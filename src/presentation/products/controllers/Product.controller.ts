@@ -4,16 +4,17 @@ import { IIDGenerator } from "@/domain/core/services/IIDGenerator";
 import ProductDtoMapper from "../mappers/Product.mapper";
 import { CreateProductRequest } from "../requests/CreateProductRequest";
 import { UpdateProductRequest } from "../requests/UpdateProductRequest";
+import CompanyIdParser from "@/presentation/core/utils/companyIdParser";
 
 export default class ProductController {
   constructor(
     private readonly productService: IProductService,
-    private readonly idGenerator: IIDGenerator,
   ) {}
 
   async create(req: Request, res: Response): Promise<void> {
     const request: CreateProductRequest = req.body;
-    const product = ProductDtoMapper.fromCreateRequest(request, this.idGenerator);
+    const companyId = CompanyIdParser(req);
+    const product = ProductDtoMapper.fromCreateRequest(request, companyId);
     const createdProduct = await this.productService.create(product);
     res.status(201).json(ProductDtoMapper.toResponse(createdProduct));
   }

@@ -9,8 +9,8 @@ export class PrismaProductMapper {
     return new Product({
       id: row.id,
       name: row.name,
-      netPrice: row.netPrice.toString(),
       ivaRate: row.ivaRate.toString(),
+      grossPrice: row.grossPrice.toString(),
       companyId: row.companyId,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
@@ -20,10 +20,9 @@ export class PrismaProductMapper {
   static toPersistence(product: Product): ProductCreateArgs {
     return {
       data: {
-        id: product.id,
         name: product.name,
-        netPrice: product.netPrice,
-        ivaRate: product.ivaRate,
+        ivaRate: product.pricing.ivaRate,
+        grossPrice: product.pricing.grossPrice,
         companyId: product.companyId,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,

@@ -140,7 +140,7 @@ export default class PrismaProductsRepository implements IProductRepository {
       const products = await prisma.product.findMany({
         where: {
           companyId,
-          netPrice: {
+          grossPrice: {
             gte: minPrice,
             lte: maxPrice,
           },

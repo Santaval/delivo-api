@@ -2,16 +2,15 @@ import { Product } from "@/domain/products/entities/Product";
 import { CreateProductRequest } from "../requests/CreateProductRequest";
 import { UpdateProductRequest } from "../requests/UpdateProductRequest";
 import { ProductResponse } from "../responses/ProductResponse";
-import { IIDGenerator } from "@/domain/core/services/IIDGenerator";
 
 export default class ProductDtoMapper {
-  static fromCreateRequest(request: CreateProductRequest, idGenerator: IIDGenerator): Product {
+  static fromCreateRequest(request: CreateProductRequest, companyId: string): Product {
     return new Product({
-      id: idGenerator.generate(),
+      id: "to-be-filled",
       name: request.name,
-      netPrice: request.netPrice,
       ivaRate: request.ivaRate || 13,
-      companyId: request.companyId,
+      companyId: companyId,
+      grossPrice: request.grossPrice,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -21,8 +20,8 @@ export default class ProductDtoMapper {
     return new Product({
       id: request.id,
       name: request.name || existingProduct.name,
-      netPrice: request.netPrice !== undefined ? request.netPrice : existingProduct.netPrice,
-      ivaRate: request.ivaRate !== undefined ? request.ivaRate : existingProduct.ivaRate,
+      ivaRate: request.ivaRate !== undefined ? request.ivaRate : existingProduct.pricing.ivaRate,
+      grossPrice: request.grossPrice !== undefined ? request.grossPrice : existingProduct.pricing.grossPrice,
       companyId: existingProduct.companyId,
       createdAt: existingProduct.createdAt.toISOString(),
       updatedAt: new Date().toISOString(),
@@ -33,10 +32,12 @@ export default class ProductDtoMapper {
     return {
       id: product.id,
       name: product.name,
-      netPrice: product.netPrice,
-      ivaRate: product.ivaRate,
-      ivaAmount: product.ivaAmount,
-      totalPrice: product.totalPrice,
+      pricing: {
+        netPrice: product.pricing.netPrice,
+        ivaRate: product.pricing.ivaRate,
+        ivaAmount: product.ivaAmount,
+        totalPrice: product.pricing.totalPrice,
+      },
       companyId: product.companyId,
       createdAt: product.createdAt.toISOString(),
       updatedAt: product.updatedAt.toISOString(),
