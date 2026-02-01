@@ -48,9 +48,10 @@ export default class PrismaProductsRepository implements IProductRepository {
    * @param product The Product entity to create.
    * @returns A promise that resolves when the product is created.
    */
-  async create(product: Product): Promise<void> {
+  async create(product: Product): Promise<Product> {
     try {
-      await prisma.product.create(PrismaProductMapper.toPersistence(product));
+      const createdProduct = await prisma.product.create(PrismaProductMapper.toPersistence(product));
+      return PrismaProductMapper.toDomain(createdProduct);
     } catch (error) {
       console.error("Error creating product:", error);
       throw new DatabaseInsertError("Could not create product");

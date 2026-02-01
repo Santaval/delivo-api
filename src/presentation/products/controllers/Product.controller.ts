@@ -37,7 +37,7 @@ export default class ProductController {
   }
 
   async findByCompany(req: Request, res: Response): Promise<void> {
-    const { companyId } = req.params;
+    const companyId = CompanyIdParser(req);
     const products = await this.productService.findByCompanyId(companyId);
     res.json(ProductDtoMapper.toResponseArray(products));
   }

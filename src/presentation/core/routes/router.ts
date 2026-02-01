@@ -1,6 +1,7 @@
 import authRouter from "@/presentation/auth/routes/auth.route";
 import clientsRouter from "@/presentation/clients/routes/clients.routes";
 import companyRouter from "@/presentation/companies/routes/companies.routes";
+import productsRouter from "@/presentation/products/routes/products.routes";
 import profileRouter from "@/presentation/users/routes/profiles.routes";
 import { Router } from "express";
 const router = Router();
@@ -12,4 +13,6 @@ router.use('/me', profileRouter);
 router.use("/companies", companyRouter);
 // client routes
 router.use("/clients", clientsRouter);
+// products router
+router.use("/products", productsRouter)
 export default router;
