@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { UpdateUserRequest } from "../requests/UpdateUserRequest";
 import UserDtoMapper from "../mappers/User.mapper";
 import { IUserService } from "@/application/users/services/interfaces/IUserService";
-import { UserId } from "@/domain/users/valueObjects/userId.valueObject";
 
 export default class MyProfileController {
 
@@ -36,5 +35,15 @@ export default class MyProfileController {
       return;
     }
     res.json(UserDtoMapper.toMyProfileResponse(user));
+  }
+
+  async logout(req: Request, res: Response) {
+    // Invalidate user session or token here if applicable
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Error logging out" });
+      }
+      res.status(200).json({ message: "Logged out successfully" });
+    });
   }
 }
