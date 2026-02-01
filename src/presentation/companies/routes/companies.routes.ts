@@ -1,7 +1,7 @@
 import { Router } from "express";
 import validateSchema from "@/presentation/core/middlewares/validateSchema";
 import asyncHandler from "@/presentation/core/handlers/asyncHandler";
-import requireAuth from "@/presentation/auth/middlewares/requireAuth";
+import jwtAuth from "@/presentation/auth/middlewares/jwtAuth";
 import { CreateCompanySchema } from "../validators/createCompany";
 import { UpdateCompanySchema } from "../validators/updateCompany";
 import { companyController } from "@/dependencyInjection/container";
@@ -9,7 +9,7 @@ import { companyController } from "@/dependencyInjection/container";
 const companyRouter = Router();
 
 // Apply authentication to all routes
-companyRouter.use(requireAuth);
+companyRouter.use(jwtAuth);
 
 // CRUD Routes
 companyRouter.post('/', 
