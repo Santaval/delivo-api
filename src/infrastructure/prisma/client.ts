@@ -1,17 +1,9 @@
-import dotenv from 'dotenv';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { PrismaClient } from './generated/prisma/client';
+import MYSQL_KEYS from '../core/config/keys/mysql';
 
-dotenv.config();
 
-const adapter = new PrismaMariaDb({
-  host: process.env.DATABASE_HOST,
-  user: process.env.DATABASE_USER,
-  password: process.env.DATABASE_PASSWORD,
-  database: process.env.DATABASE_NAME,
-  port: Number(process.env.DATABASE_PORT),
-  connectionLimit: 5
-});
+const adapter = new PrismaMariaDb(MYSQL_KEYS);
 const prisma = new PrismaClient({ adapter });
 
 export { prisma }

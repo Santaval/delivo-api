@@ -1,11 +1,10 @@
 import session from "express-session";
 import MySQLStoreFactory from "express-mysql-session";
-import MYSQL_KEYS from "@/infrastructure/core/config/keys/mysql";
 import dotenv from "dotenv";
+import MYSQL_KEYS from "@/infrastructure/core/config/keys/mysql";
 
 dotenv.config();
 
-// @ts-expect-error -- Ignore type issues with express-mysql-session
 const MySQLStore = MySQLStoreFactory(session);
 
 const sessionStore = new MySQLStore(MYSQL_KEYS);
