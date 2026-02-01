@@ -17,8 +17,8 @@ export class ClientService implements IClientService {
      * @returns {Promise<Client>}
      */
     async create(client: Client): Promise<Client> {
-        await this.clientRepository.create(client);
-        const createdClient = await this.clientRepository.find(client.id.value, "id");
+
+        const createdClient = await this.clientRepository.create(client);
         if (!createdClient) throw new ClientCreationError();
 
         return createdClient;

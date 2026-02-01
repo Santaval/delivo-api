@@ -48,9 +48,10 @@ export default class PrismaClientsRepository implements IClientRepository {
    * @param client The Client entity to create.
    * @returns A promise that resolves when the client is created.
    */
-  async create(client: Client): Promise<void> {
+  async create(client: Client): Promise<Client> {
     try {
-      await prisma.client.create(PrismaClientMapper.toPersistence(client));
+      const createdClient = await prisma.client.create(PrismaClientMapper.toPersistence(client));
+      return PrismaClientMapper.toDomain(createdClient);
     } catch (error) {
       console.error("Error creating client:", error);
       throw new DatabaseInsertError("Could not create client");

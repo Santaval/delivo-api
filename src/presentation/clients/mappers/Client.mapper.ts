@@ -2,16 +2,15 @@ import { Client } from "@/domain/clients/entities/Client";
 import { CreateClientRequest } from "../requests/CreateClientRequest";
 import { UpdateClientRequest } from "../requests/UpdateClientRequest";
 import { ClientResponse } from "../responses/ClientResponse";
-import { IIDGenerator } from "@/domain/core/services/IIDGenerator";
 
 export default class ClientDtoMapper {
-  static fromCreateRequest(request: CreateClientRequest, idGenerator: IIDGenerator): Client {
+  static fromCreateRequest(request: CreateClientRequest, companyId: string): Client {
     return new Client({
-      id: idGenerator.generate(),
+      id: "to-be-filled",
       name: request.name,
       phoneNumber: request.phoneNumber,
       email: request.email,
-      companyId: request.companyId,
+      companyId: companyId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });

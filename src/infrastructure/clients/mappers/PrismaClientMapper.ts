@@ -20,7 +20,6 @@ export class PrismaClientMapper {
   static toPersistence(client: Client): ClientCreateArgs {
     return {
       data: {
-        id: client.id.value,
         name: client.name,
         phoneNumber: client.phoneNumber?.value || null,
         email: client.email?.value || null,

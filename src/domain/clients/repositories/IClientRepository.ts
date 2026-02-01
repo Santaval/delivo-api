@@ -2,7 +2,7 @@ import { Client } from "@/domain/clients/entities/Client";
 
 export interface IClientRepository {
   all(): Promise<Client[]>;
-  create(client: Client): Promise<void>;
+  create(client: Client): Promise<Client>;
   find(value: string | number, field?: string): Promise<Client | null>;
   update(client: Client): Promise<void>;
   delete(clientId: string): Promise<void>;

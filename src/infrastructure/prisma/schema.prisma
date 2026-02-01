@@ -71,9 +71,9 @@ enum CompanyRole {
 
 model Client {
   id          String     @id @default(uuid())
-  name        String
-  phoneNumber String?
-  email       String?
+  name        String     @unique
+  phoneNumber String?    @unique
+  email       String?    @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

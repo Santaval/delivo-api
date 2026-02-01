@@ -1,4 +1,5 @@
 import authRouter from "@/presentation/auth/routes/auth.route";
+import clientsRouter from "@/presentation/clients/routes/clients.routes";
 import companyRouter from "@/presentation/companies/routes/companies.routes";
 import profileRouter from "@/presentation/users/routes/profiles.routes";
 import { Router } from "express";
@@ -9,4 +10,6 @@ router.use("/auth", authRouter);
 router.use('/me', profileRouter);
 // company routes
 router.use("/companies", companyRouter);
+// client routes
+router.use("/clients", clientsRouter);
 export default router;

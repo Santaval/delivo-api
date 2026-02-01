@@ -16,9 +16,4 @@ export const CreateClientSchema = z.object({
   email: z.string().email({
     message: "El email no es válido",
   }).optional(),
-  companyId: z.string({
-    message: "El ID de la empresa es requerido",
-  }).min(1, {
-    message: "El ID de la empresa no puede estar vacío",
-  }),
 });
