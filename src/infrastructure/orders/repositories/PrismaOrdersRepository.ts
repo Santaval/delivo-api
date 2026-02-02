@@ -87,7 +87,14 @@ export default class PrismaOrderRepository implements IOrderRepository{
   }
 
   async update(order: Order): Promise<Order> {
-    throw new InfrastructureError("Not implemented");
+    try {
+      const data = PrismaOrderMapper.toPrismaUpdate(order);
+      const result = await prisma.clientBill.update(data);
+      // @ts-expect-error
+      return PrismaOrderMapper.toDomain(result);
+    } catch (error) {
+      throw new Error("Error updating order");
+    }
   }
 
   async addItem(orderId: string, item: OrderItem): Promise<Order> {
