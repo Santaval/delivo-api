@@ -10,6 +10,7 @@ export default class PrismaOrderMapper {
       client: PrismaClientMapper.toDomain(raw.client),
       companyId: raw.companyId,
       id: raw.id,
+      // @ts-expect-error
       items: raw.items.map((item) => PrismaOrderItemMapper.toDomain(item)),
       ivaTotal: raw.ivaTotal.toNumber(),
       number: raw.number,
@@ -29,7 +30,6 @@ export default class PrismaOrderMapper {
         total: order.subtotal,
         clientId: order.client.id.value,
         companyId: order.companyId,
-        number: order.number,
         status: order.status as BillStatus,
         issueDate: order.createdAt 
       },

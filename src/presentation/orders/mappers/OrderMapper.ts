@@ -2,8 +2,10 @@ import { Order } from "@/domain/orders";
 import OrderResponse from "../responses/OrderResponse";
 import ClientDtoMapper from "@/presentation/clients/mappers/Client.mapper";
 import OrderItemMapper from "./OrderItemMapper";
+import CreateOrderRequest from "../requests/CreateOrderRequest";
+import { Client } from "@/domain/clients/entities/Client";
 
-export default class OrderResponseMapper {
+export default class OrdersDtoMapper {
   static toResponse(order: Order): OrderResponse {
     return {
       id: order.id,
@@ -21,4 +23,28 @@ export default class OrderResponseMapper {
       updatedAt: order.updatedAt.toISOString(),
     };
   }
+
+  static fromCreateToDomain(request: CreateOrderRequest, companyId: string): Order {
+    return new Order({
+      id: "to-be-filled",
+      client: new Client({
+        id: request.clientId,
+        name: "to-be-filled",
+        companyId: companyId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        
+      }),
+      number: 1, // Temporary hardcoded value
+      items: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      companyId: companyId,
+      ivaTotal: 0,
+      status: "PENDING",
+      subtotal: 0,
+      total: 0
+    });
+  }
+
 }

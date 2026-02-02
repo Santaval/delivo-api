@@ -26,8 +26,8 @@ export default class OrdersService implements IOrdersService {
     return this.ordersRepository.update(order);
   }
 
-  addItem(orderId: string, item: OrderItem): Promise<Order> {
-    return this.ordersRepository.addItem(orderId, item);
+  addItem(item: OrderItem): Promise<Order> {
+    return this.ordersRepository.addItem(item);
   }
 
   removeItem(orderId: string, itemId: string): Promise<Order> {

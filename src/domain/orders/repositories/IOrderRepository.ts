@@ -7,6 +7,6 @@ export default interface IOrderRepository {
   create(order: Order): Promise<Order>;
   update(order: Order): Promise<Order>;
   delete(id: string): Promise<void>;
-  addItem(orderId: string, item: OrderItem): Promise<Order>;
+  addItem(item: OrderItem): Promise<Order>;
   removeItem(orderId: string, itemId: string): Promise<Order>;
 }

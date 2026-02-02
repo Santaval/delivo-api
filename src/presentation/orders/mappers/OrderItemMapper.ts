@@ -1,8 +1,10 @@
 import { OrderItem } from "@/domain/orders";
 import OrderItemResponse from "../responses/OrderItemResponse";
+import AddOrderItemRequest from "../requests/AddOrderItem";
 
 export default class OrderItemMapper {
   static toResponse(item: OrderItem): OrderItemResponse {
+    console.log(item);
     return {
       id: item.itemId,
       name: item.name,
@@ -17,5 +19,21 @@ export default class OrderItemMapper {
       createdAt: item.createdAt.toISOString(),
       updatedAt: item.updatedAt.toISOString(),
     };
+  }
+
+  static fromAddItemRequest(req: AddOrderItemRequest): OrderItem {
+    const { productId, quantity, orderId } = req;
+    const item = new OrderItem({
+      name: "to-be-filled",
+      billId: orderId,
+      quantity,
+      id: productId,
+      companyId: "to-be-filled",
+      createdAt: new Date().toISOString(),
+      grossPrice: 0,
+      itemId: "to-be-filled",
+      updatedAt: new Date().toISOString(),
+    });
+    return item;
   }
 }

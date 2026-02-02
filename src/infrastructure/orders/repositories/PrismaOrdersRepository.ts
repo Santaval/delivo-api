@@ -98,13 +98,16 @@ export default class PrismaOrderRepository implements IOrderRepository{
     }
   }
 
-  async addItem(orderId: string, item: OrderItem): Promise<Order> {
+  async addItem(item: OrderItem): Promise<Order> {
     try {
       const data = PrismaOrderItemMapper.toPrisma(item);
-      const result = await prisma.clientBillItem.create(data)
-      // @ts-expect-error
-      return PrismaOrderMapper.toDomain(result);
+      await prisma.clientBillItem.create(data)
+      const updatedOrder = await this.findById(item.billId);
+      if (!updatedOrder)
+        throw new InfrastructureError("Order not found");
+      return updatedOrder;
     } catch (error) {
+      console.log(error);
       throw new InfrastructureError("Error adding item to order");
     }
   }

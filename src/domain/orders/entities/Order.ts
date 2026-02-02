@@ -23,20 +23,8 @@ export default class Order {
       updatedAt: props.updatedAt ? new Date(props.updatedAt) : new Date(),
     };
 
-    this.validate();
   }
 
-  private validate(): void {
-    if (this.props.items.length === 0) {
-      throw new DomainError("Order must have at least one item");
-    }
-
-    // Validate that totals match item totals
-    const calculatedTotals = this.calculateTotalsFromItems();
-    if (!calculatedTotals.equals(this.props.totals)) {
-      throw new DomainError("Order totals do not match item totals");
-    }
-  }
 
   private calculateTotalsFromItems(): OrderTotal {
     let subtotal = 0;
