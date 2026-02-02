@@ -1,0 +1,46 @@
+import { Order } from "@/domain/orders";
+import { BillStatus, Client, ClientBill, ClientBillItem } from "@/infrastructure/prisma/generated/prisma/client";
+import PrismaOrderItemMapper from "./PrismaOrderItemMapper";
+import { ClientBillCreateArgs } from "@/infrastructure/prisma/generated/prisma/models";
+import { PrismaClientMapper } from "@/infrastructure/clients/mappers/PrismaClientMapper";
+
+export default class PrismaOrderMapper {
+  static toDomain(raw: ClientBill & {items: ClientBillItem[], client: Client}): Order {
+    return new Order({
+      client: PrismaClientMapper.toDomain(raw.client),
+      companyId: raw.companyId,
+      id: raw.id,
+      items: raw.items.map((item) => PrismaOrderItemMapper.toDomain(item)),
+      ivaTotal: raw.ivaTotal.toNumber(),
+      number: raw.number,
+      status: raw.status,
+      subtotal: raw.subtotal.toNumber(),
+      total: raw.total.toNumber(),
+      createdAt: raw.createdAt.toISOString(),
+      updatedAt: raw.updatedAt.toISOString()
+    });
+  }
+
+  static toPrisma(order: Order): ClientBillCreateArgs {
+    return {
+      data: {
+        ivaTotal: order.ivaTotal,
+        subtotal: order.subtotal,
+        total: order.subtotal,
+        clientId: order.client.id.value,
+        companyId: order.companyId,
+        number: order.number,
+        status: order.status as BillStatus,
+        issueDate: order.createdAt 
+      },
+      include: {
+        items: {
+          include: {
+            product: true
+          }
+        },
+        client: true
+      }
+    };
+  }
+}

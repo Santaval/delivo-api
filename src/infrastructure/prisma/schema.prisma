@@ -122,7 +122,7 @@ model Product {
 
 model ClientBill {
   id        String      @id @default(uuid())
-  number    String   @unique
+  number    Int   @unique @default(autoincrement())
   issueDate DateTime @default(now())
 
   status BillStatus @default(PENDING)
@@ -149,17 +149,12 @@ model ClientBillItem {
   billId String
   bill   ClientBill @relation(fields: [billId], references: [id])
 
-  productId String?
-  product   Product? @relation(fields: [productId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
 
-  description String
-  quantity    Decimal @db.Decimal(12, 2)
-
-  unitPrice Decimal @db.Decimal(12, 2)
+  unitGrossPrice Decimal @db.Decimal(12, 2)
   ivaRate   Decimal @db.Decimal(5, 2)
-
-  ivaAmount Decimal @db.Decimal(12, 2)
-  lineTotal Decimal @db.Decimal(12, 2)
+  quantity    Decimal @db.Decimal(12, 2)
 }
 
 /// ===============================

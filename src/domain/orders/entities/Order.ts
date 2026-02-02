@@ -3,9 +3,9 @@ import { OrderId } from "../valueObjects/orderId.valueObject";
 import { OrderNumber } from "../valueObjects/orderNumber.valueObject";
 import { OrderStatus } from "../valueObjects/orderStatus.valueObject";
 import { OrderTotal } from "../valueObjects/orderTotal.valueObject";
-import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
 import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import DomainError from "@/domain/core/errors/DomainError";
+import { Client } from "@/domain/clients/entities/Client";
 
 export default class Order {
   private props: OrderProps;
@@ -13,7 +13,7 @@ export default class Order {
   constructor(props: ConstructorProps) {
     this.props = {
       id: OrderId.create(props.id),
-      clientId: ClientId.create(props.clientId),
+      client: props.client,
       number: OrderNumber.create(props.number),
       totals: OrderTotal.create(props.subtotal, props.ivaTotal),
       companyId: CompanyId.create(props.companyId),
@@ -61,11 +61,11 @@ export default class Order {
     return this.props.id.value;
   }
 
-  get clientId(): string {
-    return this.props.clientId.value;
+  get client() {
+    return this.props.client;
   }
 
-  get number(): string {
+  get number(): number {
     return this.props.number.value;
   }
 
@@ -178,7 +178,7 @@ export default class Order {
 
 interface OrderProps {
   id: OrderId;
-  clientId: ClientId;
+  client: Client
   number: OrderNumber;
   totals: OrderTotal;
   companyId: CompanyId;
@@ -190,8 +190,8 @@ interface OrderProps {
 
 export interface ConstructorProps {
   id: string;
-  clientId: string;
-  number: string;
+  client: Client
+  number: number;
   subtotal: number;
   ivaTotal: number;
   total: number;
