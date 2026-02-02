@@ -28,6 +28,7 @@ export default class PrismaOrderRepository implements IOrderRepository{
       });
       return result.map((order) => PrismaOrderMapper.toDomain(order));
     } catch (error) {
+      console.log(error)
       throw new Error("Error fetching orders");
     }
   }

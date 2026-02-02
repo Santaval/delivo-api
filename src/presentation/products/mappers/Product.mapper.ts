@@ -38,7 +38,6 @@ export default class ProductDtoMapper {
         ivaAmount: product.ivaAmount,
         totalPrice: product.pricing.totalPrice,
       },
-      companyId: product.companyId,
       createdAt: product.createdAt.toISOString(),
       updatedAt: product.updatedAt.toISOString(),
     };

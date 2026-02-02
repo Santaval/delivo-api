@@ -7,7 +7,6 @@ export interface ProductResponse {
     ivaAmount: number;
     totalPrice: number;
   };
-  companyId: string;
   createdAt: string;
   updatedAt: string;
 }
