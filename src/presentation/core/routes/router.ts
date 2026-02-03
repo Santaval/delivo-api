@@ -3,6 +3,7 @@ import clientsRouter from "@/presentation/clients/routes/clients.routes";
 import companyRouter from "@/presentation/companies/routes/companies.routes";
 import ordersRouter from "@/presentation/orders/routes/orders.routes";
 import productsRouter from "@/presentation/products/routes/products.routes";
+import routesRouter from "@/presentation/routes/routes/routes.routes";
 import profileRouter from "@/presentation/users/routes/profiles.routes";
 import { Router } from "express";
 const router = Router();
@@ -18,4 +19,7 @@ router.use("/clients", clientsRouter);
 router.use("/products", productsRouter)
 // orders router
 router.use("/orders", ordersRouter);
+// routes router
+router.use("/routes", routesRouter);
+
 export default router;
