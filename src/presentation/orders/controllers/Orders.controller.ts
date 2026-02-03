@@ -3,6 +3,7 @@ import CompanyIdParser from "@/presentation/core/utils/companyIdParser";
 import { Request, Response } from "express";
 import OrderDtoMapper from "../mappers/OrderMapper";
 import OrderItemMapper from "../mappers/OrderItemMapper";
+import AddOrderItemRequest from "../requests/AddOrderItem";
 
 export default class OrdersController {
   constructor(
@@ -34,7 +35,8 @@ export default class OrdersController {
 
   async addItem(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
-    const order = await this.ordersService.addItem(OrderItemMapper.fromAddItemRequest(req.body, id));
+    const request: AddOrderItemRequest = req.body;
+    const order = await this.ordersService.addItem(request.productId, request.quantity, id);
     res.status(201).json(OrderDtoMapper.toResponse(order));
   }
 

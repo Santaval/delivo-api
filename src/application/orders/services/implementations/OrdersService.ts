@@ -3,10 +3,13 @@ import { IOrdersService } from "../interfaces/IOrdersService";
 import { Order, OrderItem } from "@/domain/orders";
 import ApplicationError from "@/application/core/errors/ApplicationError";
 import IOrderPricingCalculator from "@/domain/orders/services/IOrderPricingCalculator";
+import { IProductRepository } from "@/domain/products/repositories/IProductRepository";
+import { Product } from "@/domain/products/entities/Product";
 
 export default class OrdersService implements IOrdersService {
   constructor(
     private readonly ordersRepository: IOrderRepository,
+    private readonly productsRepository: IProductRepository,
     private readonly orderPricingCalculator: IOrderPricingCalculator
   ) {}
   findByCompany(companyId: string): Promise<Order[]> {
@@ -29,7 +32,11 @@ export default class OrdersService implements IOrdersService {
     return this.ordersRepository.update(order);
   }
 
-  async addItem(item: OrderItem): Promise<Order> {
+  async addItem(productId: string, quantity: number, orderId: string): Promise<Order> {
+    const product = await this.productsRepository.find(productId);
+    if (!product) throw new ApplicationError("Product not found", 404);
+
+    const item = this.fromProduct(product, quantity, orderId);
 
     const updatedPricing = await this.orderPricingCalculator.onAddItem(item);
     if (!updatedPricing) throw new ApplicationError("Failed to update pricing", 400);
@@ -47,5 +54,19 @@ export default class OrdersService implements IOrdersService {
 
     await this.update(updatedPricing);
     return this.ordersRepository.removeItem(orderId, itemId);
+  }
+
+  fromProduct(product: Product, quantity: number, orderId: string): OrderItem {
+    return new OrderItem({
+      id: product.id,
+      billId: orderId,
+      quantity,
+      name: product.name,
+      companyId: product.companyId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      grossPrice: product.pricing.grossPrice,
+      itemId: "to-be-filled",
+    });
   }
 }

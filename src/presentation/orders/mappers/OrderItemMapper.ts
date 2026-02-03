@@ -4,7 +4,6 @@ import AddOrderItemRequest from "../requests/AddOrderItem";
 
 export default class OrderItemMapper {
   static toResponse(item: OrderItem): OrderItemResponse {
-    console.log(item);
     return {
       id: item.itemId,
       name: item.name,

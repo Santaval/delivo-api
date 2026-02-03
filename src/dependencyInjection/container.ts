@@ -46,7 +46,7 @@ export const companiesService = new CompanyService(companiesRepository);
 export const clientsService = new ClientService(clientsRepository);
 export const productsService = new ProductService(productsRepository);
 export const ordersPricingCalculator = new OrderPricingCalculator(ordersRepository, productsRepository);
-export const ordersService = new OrdersService(ordersRepository, ordersPricingCalculator);
+export const ordersService = new OrdersService(ordersRepository, productsRepository, ordersPricingCalculator);
 
 //  ==================== PRESENTATION ====================
 
