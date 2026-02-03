@@ -22,8 +22,11 @@ export default class PrismaRoutesRepository implements IRouteRepository {
         include: this.getIncludeConditions(),
       });
 
+      console.log("Raw route data to be inserted:", JSON.stringify(results, null, 2));
+
       return results.map(PrismaRouteMapper.toDomain);
     } catch (error) {
+      console.error("Error finding routes by company ID:", error);
       throw new DatabaseError("Could not find routes");
     }
   }
@@ -106,6 +109,7 @@ export default class PrismaRoutesRepository implements IRouteRepository {
   async addPoint(point: RoutePoint): Promise<RoutePoint> {
     try {
       const raw = PrismaRoutePointMapper.toPersistence(point);
+      console.log("Raw route point data to be inserted:", raw);
       const result = await prisma.routePoint.create(raw);
       // @ts-expect-error
       return PrismaRoutePointMapper.toDomain(result);
@@ -139,6 +143,11 @@ export default class PrismaRoutesRepository implements IRouteRepository {
           bill: {
             include: {
               client: true,
+              items: {
+                include: {
+                  product: true
+                }
+              }
             }
           }
         }
