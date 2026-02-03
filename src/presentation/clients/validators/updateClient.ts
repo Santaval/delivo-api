@@ -14,4 +14,6 @@ export const UpdateClientSchema = z.object({
   email: z.string().email({
     message: "El email no es válido",
   }).optional(),
+  lat: z.number().nullable(),
+  lng: z.number().nullable(),
 });

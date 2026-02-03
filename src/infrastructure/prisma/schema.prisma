@@ -75,6 +75,9 @@ model Client {
   phoneNumber String?    @unique
   email       String?    @unique
 
+  lat        Decimal? @db.Decimal(10, 8)
+  lng        Decimal? @db.Decimal(11, 8)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -33,7 +33,8 @@ export default class OrdersDtoMapper {
         companyId: companyId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        
+        lat: 0,
+        lng: 0
       }),
       number: 1, // Temporary hardcoded value
       items: [],
