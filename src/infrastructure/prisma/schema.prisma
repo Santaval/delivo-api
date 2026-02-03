@@ -253,6 +253,8 @@ model Route {
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
+
+  points    RoutePoint[]
 }
 
 model RoutePoint {
@@ -262,6 +264,9 @@ model RoutePoint {
 
   billId   String   @unique
   bill     ClientBill @relation(fields: [billId], references: [id])
+
+  routeId  String
+  route    Route @relation(fields: [routeId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

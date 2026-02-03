@@ -1,3 +1,4 @@
+import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import { RouteId } from "../valueObjects/routeId.valueObject";
 import { RouteName } from "../valueObjects/routeName.valueObject";
 import { RouteStatus } from "../valueObjects/routeStatus.valueObject";
@@ -12,6 +13,7 @@ export class Route {
       name: RouteName.create(props.name),
       status: RouteStatus.create(props.status),
       points: props.points || [],
+      companyId: CompanyId.create(props.companyId),
       createdAt: props.createdAt ? new Date(props.createdAt) : new Date(),
       updatedAt: props.updatedAt ? new Date(props.updatedAt) : new Date(),
     };
@@ -34,6 +36,10 @@ export class Route {
     return [...this.props.points]; // Return copy to maintain immutability
   }
 
+  get companyId(): string {
+    return this.props.companyId.value;
+  }
+
   get createdAt(): Date {
     return this.props.createdAt;
   }
@@ -48,6 +54,7 @@ interface RouteProps {
   name: RouteName;
   status: RouteStatus;
   points: RoutePoint[];
+  companyId: CompanyId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,6 +63,7 @@ export interface RouteConstructorProps {
   id: string;
   name: string;
   status: string;
+  companyId: string;
   points?: RoutePoint[];
   createdAt?: string;
   updatedAt?: string;
