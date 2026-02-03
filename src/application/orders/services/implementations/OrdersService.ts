@@ -1,10 +1,13 @@
 import IOrderRepository from "@/domain/orders/repositories/IOrderRepository";
 import { IOrdersService } from "../interfaces/IOrdersService";
 import { Order, OrderItem } from "@/domain/orders";
+import ApplicationError from "@/application/core/errors/ApplicationError";
+import IOrderPricingCalculator from "@/domain/orders/services/IOrderPricingCalculator";
 
 export default class OrdersService implements IOrdersService {
   constructor(
-    private readonly ordersRepository: IOrderRepository
+    private readonly ordersRepository: IOrderRepository,
+    private readonly orderPricingCalculator: IOrderPricingCalculator
   ) {}
   findByCompany(companyId: string): Promise<Order[]> {
     return this.ordersRepository.findByCompany(companyId);
@@ -26,7 +29,12 @@ export default class OrdersService implements IOrdersService {
     return this.ordersRepository.update(order);
   }
 
-  addItem(item: OrderItem): Promise<Order> {
+  async addItem(item: OrderItem): Promise<Order> {
+
+    const updatedPricing = await this.orderPricingCalculator.onAddItem(item);
+    if (!updatedPricing) throw new ApplicationError("Failed to update pricing", 400);
+
+    await this.update(updatedPricing);
     return this.ordersRepository.addItem(item);
   }
 

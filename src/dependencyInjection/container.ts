@@ -1,6 +1,7 @@
 import OAuthService from "@/application/auth/services/implementations/IOAuthService";
 import { ClientService } from "@/application/clients/services/implementations/ClientService";
 import { CompanyService } from "@/application/companies/services/implementations/CompanyService";
+import OrderPricingCalculator from "@/application/orders/services/implementations/OrderPricingCalculator";
 import OrdersService from "@/application/orders/services/implementations/OrdersService";
 import { ProductService } from "@/application/products/services/implementations/ProductService";
 import { UserService } from "@/application/users/services/implementations/UserService";
@@ -44,7 +45,8 @@ export const oAuthService = new OAuthService(userService, googleOAuthProvider, i
 export const companiesService = new CompanyService(companiesRepository);
 export const clientsService = new ClientService(clientsRepository);
 export const productsService = new ProductService(productsRepository);
-export const ordersService = new OrdersService(ordersRepository);
+export const ordersPricingCalculator = new OrderPricingCalculator(ordersRepository, productsRepository);
+export const ordersService = new OrdersService(ordersRepository, ordersPricingCalculator);
 
 //  ==================== PRESENTATION ====================
 

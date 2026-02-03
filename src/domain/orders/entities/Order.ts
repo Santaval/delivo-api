@@ -25,25 +25,6 @@ export default class Order {
 
   }
 
-
-  private calculateTotalsFromItems(): OrderTotal {
-    let subtotal = 0;
-    let ivaTotal = 0;
-
-    for (const item of this.props.items) {
-      const itemSubtotal = item.pricing.netPrice * item.quantity;
-      const itemIva = item.pricing.ivaAmount * item.quantity;
-      
-      subtotal += itemSubtotal;
-      ivaTotal += itemIva;
-    }
-
-    return OrderTotal.create(
-      Math.round(subtotal * 100) / 100,
-      Math.round(ivaTotal * 100) / 100
-    );
-  }
-
   // Getters
   get id(): string {
     return this.props.id.value;
@@ -89,79 +70,11 @@ export default class Order {
     return this.props.updatedAt;
   }
 
-  // Business methods
-  addItem(item: OrderItem): void {
-    this.props.items.push(item);
-    this.updateTotals();
-    this.props.updatedAt = new Date();
+  setTotals(subtotal: number, ivaTotal: number): void {
+    this.props.totals = OrderTotal.create(subtotal, ivaTotal);
   }
 
-  removeItem(itemIndex: number): void {
-    if (itemIndex < 0 || itemIndex >= this.props.items.length) {
-      throw new DomainError("Invalid item index");
-    }
 
-    this.props.items.splice(itemIndex, 1);
-    
-    if (this.props.items.length === 0) {
-      throw new DomainError("Order must have at least one item");
-    }
-
-    this.updateTotals();
-    this.props.updatedAt = new Date();
-  }
-
-  updateItemQuantity(itemIndex: number, newQuantity: number): void {
-    if (itemIndex < 0 || itemIndex >= this.props.items.length) {
-      throw new DomainError("Invalid item index");
-    }
-
-    if (newQuantity <= 0) {
-      throw new DomainError("Item quantity must be positive");
-    }
-
-    // Since OrderItem extends Product and quantity is private, 
-    // we would need to create a new OrderItem with the new quantity
-    // This depends on your OrderItem implementation
-    this.updateTotals();
-    this.props.updatedAt = new Date();
-  }
-
-  changeStatus(newStatus: string): void {
-    const newOrderStatus = OrderStatus.create(newStatus);
-    
-    if (!this.props.status.canTransitionTo(newOrderStatus)) {
-      throw new DomainError(`Cannot transition from ${this.props.status.value} to ${newStatus}`);
-    }
-
-    this.props.status = newOrderStatus;
-    this.props.updatedAt = new Date();
-  }
-
-  markAsPaid(): void {
-    this.changeStatus("PAID");
-  }
-
-  cancel(): void {
-    this.changeStatus("CANCELLED");
-  }
-
-  private updateTotals(): void {
-    this.props.totals = this.calculateTotalsFromItems();
-  }
-
-  // Status checks
-  isPending(): boolean {
-    return this.props.status.isPending();
-  }
-
-  isPaid(): boolean {
-    return this.props.status.isPaid();
-  }
-
-  isCancelled(): boolean {
-    return this.props.status.isCancelled();
-  }
 }
 
 interface OrderProps {
