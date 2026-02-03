@@ -32,4 +32,27 @@ export default class OrderPricingCalculator implements IOrderPricingCalculator {
 
     return order;
   }
+
+  /**
+   *  Calculate the new total price, iva amount, etc on the order after removing an item.
+   * @param item
+   * @returns The updated order
+   */
+  async onRemoveItem(item: OrderItem): Promise<Order> {
+    const order = await this.ordersRepository.findById(item.billId);
+    if (!order) throw new Error("Order not found");
+
+    const product = await this.productsRepository.find(item.id);
+    if (!product) throw new Error("Product not found");
+
+    const itemGrossPrice = product.pricing.grossPrice * item.quantity;
+    const itemIvaAmount = itemGrossPrice * (product.pricing.ivaRate / 100);
+    const subtotal = itemGrossPrice - itemIvaAmount;
+
+    const newSubtotal = order.subtotal - subtotal;
+    const newIvaTotal = order.ivaTotal - itemIvaAmount;
+    order.setTotals(newSubtotal, newIvaTotal);
+
+    return order;
+  }
 }

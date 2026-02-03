@@ -38,7 +38,14 @@ export default class OrdersService implements IOrdersService {
     return this.ordersRepository.addItem(item);
   }
 
-  removeItem(orderId: string, itemId: string): Promise<Order> {
+  async removeItem(orderId: string, itemId: string): Promise<Order> {
+    const orderItem = await this.ordersRepository.getItem(itemId);
+    if (!orderItem) throw new ApplicationError("Order item not found", 404);
+
+    const updatedPricing = await this.orderPricingCalculator.onRemoveItem(orderItem);
+    if (!updatedPricing) throw new ApplicationError("Failed to update pricing", 400);
+
+    await this.update(updatedPricing);
     return this.ordersRepository.removeItem(orderId, itemId);
   }
 }

@@ -9,4 +9,5 @@ export default interface IOrderRepository {
   delete(id: string): Promise<void>;
   addItem(item: OrderItem): Promise<Order>;
   removeItem(orderId: string, itemId: string): Promise<Order>;
+  getItem(itemId: string): Promise<OrderItem | null>;
 }

@@ -127,4 +127,18 @@ export default class PrismaOrderRepository implements IOrderRepository{
     }
   }
 
+  async getItem(itemId: string): Promise<OrderItem | null> {
+    try {
+      const result = await prisma.clientBillItem.findUnique({
+        where: { id: itemId },
+        include: {
+          product: true
+        }
+      });
+      return result ? PrismaOrderItemMapper.toDomain(result) : null;
+    } catch (error) {
+      throw new InfrastructureError("Error fetching order item");
+    }
+  }
+
 }

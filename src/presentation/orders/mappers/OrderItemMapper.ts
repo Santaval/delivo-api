@@ -21,8 +21,8 @@ export default class OrderItemMapper {
     };
   }
 
-  static fromAddItemRequest(req: AddOrderItemRequest): OrderItem {
-    const { productId, quantity, orderId } = req;
+  static fromAddItemRequest(req: AddOrderItemRequest, orderId: string): OrderItem {
+    const { productId, quantity } = req;
     const item = new OrderItem({
       name: "to-be-filled",
       billId: orderId,

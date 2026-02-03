@@ -11,5 +11,6 @@ ordersRouter.get("/", asyncHandler(ordersController.findByCompany.bind(ordersCon
 ordersRouter.post("/", validateSchema(createOrderSchema), asyncHandler(ordersController.create.bind(ordersController)));
 ordersRouter.get("/:id", asyncHandler(ordersController.findById.bind(ordersController)));
 ordersRouter.post("/:id/items", validateSchema(addOrderItemSchema), asyncHandler(ordersController.addItem.bind(ordersController)));
+ordersRouter.delete("/:id/items/:itemId", asyncHandler(ordersController.removeItem.bind(ordersController)));
 
 export default ordersRouter;
