@@ -13,9 +13,9 @@ export const CreateClientSchema = z.object({
   }).max(15, {
     message: "El teléfono no puede exceder 15 dígitos",
   }).optional(),
-  email: z.string().email({
+  email: z.email({
     message: "El email no es válido",
-  }).optional(),
+  }).optional().nullable(),
   lat: z.number().nullable(),
   lng: z.number().nullable(),
 });
