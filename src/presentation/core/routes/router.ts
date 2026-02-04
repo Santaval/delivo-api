@@ -4,6 +4,7 @@ import companyRouter from "@/presentation/companies/routes/companies.routes";
 import ordersRouter from "@/presentation/orders/routes/orders.routes";
 import productsRouter from "@/presentation/products/routes/products.routes";
 import routesRouter from "@/presentation/routes/routes/routes.routes";
+import statsRouter from "@/presentation/stats/routes/stats.routes";
 import profileRouter from "@/presentation/users/routes/profiles.routes";
 import { Router } from "express";
 const router = Router();
@@ -21,5 +22,7 @@ router.use("/products", productsRouter)
 router.use("/orders", ordersRouter);
 // routes router
 router.use("/routes", routesRouter);
+// stats router
+router.use("/stats", statsRouter);
 
 export default router;

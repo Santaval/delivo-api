@@ -18,12 +18,13 @@ export default class FinancialSummaryCalculator implements IFinancialSummaryCalc
   }   
 
 
-  private async getIncomesReport(start: Date, end: Date, companyId: CompanyId) : Promise<IncomesFinancialSummary> {
+  private async getIncomesReport(start: Date, end: Date, companyId: CompanyId, withPrevious: boolean = true) : Promise<IncomesFinancialSummary> {
     const orders = await this.orderRepository.byTimeRange(start, end, companyId);
+    console.log(orders);
     const totalIncome = orders.reduce((acc, order) => acc + order.total, 0);
     const averageIncomePerDay = totalIncome / moment(end).diff(moment(start), 'days') || 0;
 
-    const previousIncomesReport = await this.getPreviousIncomesReport(start, end, companyId);
+    const previousIncomesReport = withPrevious ? await this.getPreviousIncomesReport(start, end, companyId) : null;
 
     return {
       total: totalIncome,
@@ -41,7 +42,7 @@ export default class FinancialSummaryCalculator implements IFinancialSummaryCalc
     const diff = moment(end).diff(moment(start), 'days');
     const previousStart = moment(start).subtract(diff, 'days').toDate();
     const previousEnd = moment(end).subtract(diff, 'days').toDate();
-    const report = await this.getIncomesReport(previousStart, previousEnd, companyId);
+    const report = await this.getIncomesReport(previousStart, previousEnd, companyId, false);
     return report;
   }
 

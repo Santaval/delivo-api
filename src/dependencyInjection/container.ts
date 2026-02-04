@@ -5,6 +5,7 @@ import OrderPricingCalculator from "@/application/orders/services/implementation
 import OrdersService from "@/application/orders/services/implementations/OrdersService";
 import { ProductService } from "@/application/products/services/implementations/ProductService";
 import RouteService from "@/application/routes/services/implementations/RouteService";
+import FinancialSummaryCalculator from "@/application/stats/services/implementations/FinancialSummaryCalculator";
 import { UserService } from "@/application/users/services/implementations/UserService";
 import GoogleOAuthProvider from "@/infrastructure/auth/providers/GoogleOAuthProvider";
 import JwtTokenService from "@/infrastructure/auth/services/JwtTokenService";
@@ -21,6 +22,7 @@ import CompanyController from "@/presentation/companies/controllers/Company.cont
 import OrdersController from "@/presentation/orders/controllers/Orders.controller";
 import ProductController from "@/presentation/products/controllers/Product.controller";
 import RoutesContoller from "@/presentation/routes/controllers/Routes.controller";
+import StatsController from "@/presentation/stats/controllers/Stats.controller";
 import MyProfileController from "@/presentation/users/controllers/MyProfile.controller";
 
 // ==================== INFRASTRUCTURE ====================
@@ -52,6 +54,7 @@ export const productsService = new ProductService(productsRepository);
 export const ordersPricingCalculator = new OrderPricingCalculator(ordersRepository, productsRepository);
 export const ordersService = new OrdersService(ordersRepository, productsRepository, ordersPricingCalculator);
 export const routesService = new RouteService(routesRepository);
+export const financialSummaryCalculator = new FinancialSummaryCalculator(ordersRepository)
 
 //  ==================== PRESENTATION ====================
 
@@ -63,3 +66,4 @@ export const clientsController = new ClientController(clientsService);
 export const productsController = new ProductController(productsService);
 export const ordersController = new OrdersController(ordersService);
 export const routesController = new RoutesContoller(routesService);
+export const statsController = new StatsController(financialSummaryCalculator);
