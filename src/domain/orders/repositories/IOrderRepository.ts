@@ -1,3 +1,4 @@
+import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import Order from "../entities/Order";
 import OrderItem from "../entities/OrderItem";
 
@@ -10,4 +11,5 @@ export default interface IOrderRepository {
   addItem(item: OrderItem): Promise<Order>;
   removeItem(orderId: string, itemId: string): Promise<Order>;
   getItem(itemId: string): Promise<OrderItem | null>;
+  byTimeRange(start: Date, end: Date, companyId: CompanyId): Promise<Order[]>;
 }
