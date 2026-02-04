@@ -1,6 +1,7 @@
 import OAuthService from "@/application/auth/services/implementations/IOAuthService";
 import { ClientService } from "@/application/clients/services/implementations/ClientService";
 import { CompanyService } from "@/application/companies/services/implementations/CompanyService";
+import LocationService from "@/application/geolocation/services/implementations/LocationService";
 import OrderPricingCalculator from "@/application/orders/services/implementations/OrderPricingCalculator";
 import OrdersService from "@/application/orders/services/implementations/OrdersService";
 import { ProductService } from "@/application/products/services/implementations/ProductService";
@@ -12,6 +13,7 @@ import JwtTokenService from "@/infrastructure/auth/services/JwtTokenService";
 import PrismaClientsRepository from "@/infrastructure/clients/repositories/PrismaClientsRepository";
 import PrismaCompaniesRepository from "@/infrastructure/companies/repositories/PrismaCompaniesRepository";
 import UuidIDGenerator from "@/infrastructure/core/services/UuidIDGenerator";
+import { GooglePlacesService } from "@/infrastructure/geolocation/services/GooglePlacesService";
 import PrismaOrdersRepository from "@/infrastructure/orders/repositories/PrismaOrdersRepository";
 import PrismaProductsRepository from "@/infrastructure/products/repositories/PrismaProductsRepository";
 import PrismaRoutesRepository from "@/infrastructure/routes/repositories/PrismaRoutesRepository";
@@ -19,6 +21,7 @@ import PrismaUsersRepository from "@/infrastructure/users/repositories/PrismaUse
 import AuthController from "@/presentation/auth/controllers/Auth.controller";
 import ClientController from "@/presentation/clients/controllers/Client.controller";
 import CompanyController from "@/presentation/companies/controllers/Company.controller";
+import LocationController from "@/presentation/geolocation/controllers/LocationController";
 import OrdersController from "@/presentation/orders/controllers/Orders.controller";
 import ProductController from "@/presentation/products/controllers/Product.controller";
 import RoutesContoller from "@/presentation/routes/controllers/Routes.controller";
@@ -38,6 +41,8 @@ export const routesRepository = new PrismaRoutesRepository();
 // providers
 export const idGenerator = new UuidIDGenerator();
 export const googleOAuthProvider = new GoogleOAuthProvider();
+export const placesProvider = new GooglePlacesService();
+
 
 // services
 export const jwtService = new JwtTokenService();
@@ -55,6 +60,8 @@ export const ordersPricingCalculator = new OrderPricingCalculator(ordersReposito
 export const ordersService = new OrdersService(ordersRepository, productsRepository, ordersPricingCalculator);
 export const routesService = new RouteService(routesRepository);
 export const financialSummaryCalculator = new FinancialSummaryCalculator(ordersRepository)
+export const locationService = new LocationService(placesProvider);
+
 
 //  ==================== PRESENTATION ====================
 
@@ -67,3 +74,5 @@ export const productsController = new ProductController(productsService);
 export const ordersController = new OrdersController(ordersService);
 export const routesController = new RoutesContoller(routesService);
 export const statsController = new StatsController(financialSummaryCalculator);
+export const locationController = new LocationController(locationService);
+

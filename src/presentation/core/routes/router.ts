@@ -1,6 +1,7 @@
 import authRouter from "@/presentation/auth/routes/auth.route";
 import clientsRouter from "@/presentation/clients/routes/clients.routes";
 import companyRouter from "@/presentation/companies/routes/companies.routes";
+import locationRouter from "@/presentation/geolocation/routes/location.route";
 import ordersRouter from "@/presentation/orders/routes/orders.routes";
 import productsRouter from "@/presentation/products/routes/products.routes";
 import routesRouter from "@/presentation/routes/routes/routes.routes";
@@ -24,5 +25,7 @@ router.use("/orders", ordersRouter);
 router.use("/routes", routesRouter);
 // stats router
 router.use("/stats", statsRouter);
+router.use('/locations', locationRouter);
+
 
 export default router;
