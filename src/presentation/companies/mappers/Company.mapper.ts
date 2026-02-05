@@ -9,6 +9,7 @@ export default class CompanyDtoMapper {
     return new Company({
       id: idGenerator.generate(),
       name: request.name,
+    
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });

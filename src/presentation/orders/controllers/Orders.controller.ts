@@ -17,6 +17,7 @@ export default class OrdersController {
   }
 
   async create(req: Request, res: Response): Promise<void> {
+
     const companyId = CompanyIdParser(req);
     const newOrder = OrderDtoMapper.fromCreateToDomain(req.body, companyId);
     const order = await this.ordersService.create(newOrder);

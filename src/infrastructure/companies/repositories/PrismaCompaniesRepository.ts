@@ -89,4 +89,24 @@ export default class PrismaCompaniesRepository implements ICompanyRepository {
       throw new DatabaseInsertError("Could not delete company");
     }
   }
+  async addUser(companyId: string, userId: string): Promise<void> {
+    try {
+      await prisma.userCompany.create({
+        data: {
+          company: {
+            connect: { id: companyId },
+          },
+          user: {
+            connect: { id: userId },
+          },
+          role: "OWNER",
+        },
+      });
+    } catch (error) {
+      console.error("Error adding user to company:", error);
+      throw new DatabaseInsertError("Could not add user to company");
+    }
+  }
+
+             
 }

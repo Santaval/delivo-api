@@ -16,11 +16,12 @@ export class CompanyService implements ICompanyService {
      * @param company
      * @returns {Promise<Company>}
      */
-    async create(company: Company): Promise<Company> {
+    async create(company: Company, userId: string): Promise<Company> {
         await this.companyRepository.create(company);
         const createdCompany = await this.companyRepository.find(company.id, "id");
         if (!createdCompany) throw new CompanyCreationError();
-
+        // add user to company
+        await this.companyRepository.addUser(company.id, userId);
         return createdCompany;
     }
 

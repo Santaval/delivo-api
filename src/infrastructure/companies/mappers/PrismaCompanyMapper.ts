@@ -6,6 +6,7 @@ import { CompanyCreateArgs } from "@/infrastructure/prisma/generated/prisma/mode
 
 export class PrismaCompanyMapper {
   static toDomain(row: PrismaCompany): Company {
+    console.log(row)
     return new Company({
       id: row.id,
       name: row.name,

@@ -12,9 +12,11 @@ export default class CompanyController {
   ) {}
 
   async create(req: Request, res: Response): Promise<void> {
+    // @ts-expect-error
+    const userId = req?.user?.id;
     const request: CreateCompanyRequest = req.body;
     const company = CompanyDtoMapper.fromCreateRequest(request, this.idGenerator);
-    const createdCompany = await this.companyService.create(company);
+    const createdCompany = await this.companyService.create(company, userId);
     res.status(201).json(CompanyDtoMapper.toResponse(createdCompany));
   }
 

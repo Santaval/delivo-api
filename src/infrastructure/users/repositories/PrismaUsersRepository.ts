@@ -16,11 +16,8 @@ export default class PrismaUsersRepository implements IUserRepository {
   async all(): Promise<User[]> {
     try {
       const users = await prisma.user.findMany({
-        include: {
-          companies: true,
-        },
+        include: this.getIncludes(),
       });
-      // @ts-expect-error
       return users.map((user) => PrismaUserMapper.toDomain(user));
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -40,11 +37,8 @@ export default class PrismaUsersRepository implements IUserRepository {
         where: {
           [field || "id"]: value,
         },
-        include: {
-          companies: true,
-        },
+        include: this.getIncludes(),
       });
-      // @ts-expect-error
       return user ? PrismaUserMapper.toDomain(user) : null;
     } catch (error) {
       console.error("Error finding user:", error);
@@ -80,6 +74,16 @@ export default class PrismaUsersRepository implements IUserRepository {
     } catch (error) {
       console.error("Error updating user:", error);
       throw new DatabaseInsertError("Could not update user");
+    }
+  }
+
+  getIncludes() {
+    return {
+      companies: {
+        include: {
+          company: true
+        }
+      },
     }
   }
 
