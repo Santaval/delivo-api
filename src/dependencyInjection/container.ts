@@ -68,7 +68,7 @@ export const locationService = new LocationService(placesProvider);
 // controllers
 export const myProfileController = new MyProfileController(userService);
 export const companyController = new CompanyController(companiesService, idGenerator);
-export const authController = new AuthController(oAuthService, jwtService);
+export const authController = new AuthController(oAuthService, jwtService, userService);
 export const clientsController = new ClientController(clientsService);
 export const productsController = new ProductController(productsService);
 export const ordersController = new OrdersController(ordersService);

@@ -2,11 +2,14 @@ import { Request, Response } from "express";
 import { IOAuthService } from "@/application/auth/services/interfaces/IOAuthService";
 import { AuthResponse } from "../responses/AuthResponse";
 import IJwtService from "@/domain/auth/services/IJwtService";
+import { IUserService } from "@/application/users/services/interfaces/IUserService";
+import UserDtoMapper from "@/presentation/users/mappers/User.mapper";
 
 export default class AuthController {
   constructor(
     private readonly oAuthService: IOAuthService,
     private readonly jwtService: IJwtService,
+    private readonly usersService: IUserService
   ) {}
 
   async googleLogin(req: Request, res: Response): Promise<void> {
@@ -43,6 +46,32 @@ export default class AuthController {
       console.error("Google login error:", error);
       res.status(401).json({ message: "Autenticación fallida" });
     }
+  }
+
+  async me(req: Request, res: Response): Promise<void> {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.status(401).json({ message: "Token no proporcionado" });
+      return;
+    }
+
+    const token = authHeader.substring(7);
+    const payload = this.jwtService.verifyToken(token);
+
+    if (!payload) {
+      res.status(401).json({ message: "Token inválido" });
+      return;
+    }
+
+    // Fetch user information
+    const user = await this.usersService.find(payload.id);
+    if (!user) {
+      res.status(404).json({ message: "Usuario no encontrado" });
+      return;
+    }
+
+    res.json(UserDtoMapper.toResponse(user));
   }
 
   async refreshToken(req: Request, res: Response): Promise<void> {

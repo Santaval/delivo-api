@@ -14,7 +14,6 @@ export default class OAuthService implements IOAuthService {
   async google(accessToken: string): Promise<User> {
     try {
       const userInfo = await this.googleOAuthProvider.getUserInfo(accessToken);
-      console.log(userInfo);
       let user = await this.usersService.find(userInfo.email, "email");
       if (!user) {
         const id = this.idGenerator.generate()
@@ -23,6 +22,7 @@ export default class OAuthService implements IOAuthService {
           id,
           name: userInfo.name!,
           surnames: "",
+          companies: [],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         })
@@ -31,6 +31,7 @@ export default class OAuthService implements IOAuthService {
 
       return user;
     } catch (error) {
+      console.error(error);
       throw new InvalidCredentialsError();
     }
   }

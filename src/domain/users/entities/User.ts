@@ -1,5 +1,6 @@
 import { UserId } from "@/domain/users/valueObjects/userId.valueObject";
 import { Email } from "../valueObjects/email.valueObject";
+import { Company } from "@/domain/companies/entities/Company";
 
 export class User {
   private props: UserProps;
@@ -9,18 +10,20 @@ export class User {
       name: props.name,
       surnames: props.surnames,
       email: Email.create(props.email),
+      companies: props.companies,
       createdAt: new Date(props.createdAt),
       updatedAt: new Date(props.updatedAt),
     };
   }
 
+  set id (value: string) { this.props.id = UserId.create(value);}
   get id() { return this.props.id.value; }
   get name() { return this.props.name; }
   get surnames() { return this.props.surnames; }
   get email() { return this.props.email; }
+  get companies() { return this.props.companies; }
   get createdAt() { return this.props.createdAt; }
   get updatedAt() { return this.props.updatedAt; }
-  set id (value: string) { this.props.id = UserId.create(value);  }
 }
 
 
@@ -29,6 +32,7 @@ export interface UserProps {
   name: string;
   surnames: string;
   email: Email;
+  companies: Company[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,4 +44,5 @@ export interface UserConstructorProps {
   email: string;
   createdAt: string;
   updatedAt: string;
+  companies: Company[]
 }

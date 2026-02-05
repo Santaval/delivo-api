@@ -2,6 +2,7 @@ import { User } from "@/domain/users/entities/User";
 import { UpdateUserRequest } from "../requests/UpdateUserRequest";
 import { UserResponse } from "../responses/UserResponse";
 import { MyProfileResponse } from "../responses/MyProfileResponse";
+import CompanyDtoMapper from "@/presentation/companies/mappers/Company.mapper";
 
 export default class UserDtoMapper {
   static fromUpdateRequestToEntity(request: UpdateUserRequest): User {
@@ -12,6 +13,7 @@ export default class UserDtoMapper {
         surnames: request.surnames || "",
         email:  "default@example.com", // no needed for update
         createdAt:  new Date().toISOString(),
+        companies: [],
         updatedAt: new Date().toISOString(),
       }
     );
@@ -22,6 +24,7 @@ export default class UserDtoMapper {
       id: user.id,
       name: user.name,
       surnames: user.surnames,
+      companies: user.companies.map(CompanyDtoMapper.toResponse),
       email: user.email.value,
     };
   }

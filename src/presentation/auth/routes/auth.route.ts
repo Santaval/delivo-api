@@ -24,4 +24,9 @@ authRouter.post("/logout",
   asyncHandler(authController.logout.bind(authController))
 );
 
+authRouter.get("/me",
+  jwtAuth, // Require valid token to access user info
+  asyncHandler(authController.me.bind(authController))
+);
+
 export default authRouter;

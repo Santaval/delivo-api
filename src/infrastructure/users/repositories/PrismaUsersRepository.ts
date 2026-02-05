@@ -15,7 +15,12 @@ export default class PrismaUsersRepository implements IUserRepository {
    */
   async all(): Promise<User[]> {
     try {
-      const users = await prisma.user.findMany();
+      const users = await prisma.user.findMany({
+        include: {
+          companies: true,
+        },
+      });
+      // @ts-expect-error
       return users.map((user) => PrismaUserMapper.toDomain(user));
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -35,7 +40,11 @@ export default class PrismaUsersRepository implements IUserRepository {
         where: {
           [field || "id"]: value,
         },
+        include: {
+          companies: true,
+        },
       });
+      // @ts-expect-error
       return user ? PrismaUserMapper.toDomain(user) : null;
     } catch (error) {
       console.error("Error finding user:", error);
