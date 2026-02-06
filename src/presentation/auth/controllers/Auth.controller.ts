@@ -30,13 +30,10 @@ export default class AuthController {
         email: user.email.value,
       });
 
+      const userResponse = UserDtoMapper.toResponse(user);
+
       const response: AuthResponse = {
-        user: {
-          id: user.id,
-          email: user.email.value,
-          name: user.name,
-          surnames: user.surnames,
-        },
+        user: userResponse,
         token: jwtToken,
         expiresIn: "7d", // Should match JWT_EXPIRES_IN
       };
