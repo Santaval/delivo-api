@@ -72,9 +72,9 @@ enum CompanyRole {
 
 model Client {
   id          String     @id @default(uuid())
-  name        String     @unique
-  phoneNumber String?    @unique
-  email       String?    @unique
+  name        String     
+  phoneNumber String?    
+  email       String?   
 
   lat        Decimal? @db.Decimal(10, 8)
   lng        Decimal? @db.Decimal(11, 8)
@@ -86,6 +86,10 @@ model Client {
   company   Company @relation(fields: [companyId], references: [id])
 
   bills ClientBill[]
+
+  @@unique([name, companyId])
+  @@unique([phoneNumber, companyId])
+  @@unique([email, companyId])
 }
 
 model Supplier {
