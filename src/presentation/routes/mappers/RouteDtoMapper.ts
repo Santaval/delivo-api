@@ -10,6 +10,7 @@ export default class RouteDtoMapper {
       name: dto.name,
       status: dto.status,
       companyId: dto.companyId,
+      polyline: dto.polyline,
       points: dto.points?.map(RoutePointDtoMapper.toResponse),
       createdAt: dto.createdAt.toISOString(),
       updatedAt: dto.updatedAt.toISOString(),

@@ -6,6 +6,7 @@ export default interface RouteResponse {
     status: string;
     companyId: string;
     points?: RoutePointResponse[];
+    polyline: string | null;
     createdAt?: string;
     updatedAt?: string;
 }
