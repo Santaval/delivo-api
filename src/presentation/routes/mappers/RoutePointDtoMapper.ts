@@ -24,6 +24,7 @@ export default class RoutePointDtoMapper {
       polyline: null,
       order: new Order({
         id: req.orderId,
+        deliveryStatus: "PENDING",
         client: new Client({
           id: "not-needed",
           name: "not-needed",

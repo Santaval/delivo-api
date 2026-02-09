@@ -1,11 +1,12 @@
 import OrderItem from "./OrderItem";
 import { OrderId } from "../valueObjects/orderId.valueObject";
 import { OrderNumber } from "../valueObjects/orderNumber.valueObject";
-import { OrderStatus } from "../valueObjects/orderStatus.valueObject";
+import { OrderStatus, OrderStatusType } from "../valueObjects/orderStatus.valueObject";
 import { OrderTotal } from "../valueObjects/orderTotal.valueObject";
 import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import DomainError from "@/domain/core/errors/DomainError";
 import { Client } from "@/domain/clients/entities/Client";
+import { OrderDeliveryStatus, OrderDeliveryStatusType } from "../valueObjects/orderDeliveryStatus";
 
 export default class Order {
   private props: OrderProps;
@@ -19,6 +20,7 @@ export default class Order {
       companyId: CompanyId.create(props.companyId),
       items: props.items || [],
       status: OrderStatus.create(props.status),
+      deliveryStatus: OrderDeliveryStatus.create(props.deliveryStatus),
       createdAt: props.createdAt ? new Date(props.createdAt) : new Date(),
       updatedAt: props.updatedAt ? new Date(props.updatedAt) : new Date(),
     };
@@ -62,6 +64,10 @@ export default class Order {
     return this.props.status.value;
   }
 
+  get deliveryStatus(): string {
+    return this.props.deliveryStatus.value;
+  }
+
   get createdAt(): Date {
     return this.props.createdAt;
   }
@@ -85,6 +91,7 @@ interface OrderProps {
   companyId: CompanyId;
   items: OrderItem[];
   status: OrderStatus;
+  deliveryStatus: OrderDeliveryStatus;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -98,7 +105,8 @@ export interface ConstructorProps {
   total: number;
   companyId: string;
   items: OrderItem[];
-  status: "PENDING" | "PAID" | "CANCELLED";
+  status: OrderStatusType;
+  deliveryStatus: OrderDeliveryStatusType;
   createdAt?: string;
   updatedAt?: string;
 }

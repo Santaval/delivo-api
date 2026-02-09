@@ -19,6 +19,7 @@ export default class OrdersDtoMapper {
       items: order.items.map(OrderItemMapper.toResponse),
       // @ts-expect-error
       status: order.status,
+      deliveryStatus: order.deliveryStatus as "PENDING" | "ON_ROUTE" | "IN_TRANSIT" | "DELIVERED" | "RETURNED",
       createdAt: order.createdAt.toISOString(),
       updatedAt: order.updatedAt.toISOString(),
     };
@@ -36,6 +37,7 @@ export default class OrdersDtoMapper {
         lat: 0,
         lng: 0
       }),
+      deliveryStatus: "PENDING",
       number: 1, // Temporary hardcoded value
       items: [],
       createdAt: new Date().toISOString(),

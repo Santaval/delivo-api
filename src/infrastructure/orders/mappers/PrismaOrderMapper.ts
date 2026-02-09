@@ -1,5 +1,5 @@
 import { Order } from "@/domain/orders";
-import { BillStatus, Client, ClientBill, ClientBillItem } from "@/infrastructure/prisma/generated/prisma/client";
+import { BillDeliveryStatus, BillStatus, Client, ClientBill, ClientBillItem } from "@/infrastructure/prisma/generated/prisma/client";
 import PrismaOrderItemMapper from "./PrismaOrderItemMapper";
 import { ClientBillCreateArgs, ClientBillUpdateArgs } from "@/infrastructure/prisma/generated/prisma/models";
 import { PrismaClientMapper } from "@/infrastructure/clients/mappers/PrismaClientMapper";
@@ -15,6 +15,7 @@ export default class PrismaOrderMapper {
       ivaTotal: raw.ivaTotal.toNumber(),
       number: raw.number,
       status: raw.status,
+      deliveryStatus: raw.deliveryStatus,
       subtotal: raw.subtotal.toNumber(),
       total: raw.total.toNumber(),
       createdAt: raw.createdAt.toISOString(),
@@ -31,7 +32,8 @@ export default class PrismaOrderMapper {
         clientId: order.client.id.value,
         companyId: order.companyId,
         status: order.status as BillStatus,
-        issueDate: order.createdAt 
+        deliveryStatus: order.deliveryStatus as BillDeliveryStatus,
+        issueDate: order.createdAt
       },
       include: {
         items: {
@@ -55,6 +57,7 @@ export default class PrismaOrderMapper {
         companyId: order.companyId,
         number: order.number,
         status: order.status as BillStatus,
+        deliveryStatus: order.deliveryStatus as BillDeliveryStatus,
         issueDate: order.createdAt
       },
       
