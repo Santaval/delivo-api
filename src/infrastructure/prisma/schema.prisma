@@ -265,7 +265,7 @@ model RoutePoint {
   id        String   @id @default(uuid())
 
   status    RoutePointStatus @default(CREATED)
-  index     Int
+  index     Int?
 
   billId   String   @unique
   bill     ClientBill @relation(fields: [billId], references: [id])

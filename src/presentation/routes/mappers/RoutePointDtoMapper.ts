@@ -20,6 +20,7 @@ export default class RoutePointDtoMapper {
   static fromAddRequest(req: AddRouteItemRequest, routeId: string): RoutePoint {
     return new RoutePoint({
       id: "to-be-filled",
+      index: null,
       order: new Order({
         id: req.orderId,
         client: new Client({
@@ -32,6 +33,7 @@ export default class RoutePointDtoMapper {
           updatedAt: new Date().toISOString(),
         }),
         companyId: "not-needed",
+        
         items: [],
         ivaTotal: 0,
         number: 1,

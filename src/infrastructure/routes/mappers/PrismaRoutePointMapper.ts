@@ -14,6 +14,7 @@ export default class PrismaRoutePointMapper {
       order: PrismaOrderMapper.toDomain(raw.bill),
       status: raw.status,
       routeId: raw.routeId,
+      index: raw.index,
       createdAt: raw.createdAt.toISOString(),
       updatedAt: raw.updatedAt.toISOString(),
     });
@@ -24,6 +25,7 @@ export default class PrismaRoutePointMapper {
       data: {
         billId: domain.order.id,
         routeId: domain.routeId,
+        index: domain.index,
       }
     };
   }

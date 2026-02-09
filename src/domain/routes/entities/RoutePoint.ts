@@ -1,7 +1,6 @@
 import { Order } from "@/domain/orders";
 import { RoutePointId } from "../valueObjects/routePointId.valueObject";
 import { RoutePointStatus } from "../valueObjects/routePointStatus.valueObject";
-import DomainError from "@/domain/core/errors/DomainError";
 import { RouteId } from "../valueObjects/routeId.valueObject";
 
 export class RoutePoint {
@@ -12,6 +11,7 @@ export class RoutePoint {
       id: RoutePointId.create(props.id),
       status: RoutePointStatus.create(props.status),
       order: props.order,
+      index: props.index,
       routeId: RouteId.create(props.routeId),
       createdAt: props.createdAt ? new Date(props.createdAt) : new Date(),
       updatedAt: props.updatedAt ? new Date(props.updatedAt) : new Date(),
@@ -35,6 +35,10 @@ export class RoutePoint {
     return this.props.createdAt;
   }
 
+  get index(): number | null {
+    return this.props.index;
+  }
+
   get updatedAt(): Date {
     return this.props.updatedAt;
   }
@@ -48,6 +52,7 @@ interface RoutePointProps {
   id: RoutePointId;
   status: RoutePointStatus;
   order: Order;
+  index: number | null;
   routeId: RouteId;
   createdAt: Date;
   updatedAt: Date;
@@ -56,6 +61,7 @@ interface RoutePointProps {
 export interface RoutePointConstructorProps {
   id: string;
   status: string;
+  index: number | null;
   order: Order;
   routeId: string;
   createdAt?: string;
