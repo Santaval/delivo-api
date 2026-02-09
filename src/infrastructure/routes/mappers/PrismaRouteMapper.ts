@@ -1,4 +1,4 @@
-import { Route as PrismaRoute} from "@/infrastructure/prisma/generated/prisma/client";
+import { Route as PrismaRoute, RouteStatus} from "@/infrastructure/prisma/generated/prisma/client";
 import PrismaRoutePointMapper, { RawRoutePoint } from "./PrismaRoutePointMapper";
 import { RouteCreateArgs, RouteUpdateArgs } from "@/infrastructure/prisma/generated/prisma/models";
 import { Route } from "@/domain/routes/entities/Route";
@@ -33,6 +33,7 @@ export default class PrismaRouteMapper {
       data: {
         name: domain.name,
         polyline: domain.polyline,
+        status: domain.status as RouteStatus
       },
       include: this.getIncludeConditions()
     };
