@@ -22,8 +22,6 @@ export default class PrismaRoutesRepository implements IRouteRepository {
         include: this.getIncludeConditions(),
       });
 
-      console.log("Raw route data to be inserted:", JSON.stringify(results, null, 2));
-
       return results.map(PrismaRouteMapper.toDomain);
     } catch (error) {
       console.error("Error finding routes by company ID:", error);
