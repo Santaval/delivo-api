@@ -15,7 +15,6 @@ type UserCompanyRegistry = {
 
 export class PrismaUserMapper {
   static toDomain(row: PrismaUser & {companies: UserCompanyRegistry[]}): User {
-    console.log(row);
     return new User({
       id: row.id,
       name: row.name,

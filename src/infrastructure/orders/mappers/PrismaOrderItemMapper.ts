@@ -20,7 +20,6 @@ export default class PrismaOrderItemMapper {
   }
 
   static toPrisma(orderItem: OrderItem): ClientBillItemCreateArgs {
-    console.log(orderItem);
     return {
       data: {
         productId: orderItem.id,

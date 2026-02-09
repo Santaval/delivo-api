@@ -107,7 +107,6 @@ export default class PrismaRoutesRepository implements IRouteRepository {
   async addPoint(point: RoutePoint): Promise<RoutePoint> {
     try {
       const raw = PrismaRoutePointMapper.toPersistence(point);
-      console.log("Raw route point data to be inserted:", raw);
       const result = await prisma.routePoint.create(raw);
       // @ts-expect-error
       return PrismaRoutePointMapper.toDomain(result);

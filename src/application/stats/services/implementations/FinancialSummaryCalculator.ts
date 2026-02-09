@@ -20,7 +20,6 @@ export default class FinancialSummaryCalculator implements IFinancialSummaryCalc
 
   private async getIncomesReport(start: Date, end: Date, companyId: CompanyId, withPrevious: boolean = true) : Promise<IncomesFinancialSummary> {
     const orders = await this.orderRepository.byTimeRange(start, end, companyId);
-    console.log(orders);
     const totalIncome = orders.reduce((acc, order) => acc + order.total, 0);
     const averageIncomePerDay = totalIncome / moment(end).diff(moment(start), 'days') || 0;
 
