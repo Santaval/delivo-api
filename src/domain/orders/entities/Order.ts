@@ -76,6 +76,10 @@ export default class Order {
     return this.props.updatedAt;
   }
 
+  setDeliveryStatus(status: OrderDeliveryStatusType): void {
+    this.props.deliveryStatus = OrderDeliveryStatus.create(status);
+  }
+
   setTotals(subtotal: number, ivaTotal: number): void {
     this.props.totals = OrderTotal.create(subtotal, ivaTotal);
   }

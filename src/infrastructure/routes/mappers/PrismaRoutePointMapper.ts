@@ -28,6 +28,18 @@ export default class PrismaRoutePointMapper {
         routeId: domain.routeId,
         index: domain.index,
         polyline: domain.polyline,
+      }, 
+      include: {
+        bill: {
+          include: {
+            client: true,
+            items: {
+              include: {
+                product: true
+              }
+            }
+          }
+        }
       }
     };
   }

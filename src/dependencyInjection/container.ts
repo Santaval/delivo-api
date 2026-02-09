@@ -2,6 +2,7 @@ import OAuthService from "@/application/auth/services/implementations/IOAuthServ
 import { ClientService } from "@/application/clients/services/implementations/ClientService";
 import { CompanyService } from "@/application/companies/services/implementations/CompanyService";
 import LocationService from "@/application/geolocation/services/implementations/LocationService";
+import OrderDeliveryStatusManager from "@/application/orders/services/implementations/OrderDeliveryStatusManger";
 import OrderPricingCalculator from "@/application/orders/services/implementations/OrderPricingCalculator";
 import OrdersService from "@/application/orders/services/implementations/OrdersService";
 import { ProductService } from "@/application/products/services/implementations/ProductService";
@@ -61,8 +62,9 @@ export const clientsService = new ClientService(clientsRepository);
 export const productsService = new ProductService(productsRepository);
 export const ordersPricingCalculator = new OrderPricingCalculator(ordersRepository, productsRepository);
 export const ordersService = new OrdersService(ordersRepository, productsRepository, ordersPricingCalculator);
+export const orderDeliveryStatusManager = new OrderDeliveryStatusManager(ordersRepository);
 export const routeOptimizationService = new RouteOptimizationService(routesRepository, routeOptimizationProvider);
-export const routesService = new RouteService(routesRepository, routeOptimizationService);
+export const routesService = new RouteService(routesRepository, routeOptimizationService, orderDeliveryStatusManager);
 export const financialSummaryCalculator = new FinancialSummaryCalculator(ordersRepository)
 export const locationService = new LocationService(placesProvider);
 

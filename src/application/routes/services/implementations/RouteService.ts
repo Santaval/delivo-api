@@ -4,11 +4,13 @@ import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject
 import { Route, RouteId, RoutePoint, RoutePointId } from "@/domain/routes";
 import IRouteOptimizationService from "@/domain/routes/service/IRouteOptimizationService";
 import { Location } from "@/domain/clients/valueObjects/location.valouObject";
+import IOrderDeliveryStatusManager from "@/domain/orders/services/IOrderDeliveryStatusManager";
 
 export default class RouteService implements IRouteService {
   constructor(
     private readonly routeRepository: IRouteRepository,
-    private readonly routeOptimizationService: IRouteOptimizationService
+    private readonly routeOptimizationService: IRouteOptimizationService,
+    private readonly orderDeliveryStatusManager: IOrderDeliveryStatusManager
   ) {}
 
   findAllByCompany(companyId: CompanyId): Promise<Route[]> {
@@ -27,12 +29,15 @@ export default class RouteService implements IRouteService {
     return this.routeRepository.delete(id);
   }
 
-  addPoint(point: RoutePoint): Promise<RoutePoint> {
-    return this.routeRepository.addPoint(point);
+  async addPoint(point: RoutePoint): Promise<RoutePoint> {
+    const addedPoint = await this.routeRepository.addPoint(point);
+    await this.orderDeliveryStatusManager.change(point.order.id, "ON_ROUTE");
+    return addedPoint;
   }
 
-  removePoint(pointId: RoutePointId): Promise<void> {
-    return this.routeRepository.removePoint(pointId);
+  async removePoint(pointId: RoutePointId): Promise<void> {
+    await this.routeRepository.removePoint(pointId);
+    await this.orderDeliveryStatusManager.change(pointId.value, "PENDING");
   }
 
   findById(id: RouteId): Promise<Route | null> {
@@ -43,6 +48,11 @@ export default class RouteService implements IRouteService {
     const optimizedRoute = await this.routeOptimizationService.optimize(routeId, startLocation);
     optimizedRoute.setStatus("STARTED");
     const updatedRoute = await this.routeRepository.update(optimizedRoute);
+
+    // for each order in the route, change its status to "IN_TRANSIT"
+    const promises = updatedRoute.points.map(point => this.orderDeliveryStatusManager.change(point.order.id, "IN_TRANSIT"));
+
+    await Promise.all(promises);
     return updatedRoute;
   }
 }

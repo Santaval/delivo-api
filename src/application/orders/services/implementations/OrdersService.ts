@@ -41,7 +41,6 @@ export default class OrdersService implements IOrdersService {
 
     const updatedPricing = await this.orderPricingCalculator.onAddItem(item);
     if (!updatedPricing) throw new ApplicationError("Failed to update pricing", 400);
-
     await this.update(updatedPricing);
     return this.ordersRepository.addItem(item);
   }
