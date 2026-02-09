@@ -21,6 +21,7 @@ export default class RouteDtoMapper {
       name: dto.name,
       status: "CREATED",
       companyId: companyId,
+      polyline: null,
       points: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

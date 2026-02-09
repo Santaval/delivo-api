@@ -1,6 +1,7 @@
 import { RouteOptimizationClient } from '@googlemaps/routeoptimization';
-import IRouteOptimizationProvider, { RouteDelivery, RouteVehicle } from "@/domain/routes/providers/IRouteOptimizationProvider";
+import IRouteOptimizationProvider, { OptimizationResult, RouteDelivery, RouteVehicle } from "@/domain/routes/providers/IRouteOptimizationProvider";
 import moment from 'moment';
+import InfrastructureError from '@/infrastructure/core/errors/InfrastructureError';
 
 
 export default class GoogleRouteOptimizationProvider implements IRouteOptimizationProvider {
@@ -16,14 +17,12 @@ export default class GoogleRouteOptimizationProvider implements IRouteOptimizati
     this.parent = `projects/${this.projectId}`;
   }
 
-  async optimize(deliveries: RouteDelivery[], vehicles: RouteVehicle[]): Promise<void> {
+  async optimize(deliveries: RouteDelivery[], vehicles: RouteVehicle[]): Promise<OptimizationResult> {
     const request = {
       parent: this.parent,
-      searchmode: 2,
-      timeout: {
-        seconds: 10,
-        nanos: 0
-      },
+      "populatePolylines": true,
+      "populateTransitionPolylines": true,
+      
       model: {
         shipments: deliveries.map(del => ({
           deliveries: [del],
@@ -38,8 +37,6 @@ export default class GoogleRouteOptimizationProvider implements IRouteOptimizati
           seconds: moment().endOf('day').unix(),
           nanos: 0
         },
-        populatePolylines: true,
-        populateTransitionPolylines: true,
         considerRoadTraffic: true,
       }
     };
@@ -48,10 +45,21 @@ export default class GoogleRouteOptimizationProvider implements IRouteOptimizati
     try {
 
       const [response] = await this.client.optimizeTours(request);
-      console.log('Optimization response:', JSON.stringify(response, null, 2));
-  
+      if (!response.routes) throw new InfrastructureError('No routes in response');
+      const route = response?.routes[0];
+      if (!route) throw new InfrastructureError('No route found');
+      const visits = route.visits;
+      if (!visits) throw new InfrastructureError('No visits found');
+      return {
+        visits: visits.map(visit => ({
+          id: visit.visitLabel || "",
+        })),
+        polyline: route.routePolyline?.points || ''
+      };
+
     } catch (error) {
       console.error('Error optimizing tours:', error);
+      throw new InfrastructureError('Error optimizing tours');
     }
   }
 

@@ -21,6 +21,7 @@ export default class RoutePointDtoMapper {
     return new RoutePoint({
       id: "to-be-filled",
       index: null,
+      polyline: null,
       order: new Order({
         id: req.orderId,
         client: new Client({

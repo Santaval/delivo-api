@@ -12,6 +12,7 @@ export class RoutePoint {
       status: RoutePointStatus.create(props.status),
       order: props.order,
       index: props.index,
+      polyline: props.polyline,
       routeId: RouteId.create(props.routeId),
       createdAt: props.createdAt ? new Date(props.createdAt) : new Date(),
       updatedAt: props.updatedAt ? new Date(props.updatedAt) : new Date(),
@@ -39,12 +40,20 @@ export class RoutePoint {
     return this.props.index;
   }
 
+  get polyline(): string | null {
+    return this.props.polyline;
+  }
+
   get updatedAt(): Date {
     return this.props.updatedAt;
   }
 
   get routeId(): string {
     return this.props.routeId.value;
+  }
+
+  setIndex(index: number): void {
+    this.props.index = index;
   }
 }
 
@@ -53,6 +62,7 @@ interface RoutePointProps {
   status: RoutePointStatus;
   order: Order;
   index: number | null;
+  polyline: string | null;
   routeId: RouteId;
   createdAt: Date;
   updatedAt: Date;
@@ -63,6 +73,7 @@ export interface RoutePointConstructorProps {
   status: string;
   index: number | null;
   order: Order;
+  polyline: string | null;
   routeId: string;
   createdAt?: string;
   updatedAt?: string;

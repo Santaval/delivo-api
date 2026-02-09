@@ -133,6 +133,18 @@ export default class PrismaRoutesRepository implements IRouteRepository {
     }
   }
 
+  async updatePoint(point: RoutePoint): Promise<RoutePoint> {
+    try {
+      const raw = PrismaRoutePointMapper.toPersistenceUpdate(point);
+      const result = await prisma.routePoint.update(raw);
+      // @ts-expect-error
+      return PrismaRoutePointMapper.toDomain(result);
+    } catch (error) {
+      console.error("Error updating route point:", error);
+      throw new DatabaseError("Could not update route point");
+    }
+  }
+
   getIncludeConditions() {
     return {
       points: {

@@ -12,6 +12,7 @@ export class Route {
       id: RouteId.create(props.id),
       name: RouteName.create(props.name),
       status: RouteStatus.create(props.status),
+      polyline: props.polyline || null,
       points: props.points || [],
       companyId: CompanyId.create(props.companyId),
       createdAt: props.createdAt ? new Date(props.createdAt) : new Date(),
@@ -40,6 +41,10 @@ export class Route {
     return this.props.companyId.value;
   }
 
+  get polyline(): string | null {
+    return this.props.polyline;
+  }
+
   get createdAt(): Date {
     return this.props.createdAt;
   }
@@ -47,6 +52,15 @@ export class Route {
   get updatedAt(): Date {
     return this.props.updatedAt;
   }
+
+  setPolyline(polyline: string | null): void {
+    this.props.polyline = polyline;
+  }
+
+  setStatus(status: string): void {
+    this.props.status = RouteStatus.create(status);
+  }
+
 }
 
 interface RouteProps {
@@ -55,6 +69,7 @@ interface RouteProps {
   status: RouteStatus;
   points: RoutePoint[];
   companyId: CompanyId;
+  polyline: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -64,6 +79,7 @@ export interface RouteConstructorProps {
   name: string;
   status: string;
   companyId: string;
+  polyline: string | null;
   points?: RoutePoint[];
   createdAt?: string;
   updatedAt?: string;

@@ -12,4 +12,5 @@ export default interface IRouteRepository {
   delete(id: RouteId): Promise<void>;
   addPoint(point: RoutePoint): Promise<RoutePoint>;
   removePoint(pointId: RoutePointId): Promise<void>;
+  updatePoint(point: RoutePoint): Promise<RoutePoint>;
 }

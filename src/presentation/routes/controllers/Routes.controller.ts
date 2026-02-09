@@ -50,7 +50,7 @@ export default class RoutesContoller {
   async startOptimization(req: Request, res: Response) {
     const routeId = RouteId.create(req.params.id);
     const startLocation = Location.create(req.body.startLocation.lat, req.body.startLocation.lng);
-    await this.routeService.start(routeId, startLocation);
-    return res.status(204).send();
+    const route = await this.routeService.start(routeId, startLocation);
+    return res.status(200).json(RouteDtoMapper.toResponse(route));
   }
 }

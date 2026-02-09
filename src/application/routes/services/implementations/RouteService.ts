@@ -39,7 +39,10 @@ export default class RouteService implements IRouteService {
     return this.routeRepository.findById(id);
   }
 
-  start(routeId: RouteId, startLocation: Location): Promise<void> {
-    return this.routeOptimizationService.optimize(routeId, startLocation);
+  async start(routeId: RouteId, startLocation: Location): Promise<Route> {
+    const optimizedRoute = await this.routeOptimizationService.optimize(routeId, startLocation);
+    optimizedRoute.setStatus("STARTED");
+    const updatedRoute = await this.routeRepository.update(optimizedRoute);
+    return updatedRoute;
   }
 }

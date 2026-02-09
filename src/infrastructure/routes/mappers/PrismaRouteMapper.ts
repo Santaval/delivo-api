@@ -9,6 +9,7 @@ export default class PrismaRouteMapper {
       id: raw.id,
       name: raw.name,
       status: raw.status,
+      polyline: raw.polyline,
       points: raw.points.map(PrismaRoutePointMapper.toDomain),
       companyId: raw.companyId,
     })
@@ -31,6 +32,7 @@ export default class PrismaRouteMapper {
       },
       data: {
         name: domain.name,
+        polyline: domain.polyline,
       },
       include: this.getIncludeConditions()
     };
@@ -43,6 +45,11 @@ export default class PrismaRouteMapper {
           bill: {
             include: {
               client: true,
+              items: {
+                include: {
+                  product: true
+                }
+              }
             }
           }
         }

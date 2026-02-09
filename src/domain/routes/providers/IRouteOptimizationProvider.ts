@@ -1,12 +1,14 @@
 export default interface IRouteOptimizationProvider {
-  optimize: (deliveries: RouteDelivery[], vehicles: RouteVehicle[]) => Promise<void>;
+  optimize: (deliveries: RouteDelivery[], vehicles: RouteVehicle[]) => Promise<OptimizationResult>;
 };
 
-export type OptimizationResult = {
-  visits: {
-    id: string;
+export type OptimizationVisit = {
+  id: string;
+}
 
-  }
+export type OptimizationResult = {
+  visits: OptimizationVisit[],
+  polyline: string;
 }
 
 
