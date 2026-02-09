@@ -2,10 +2,13 @@ import IRouteRepository from "@/domain/routes/repositories/IRouteRepository";
 import IRouteService from "../interfaces/IRouteService";
 import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import { Route, RouteId, RoutePoint, RoutePointId } from "@/domain/routes";
+import IRouteOptimizationService from "@/domain/routes/service/IRouteOptimizationService";
+import { Location } from "@/domain/clients/valueObjects/location.valouObject";
 
 export default class RouteService implements IRouteService {
   constructor(
     private readonly routeRepository: IRouteRepository,
+    private readonly routeOptimizationService: IRouteOptimizationService
   ) {}
 
   findAllByCompany(companyId: CompanyId): Promise<Route[]> {
@@ -34,5 +37,9 @@ export default class RouteService implements IRouteService {
 
   findById(id: RouteId): Promise<Route | null> {
     return this.routeRepository.findById(id);
+  }
+
+  start(routeId: RouteId, startLocation: Location): Promise<void> {
+    return this.routeOptimizationService.optimize(routeId, startLocation);
   }
 }

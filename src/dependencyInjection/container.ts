@@ -5,6 +5,7 @@ import LocationService from "@/application/geolocation/services/implementations/
 import OrderPricingCalculator from "@/application/orders/services/implementations/OrderPricingCalculator";
 import OrdersService from "@/application/orders/services/implementations/OrdersService";
 import { ProductService } from "@/application/products/services/implementations/ProductService";
+import RouteOptimizationService from "@/application/routes/services/implementations/RouteOptimizationService";
 import RouteService from "@/application/routes/services/implementations/RouteService";
 import FinancialSummaryCalculator from "@/application/stats/services/implementations/FinancialSummaryCalculator";
 import { UserService } from "@/application/users/services/implementations/UserService";
@@ -16,6 +17,7 @@ import UuidIDGenerator from "@/infrastructure/core/services/UuidIDGenerator";
 import { GooglePlacesService } from "@/infrastructure/geolocation/services/GooglePlacesService";
 import PrismaOrdersRepository from "@/infrastructure/orders/repositories/PrismaOrdersRepository";
 import PrismaProductsRepository from "@/infrastructure/products/repositories/PrismaProductsRepository";
+import GoogleRouteOptimizationProvider from "@/infrastructure/routes/providers/GoogleRouteOptimizationProvider";
 import PrismaRoutesRepository from "@/infrastructure/routes/repositories/PrismaRoutesRepository";
 import PrismaUsersRepository from "@/infrastructure/users/repositories/PrismaUsersRepository";
 import AuthController from "@/presentation/auth/controllers/Auth.controller";
@@ -42,6 +44,7 @@ export const routesRepository = new PrismaRoutesRepository();
 export const idGenerator = new UuidIDGenerator();
 export const googleOAuthProvider = new GoogleOAuthProvider();
 export const placesProvider = new GooglePlacesService();
+export const routeOptimizationProvider = new GoogleRouteOptimizationProvider();
 
 
 // services
@@ -58,7 +61,8 @@ export const clientsService = new ClientService(clientsRepository);
 export const productsService = new ProductService(productsRepository);
 export const ordersPricingCalculator = new OrderPricingCalculator(ordersRepository, productsRepository);
 export const ordersService = new OrdersService(ordersRepository, productsRepository, ordersPricingCalculator);
-export const routesService = new RouteService(routesRepository);
+export const routeOptimizationService = new RouteOptimizationService(routesRepository, routeOptimizationProvider);
+export const routesService = new RouteService(routesRepository, routeOptimizationService);
 export const financialSummaryCalculator = new FinancialSummaryCalculator(ordersRepository)
 export const locationService = new LocationService(placesProvider);
 

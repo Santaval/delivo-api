@@ -1,3 +1,4 @@
+import { Location } from "@/domain/clients/valueObjects/location.valouObject";
 import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import { Route, RouteId, RoutePoint, RoutePointId } from "@/domain/routes";
 
@@ -8,5 +9,6 @@ export default interface IRouteService {
   delete(id: RouteId): Promise<void>;
   update(route: Route): Promise<Route>;
   addPoint(point: RoutePoint): Promise<RoutePoint>;
-  removePoint(pointId: RoutePointId): Promise<void>
+  removePoint(pointId: RoutePointId): Promise<void>;
+  start(routeId: RouteId, startLocation: Location): Promise<void>;
 }

@@ -5,6 +5,7 @@ import { Request, Response } from "express";
 import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import { RouteId, RoutePointId } from "@/domain/routes";
 import RoutePointDtoMapper from "../mappers/RoutePointDtoMapper";
+import { Location } from "@/domain/clients/valueObjects/location.valouObject";
 
 export default class RoutesContoller {
   constructor(
@@ -43,6 +44,13 @@ export default class RoutesContoller {
   async removePoint(req: Request, res: Response) {
     const pointId = req.params.pointId;
     await this.routeService.removePoint(RoutePointId.create(pointId));
+    return res.status(204).send();
+  }
+
+  async startOptimization(req: Request, res: Response) {
+    const routeId = RouteId.create(req.params.id);
+    const startLocation = Location.create(req.body.startLocation.lat, req.body.startLocation.lng);
+    await this.routeService.start(routeId, startLocation);
     return res.status(204).send();
   }
 }
