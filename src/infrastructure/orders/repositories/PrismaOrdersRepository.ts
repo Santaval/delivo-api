@@ -5,6 +5,7 @@ import PrismaOrderMapper from "../mappers/PrismaOrderMapper";
 import InfrastructureError from "@/infrastructure/core/errors/InfrastructureError";
 import PrismaOrderItemMapper from "../mappers/PrismaOrderItemMapper";
 import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
+import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
 
 export default class PrismaOrderRepository implements IOrderRepository{
   constructor() {}
@@ -152,6 +153,26 @@ export default class PrismaOrderRepository implements IOrderRepository{
             lte: end
           }
         },
+        include: {
+          items: {
+            include: {
+              product: true
+            }
+          },
+          client: true
+        }
+      });
+      return result.map((order) => PrismaOrderMapper.toDomain(order));
+    } catch (error) {
+      console.log(error);
+      throw new Error("Error fetching orders");
+    }
+  }
+
+  async byClient(clientId: ClientId): Promise<Order[]> {
+    try {
+      const result = await prisma.clientBill.findMany({
+        where: { clientId: clientId.value },
         include: {
           items: {
             include: {

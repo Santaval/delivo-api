@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 import OrderDtoMapper from "../mappers/OrderMapper";
 import OrderItemMapper from "../mappers/OrderItemMapper";
 import AddOrderItemRequest from "../requests/AddOrderItem";
+import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
 
 export default class OrdersController {
   constructor(
@@ -45,6 +46,12 @@ export default class OrdersController {
     const { id, itemId } = req.params;
     const order = await this.ordersService.removeItem(id, itemId);
     res.status(200).json(OrderDtoMapper.toResponse(order));
+  }
+
+  async byClient(req: Request, res: Response): Promise<void> {
+    const clientId = ClientId.create(req.params.clientId);
+    const orders = await this.ordersService.byClient(clientId);
+    res.json(orders.map(OrderDtoMapper.toResponse));
   }
 
 }

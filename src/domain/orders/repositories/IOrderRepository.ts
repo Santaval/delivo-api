@@ -1,6 +1,7 @@
 import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import Order from "../entities/Order";
 import OrderItem from "../entities/OrderItem";
+import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
 
 export default interface IOrderRepository {
   findById(id: string): Promise<Order | null>;
@@ -12,4 +13,5 @@ export default interface IOrderRepository {
   removeItem(orderId: string, itemId: string): Promise<Order>;
   getItem(itemId: string): Promise<OrderItem | null>;
   byTimeRange(start: Date, end: Date, companyId: CompanyId): Promise<Order[]>;
+  byClient(clientId: ClientId): Promise<Order[]>;
 }

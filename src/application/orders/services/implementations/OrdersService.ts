@@ -5,6 +5,7 @@ import ApplicationError from "@/application/core/errors/ApplicationError";
 import IOrderPricingCalculator from "@/domain/orders/services/IOrderPricingCalculator";
 import { IProductRepository } from "@/domain/products/repositories/IProductRepository";
 import { Product } from "@/domain/products/entities/Product";
+import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
 
 export default class OrdersService implements IOrdersService {
   constructor(
@@ -54,6 +55,10 @@ export default class OrdersService implements IOrdersService {
 
     await this.update(updatedPricing);
     return this.ordersRepository.removeItem(orderId, itemId);
+  }
+
+  async byClient(clientId: ClientId): Promise<Order[]> {
+    return this.ordersRepository.byClient(clientId);
   }
 
   fromProduct(product: Product, quantity: number, orderId: string): OrderItem {

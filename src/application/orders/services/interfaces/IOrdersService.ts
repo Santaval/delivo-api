@@ -1,3 +1,4 @@
+import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
 import { Order, OrderItem } from "@/domain/orders";
 
 export interface IOrdersService {
@@ -8,4 +9,5 @@ export interface IOrdersService {
   update(order: Order): Promise<Order>;
   addItem(productId: string, quantity: number, orderId: string): Promise<Order>;
   removeItem(orderId: string, itemId: string): Promise<Order>;
+  byClient(clientId: ClientId): Promise<Order[]>;
 }
