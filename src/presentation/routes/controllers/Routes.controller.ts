@@ -31,7 +31,8 @@ export default class RoutesContoller {
     if (!result) {
       return res.status(404).json({ message: "Route not found" });
     }
-    return res.status(200).json(RouteDtoMapper.toResponse(result));
+    const resultDto = RouteDtoMapper.toResponse(result);
+    return res.status(200).json(resultDto);
   }
 
   async addPoint(req: Request, res: Response) {

@@ -1,7 +1,7 @@
 import { RoutePoint } from "@/domain/routes";
 import PrismaOrderMapper from "@/infrastructure/orders/mappers/PrismaOrderMapper";
 import { ClientBillItem } from "@/infrastructure/prisma/generated/prisma/browser";
-import { Client, ClientBill, RoutePoint as PrismaRoutePoint } from "@/infrastructure/prisma/generated/prisma/client";
+import { Client, ClientBill, RoutePoint as PrismaRoutePoint, RoutePointStatus } from "@/infrastructure/prisma/generated/prisma/client";
 import { RoutePointCreateArgs, RoutePointUpdateArgs } from "@/infrastructure/prisma/generated/prisma/models";
 
 
@@ -52,6 +52,7 @@ export default class PrismaRoutePointMapper {
       data: {
         index: domain.index,
         polyline: domain.polyline,
+        status: domain.status as RoutePointStatus,
       },
       include: {
         bill: {
