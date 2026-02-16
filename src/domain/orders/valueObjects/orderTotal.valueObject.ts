@@ -4,14 +4,18 @@ export class OrderTotal {
   private readonly _subtotal: number;
   private readonly _ivaTotal: number;
   private readonly _total: number;
+  private readonly _due: number;
+  private readonly _paid: number;
 
-  private constructor(subtotal: number, ivaTotal: number, total: number) {
+  private constructor(subtotal: number, ivaTotal: number, total: number, paid: number, due: number) {
     this._subtotal = subtotal;
     this._ivaTotal = ivaTotal;
     this._total = total;
+    this._paid = paid;
+    this._due = due;
   }
 
-  static create(subtotal: number, ivaTotal: number): OrderTotal {
+  static create(subtotal: number, ivaTotal: number, paid: number): OrderTotal {
     if (subtotal < 0) {
       throw new DomainError("Subtotal cannot be negative");
     }
@@ -20,28 +24,23 @@ export class OrderTotal {
       throw new DomainError("IVA total cannot be negative");
     }
 
-    const total = subtotal + ivaTotal;
+    if (paid < 0) {
+      throw new DomainError("Due cannot be negative");
+    }
 
-    return new OrderTotal(subtotal, ivaTotal, total);
+
+    const total = subtotal + ivaTotal;
+    const due = total - paid;
+
+    return new OrderTotal(subtotal, ivaTotal, total, paid, due);
   }
 
-  static fromTotal(total: number, ivaRate: number = 13.00): OrderTotal {
-    if (total < 0) {
-      throw new DomainError("Total cannot be negative");
-    }
+  get due(): number {
+    return this._due;
+  }
 
-    if (ivaRate < 0 || ivaRate > 100) {
-      throw new DomainError("IVA rate must be between 0 and 100");
-    }
-
-    const subtotal = total / (1 + ivaRate / 100);
-    const ivaTotal = total - subtotal;
-
-    return new OrderTotal(
-      Math.round(subtotal * 100) / 100, // Round to 2 decimal places
-      Math.round(ivaTotal * 100) / 100,
-      Math.round(total * 100) / 100
-    );
+  get paid(): number {
+    return this._paid;
   }
 
   get subtotal(): number {
@@ -54,19 +53,6 @@ export class OrderTotal {
 
   get total(): number {
     return this._total;
-  }
-
-  add(other: OrderTotal): OrderTotal {
-    return OrderTotal.create(
-      this._subtotal + other._subtotal,
-      this._ivaTotal + other._ivaTotal
-    );
-  }
-
-  equals(other: OrderTotal): boolean {
-    return this._subtotal === other._subtotal && 
-           this._ivaTotal === other._ivaTotal && 
-           this._total === other._total;
   }
 
   toString(): string {

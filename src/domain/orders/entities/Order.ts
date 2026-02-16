@@ -4,7 +4,6 @@ import { OrderNumber } from "../valueObjects/orderNumber.valueObject";
 import { OrderStatus, OrderStatusType } from "../valueObjects/orderStatus.valueObject";
 import { OrderTotal } from "../valueObjects/orderTotal.valueObject";
 import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
-import DomainError from "@/domain/core/errors/DomainError";
 import { Client } from "@/domain/clients/entities/Client";
 import { OrderDeliveryStatus, OrderDeliveryStatusType } from "../valueObjects/orderDeliveryStatus";
 
@@ -16,7 +15,7 @@ export default class Order {
       id: OrderId.create(props.id),
       client: props.client,
       number: OrderNumber.create(props.number),
-      totals: OrderTotal.create(props.subtotal, props.ivaTotal),
+      totals: OrderTotal.create(props.subtotal, props.ivaTotal, props.paid),
       companyId: CompanyId.create(props.companyId),
       items: props.items || [],
       status: OrderStatus.create(props.status),
@@ -52,6 +51,14 @@ export default class Order {
     return this.props.totals.total;
   }
 
+  get due(): number {
+    return this.props.totals.due;
+  }
+
+  get paid(): number {
+    return this.props.totals.paid;
+  }
+
   get companyId(): string {
     return this.props.companyId.value;
   }
@@ -80,8 +87,8 @@ export default class Order {
     this.props.deliveryStatus = OrderDeliveryStatus.create(status);
   }
 
-  setTotals(subtotal: number, ivaTotal: number): void {
-    this.props.totals = OrderTotal.create(subtotal, ivaTotal);
+  setTotals(subtotal: number, ivaTotal: number, due: number): void {
+    this.props.totals = OrderTotal.create(subtotal, ivaTotal, due);
   }
 
 
@@ -107,6 +114,7 @@ export interface ConstructorProps {
   subtotal: number;
   ivaTotal: number;
   total: number;
+  paid: number;
   companyId: string;
   items: OrderItem[];
   status: OrderStatusType;

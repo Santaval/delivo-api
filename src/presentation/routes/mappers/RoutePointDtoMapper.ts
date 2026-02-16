@@ -43,7 +43,7 @@ export default class RoutePointDtoMapper {
         status: "PENDING",
         subtotal: 0,
         total: 0,
-
+        paid: 0
       }),
       routeId: routeId,
       status: "CREATED",

@@ -28,7 +28,7 @@ export default class OrderPricingCalculator implements IOrderPricingCalculator {
 
     const newSubtotal = order.subtotal + subtotal;
     const newIvaTotal = order.ivaTotal + itemIvaAmount;
-    order.setTotals(newSubtotal, newIvaTotal);
+    order.setTotals(newSubtotal, newIvaTotal, order.paid);
 
     return order;
   }
@@ -51,7 +51,8 @@ export default class OrderPricingCalculator implements IOrderPricingCalculator {
 
     const newSubtotal = order.subtotal - subtotal;
     const newIvaTotal = order.ivaTotal - itemIvaAmount;
-    order.setTotals(newSubtotal, newIvaTotal);
+    const newDue = (newSubtotal + newIvaTotal) ;
+    order.setTotals(newSubtotal, newIvaTotal, newDue);
 
     return order;
   }

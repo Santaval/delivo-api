@@ -46,7 +46,8 @@ export default class OrdersDtoMapper {
       ivaTotal: 0,
       status: "PENDING",
       subtotal: 0,
-      total: 0
+      total: 0,
+      paid: 0
     });
   }
 

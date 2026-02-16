@@ -140,7 +140,7 @@ model ClientBill {
   subtotal Decimal @db.Decimal(12, 2)
   ivaTotal Decimal @db.Decimal(12, 2)
   total    Decimal @db.Decimal(12, 2)
-  due      Decimal @db.Decimal(12, 2)
+  paid     Decimal @db.Decimal(12, 2)
 
   clientId String
   client   Client @relation(fields: [clientId], references: [id])
