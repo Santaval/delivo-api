@@ -7,8 +7,8 @@ import PrismaOrderItemMapper from "../mappers/PrismaOrderItemMapper";
 import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
 
-export default class PrismaOrderRepository implements IOrderRepository{
-  constructor() {}
+export default class PrismaOrderRepository implements IOrderRepository {
+  constructor() { }
 
   /**
    * Find orders by company ID
@@ -19,14 +19,7 @@ export default class PrismaOrderRepository implements IOrderRepository{
     try {
       const result = await prisma.clientBill.findMany({
         where: { companyId },
-        include: {
-          items: {
-            include: {
-              product: true
-            }
-          },
-          client: true
-        },
+        include: this.getIncludes(),
       });
       return result.map((order) => PrismaOrderMapper.toDomain(order));
     } catch (error) {
@@ -59,14 +52,7 @@ export default class PrismaOrderRepository implements IOrderRepository{
     try {
       const result = await prisma.clientBill.findUnique({
         where: { id },
-        include: {
-          items: {
-            include: {
-              product: true
-            }
-          },
-          client: true
-        }
+        include: this.getIncludes()
       });
       return result ? PrismaOrderMapper.toDomain(result) : null;
     } catch (error) {
@@ -153,14 +139,7 @@ export default class PrismaOrderRepository implements IOrderRepository{
             lte: end
           }
         },
-        include: {
-          items: {
-            include: {
-              product: true
-            }
-          },
-          client: true
-        }
+        include: this.getIncludes()
       });
       return result.map((order) => PrismaOrderMapper.toDomain(order));
     } catch (error) {
@@ -173,19 +152,28 @@ export default class PrismaOrderRepository implements IOrderRepository{
     try {
       const result = await prisma.clientBill.findMany({
         where: { clientId: clientId.value },
-        include: {
-          items: {
-            include: {
-              product: true
-            }
-          },
-          client: true
-        }
+        include: this.getIncludes()
       });
       return result.map((order) => PrismaOrderMapper.toDomain(order));
     } catch (error) {
       console.log(error);
       throw new Error("Error fetching orders");
+    }
+  }
+
+  getIncludes() {
+    return {
+      items: {
+        include: {
+          product: true
+        }
+      },
+      client: true,
+      payments: {
+        include: {
+          method: true
+        }
+      }
     }
   }
 

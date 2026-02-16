@@ -40,6 +40,7 @@ export default class OrdersDtoMapper {
       deliveryStatus: "PENDING",
       number: 1, // Temporary hardcoded value
       items: [],
+      payments: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       companyId: companyId,

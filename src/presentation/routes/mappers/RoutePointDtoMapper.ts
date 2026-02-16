@@ -38,6 +38,7 @@ export default class RoutePointDtoMapper {
         companyId: "not-needed",
         
         items: [],
+        payments: [],
         ivaTotal: 0,
         number: 1,
         status: "PENDING",

@@ -1,11 +1,12 @@
 import { RoutePoint } from "@/domain/routes";
 import PrismaOrderMapper from "@/infrastructure/orders/mappers/PrismaOrderMapper";
+import { FullPaymentType } from "@/infrastructure/orders/mappers/PrismaPaymentMapper";
 import { ClientBillItem } from "@/infrastructure/prisma/generated/prisma/browser";
 import { Client, ClientBill, RoutePoint as PrismaRoutePoint, RoutePointStatus } from "@/infrastructure/prisma/generated/prisma/client";
 import { RoutePointCreateArgs, RoutePointUpdateArgs } from "@/infrastructure/prisma/generated/prisma/models";
 
 
-export type RawRoutePoint = PrismaRoutePoint & { bill: ClientBill & {client: Client, items: ClientBillItem[] } };
+export type RawRoutePoint = PrismaRoutePoint & { bill: ClientBill & {client: Client, items: ClientBillItem[], payments: FullPaymentType[] } };
 
 export default class PrismaRoutePointMapper {
   static toDomain(raw: RawRoutePoint): RoutePoint {

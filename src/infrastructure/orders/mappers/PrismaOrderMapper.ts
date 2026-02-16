@@ -1,11 +1,12 @@
 import { Order } from "@/domain/orders";
-import { BillDeliveryStatus, BillStatus, Client, ClientBill, ClientBillItem } from "@/infrastructure/prisma/generated/prisma/client";
+import { BillDeliveryStatus, BillStatus, Client, ClientBill, ClientBillItem, ClientPayment, PaymentMethod } from "@/infrastructure/prisma/generated/prisma/client";
 import PrismaOrderItemMapper from "./PrismaOrderItemMapper";
 import { ClientBillCreateArgs, ClientBillUpdateArgs } from "@/infrastructure/prisma/generated/prisma/models";
 import { PrismaClientMapper } from "@/infrastructure/clients/mappers/PrismaClientMapper";
+import PrismaPaymentMapper, { FullPaymentType } from "./PrismaPaymentMapper";
 
 export default class PrismaOrderMapper {
-  static toDomain(raw: ClientBill & {items: ClientBillItem[], client: Client}): Order {
+  static toDomain(raw: ClientBill & {items: ClientBillItem[], client: Client, payments: FullPaymentType[]}): Order {
     return new Order({
       client: PrismaClientMapper.toDomain(raw.client),
       companyId: raw.companyId,
@@ -19,6 +20,7 @@ export default class PrismaOrderMapper {
       deliveryStatus: raw.deliveryStatus,
       subtotal: raw.subtotal.toNumber(),
       total: raw.total.toNumber(),
+      payments: raw.payments.map(PrismaPaymentMapper.toDomain),
       createdAt: raw.createdAt.toISOString(),
       updatedAt: raw.updatedAt.toISOString()
     });

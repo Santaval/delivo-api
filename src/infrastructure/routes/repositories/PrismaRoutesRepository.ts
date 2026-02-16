@@ -152,17 +152,22 @@ export default class PrismaRoutesRepository implements IRouteRepository {
           id: id.value,
         },
         include: {
-        bill: {
-          include: {
-            client: true,
-            items: {
-              include: {
-                product: true
+          bill: {
+            include: {
+              client: true,
+              items: {
+                include: {
+                  product: true
+                }
+              },
+              payments: {
+                include: {
+                  method: true
+                }
               }
             }
           }
         }
-      }
       });
       return result ? PrismaRoutePointMapper.toDomain(result) : null;
     } catch (error) {
@@ -181,6 +186,11 @@ export default class PrismaRoutesRepository implements IRouteRepository {
               items: {
                 include: {
                   product: true
+                }
+              },
+              payments: {
+                include: {
+                  method: true
                 }
               }
             }

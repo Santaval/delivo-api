@@ -6,6 +6,7 @@ import { OrderTotal } from "../valueObjects/orderTotal.valueObject";
 import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import { Client } from "@/domain/clients/entities/Client";
 import { OrderDeliveryStatus, OrderDeliveryStatusType } from "../valueObjects/orderDeliveryStatus";
+import Payment from "./Payment";
 
 export default class Order {
   private props: OrderProps;
@@ -20,6 +21,7 @@ export default class Order {
       items: props.items || [],
       status: OrderStatus.create(props.status),
       deliveryStatus: OrderDeliveryStatus.create(props.deliveryStatus),
+      payments: props.payments,
       createdAt: props.createdAt ? new Date(props.createdAt) : new Date(),
       updatedAt: props.updatedAt ? new Date(props.updatedAt) : new Date(),
     };
@@ -103,6 +105,7 @@ interface OrderProps {
   items: OrderItem[];
   status: OrderStatus;
   deliveryStatus: OrderDeliveryStatus;
+  payments: Payment[]
   createdAt: Date;
   updatedAt: Date;
 }
@@ -119,6 +122,7 @@ export interface ConstructorProps {
   items: OrderItem[];
   status: OrderStatusType;
   deliveryStatus: OrderDeliveryStatusType;
+  payments: Payment[]
   createdAt?: string;
   updatedAt?: string;
 }

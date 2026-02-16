@@ -1,8 +1,8 @@
 import { PaymentMethodId } from "../valueObjects/paymentMethodId.valueObject";
 import PaymentMethodName from "../valueObjects/paymentMethodName";
 
-export default class Order {
-  private props: OrderProps;
+export default class PaymentMethod {
+  private props: PaymentMethodProps;
 
   constructor(props: ConstructorProps) {
     this.props = {
@@ -32,7 +32,7 @@ export default class Order {
   }
 }
 
-interface OrderProps {
+interface PaymentMethodProps {
   id: PaymentMethodId;
   name: PaymentMethodName;
   createdAt: Date;
