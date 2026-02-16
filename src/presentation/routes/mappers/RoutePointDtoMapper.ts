@@ -10,6 +10,7 @@ export default class RoutePointDtoMapper {
     return {
       id: dto.id,
       status: dto.status,
+      index: dto.index,
       order: OrdersDtoMapper.toResponse(dto.order),
       routeId: dto.routeId,
       createdAt: dto.createdAt.toISOString(),
