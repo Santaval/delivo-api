@@ -55,4 +55,12 @@ export default class RouteService implements IRouteService {
     await Promise.all(promises);
     return updatedRoute;
   }
-}
+
+  async completeDelivery(routePointId: RoutePointId): Promise<RoutePoint> {
+    const routePoint = await this.routeRepository.findPointById(routePointId);
+    if (!routePoint) throw new Error("Route point not found");
+    routePoint.setStatus("VISITED");
+    const updatedRoutePoint = await this.routeRepository.updatePoint(routePoint);
+    return updatedRoutePoint;
+  }
+  }

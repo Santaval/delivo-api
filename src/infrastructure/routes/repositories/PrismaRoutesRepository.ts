@@ -145,6 +145,32 @@ export default class PrismaRoutesRepository implements IRouteRepository {
     }
   }
 
+  async findPointById(id: RoutePointId): Promise<RoutePoint | null> {
+    try {
+      const result = await prisma.routePoint.findUnique({
+        where: {
+          id: id.value,
+        },
+        include: {
+        bill: {
+          include: {
+            client: true,
+            items: {
+              include: {
+                product: true
+              }
+            }
+          }
+        }
+      }
+      });
+      return result ? PrismaRoutePointMapper.toDomain(result) : null;
+    } catch (error) {
+      console.error("Error finding route point by ID:", error);
+      return null;
+    }
+  }
+
   getIncludeConditions() {
     return {
       points: {

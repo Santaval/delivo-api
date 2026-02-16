@@ -14,4 +14,5 @@ routesRouter.get("/:id", asyncHandler(routesController.findById.bind(routesContr
 routesRouter.post("/:id/points", validateSchema(addRoutePointSchema), asyncHandler(routesController.addPoint.bind(routesController)));
 routesRouter.delete("/:id/points/:pointId", asyncHandler(routesController.removePoint.bind(routesController)));
 routesRouter.post("/:id/start", validateSchema(startRouteSchema), asyncHandler(routesController.startOptimization.bind(routesController)));
+routesRouter.patch("/points/:pointId/complete", asyncHandler(routesController.completeDelivery.bind(routesController)));
 export default routesRouter;

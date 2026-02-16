@@ -1,6 +1,6 @@
 import { Order } from "@/domain/orders";
 import { RoutePointId } from "../valueObjects/routePointId.valueObject";
-import { RoutePointStatus } from "../valueObjects/routePointStatus.valueObject";
+import { RoutePointStatus, RoutePointStatusType } from "../valueObjects/routePointStatus.valueObject";
 import { RouteId } from "../valueObjects/routeId.valueObject";
 
 export class RoutePoint {
@@ -54,6 +54,10 @@ export class RoutePoint {
 
   setIndex(index: number): void {
     this.props.index = index;
+  }
+
+  setStatus(status: RoutePointStatusType): void {
+    this.props.status = RoutePointStatus.create(status);
   }
 }
 

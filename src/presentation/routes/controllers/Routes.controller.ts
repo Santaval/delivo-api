@@ -53,4 +53,10 @@ export default class RoutesContoller {
     const route = await this.routeService.start(routeId, startLocation);
     return res.status(200).json(RouteDtoMapper.toResponse(route));
   }
+
+  async completeDelivery(req: Request, res: Response) {
+    const pointId = req.params.pointId;
+    const result = await this.routeService.completeDelivery(RoutePointId.create(pointId));
+    return res.status(200).json(RoutePointDtoMapper.toResponse(result));
+  }
 }

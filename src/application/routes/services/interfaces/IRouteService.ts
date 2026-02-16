@@ -11,4 +11,5 @@ export default interface IRouteService {
   addPoint(point: RoutePoint): Promise<RoutePoint>;
   removePoint(pointId: RoutePointId): Promise<void>;
   start(routeId: RouteId, startLocation: Location): Promise<Route>;
+  completeDelivery(routePointId: RoutePointId): Promise<RoutePoint>;
 }
