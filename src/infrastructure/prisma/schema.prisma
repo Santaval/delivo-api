@@ -44,6 +44,7 @@ model Company {
   clientBills   ClientBill[]
   supplierBills SupplierBill[]
   routes        Route[]
+  paymentMethods PaymentMethod[]
 }
 
 model UserCompany {
@@ -139,6 +140,7 @@ model ClientBill {
   subtotal Decimal @db.Decimal(12, 2)
   ivaTotal Decimal @db.Decimal(12, 2)
   total    Decimal @db.Decimal(12, 2)
+  due      Decimal @db.Decimal(12, 2)
 
   clientId String
   client   Client @relation(fields: [clientId], references: [id])
@@ -149,6 +151,8 @@ model ClientBill {
   items ClientBillItem[]
 
   routePoint RoutePoint?
+
+  payments   ClientPayment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -169,6 +173,33 @@ model ClientBillItem {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt @default(now())
+}
+
+model PaymentMethod {
+  id   String @id @default(uuid())
+  name String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  payments   ClientPayment[]
+}
+
+model ClientPayment {
+  id   String @id @default(uuid())
+  amount Decimal @db.Decimal(12, 2)
+  method PaymentMethod @relation(fields: [methodId], references: [id])
+  methodId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  billId String
+  bill   ClientBill @relation(fields: [billId], references: [id])
+
 }
 
 /// ===============================
