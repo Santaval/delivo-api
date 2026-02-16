@@ -1,7 +1,7 @@
 import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import { RouteId } from "../valueObjects/routeId.valueObject";
 import { RouteName } from "../valueObjects/routeName.valueObject";
-import { RouteStatus } from "../valueObjects/routeStatus.valueObject";
+import { RouteStatus, RouteStatusType } from "../valueObjects/routeStatus.valueObject";
 import { RoutePoint } from "./RoutePoint";
 
 export class Route {
@@ -57,7 +57,7 @@ export class Route {
     this.props.polyline = polyline;
   }
 
-  setStatus(status: string): void {
+  setStatus(status: RouteStatusType): void {
     this.props.status = RouteStatus.create(status);
   }
 

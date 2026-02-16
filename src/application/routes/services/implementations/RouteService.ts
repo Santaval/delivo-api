@@ -5,6 +5,7 @@ import { Route, RouteId, RoutePoint, RoutePointId } from "@/domain/routes";
 import IRouteOptimizationService from "@/domain/routes/service/IRouteOptimizationService";
 import { Location } from "@/domain/clients/valueObjects/location.valouObject";
 import IOrderDeliveryStatusManager from "@/domain/orders/services/IOrderDeliveryStatusManager";
+import ApplicationError from "@/application/core/errors/ApplicationError";
 
 export default class RouteService implements IRouteService {
   constructor(
@@ -56,11 +57,38 @@ export default class RouteService implements IRouteService {
     return updatedRoute;
   }
 
+
   async completeDelivery(routePointId: RoutePointId): Promise<RoutePoint> {
     const routePoint = await this.routeRepository.findPointById(routePointId);
     if (!routePoint) throw new Error("Route point not found");
     routePoint.setStatus("VISITED");
     const updatedRoutePoint = await this.routeRepository.updatePoint(routePoint);
+    await this.tryMarkAsFinished(RouteId.create(updatedRoutePoint.routeId));
     return updatedRoutePoint;
   }
+
+  async markAsFinished(routeId: RouteId): Promise<Route> {
+    const route = await this.routeRepository.findById(routeId);
+    if (!route) throw new Error("Route not found");
+    const arePointsFinished = route.points.every(point => point.status !== "CREATED");
+    if (!arePointsFinished) throw new ApplicationError("Not all points are finished");
+    route.setStatus("COMPLETED");
+    const updatedRoute = await this.routeRepository.update(route);
+    return updatedRoute;
   }
+
+  async tryMarkAsFinished(routeId: RouteId): Promise<Route | null> {
+    try {
+      return await this.markAsFinished(routeId);
+    } catch (error) {
+      if (error instanceof ApplicationError) {
+        // Handle specific application error
+        console.error("Application error occurred:", error.message);
+      } else {
+        // Handle generic error
+        console.error("An error occurred:", error);
+      }
+      return null;
+    }
+  }
+}

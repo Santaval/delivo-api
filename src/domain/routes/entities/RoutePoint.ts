@@ -24,7 +24,7 @@ export class RoutePoint {
     return this.props.id.value;
   }
 
-  get status(): string {
+  get status(): RoutePointStatusType {
     return this.props.status.value;
   }
 
