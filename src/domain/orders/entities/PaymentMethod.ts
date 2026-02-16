@@ -1,3 +1,4 @@
+import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import { PaymentMethodId } from "../valueObjects/paymentMethodId.valueObject";
 import PaymentMethodName from "../valueObjects/paymentMethodName";
 
@@ -8,6 +9,7 @@ export default class PaymentMethod {
     this.props = {
       id: PaymentMethodId.create(props.id),
       name: PaymentMethodName.create(props.name),
+      companyId: CompanyId.create(props.companyId),
       createdAt: props.createdAt ? new Date(props.createdAt) : new Date(),
       updatedAt: props.updatedAt ? new Date(props.updatedAt) : new Date(),
     };
@@ -35,6 +37,7 @@ export default class PaymentMethod {
 interface PaymentMethodProps {
   id: PaymentMethodId;
   name: PaymentMethodName;
+  companyId: CompanyId;
   createdAt: Date;
   updatedAt: Date;
   
@@ -43,6 +46,7 @@ interface PaymentMethodProps {
 export interface ConstructorProps {
   id: string;
   name: string;
+  companyId: string,
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }

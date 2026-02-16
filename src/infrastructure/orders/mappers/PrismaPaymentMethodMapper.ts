@@ -6,6 +6,7 @@ export default class PrismaPaymentMethodMapper {
     return new PaymentMethod({
       id: raw.id,
       name: raw.name,
+      companyId: raw.companyId,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt
     })
