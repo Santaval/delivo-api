@@ -5,6 +5,7 @@ import LocationService from "@/application/geolocation/services/implementations/
 import OrderDeliveryStatusManager from "@/application/orders/services/implementations/OrderDeliveryStatusManger";
 import OrderPricingCalculator from "@/application/orders/services/implementations/OrderPricingCalculator";
 import OrdersService from "@/application/orders/services/implementations/OrdersService";
+import PaymentMethodsService from "@/application/orders/services/implementations/PaymentmethodsService";
 import { ProductService } from "@/application/products/services/implementations/ProductService";
 import RouteOptimizationService from "@/application/routes/services/implementations/RouteOptimizationService";
 import RouteService from "@/application/routes/services/implementations/RouteService";
@@ -17,6 +18,7 @@ import PrismaCompaniesRepository from "@/infrastructure/companies/repositories/P
 import UuidIDGenerator from "@/infrastructure/core/services/UuidIDGenerator";
 import { GooglePlacesService } from "@/infrastructure/geolocation/services/GooglePlacesService";
 import PrismaOrdersRepository from "@/infrastructure/orders/repositories/PrismaOrdersRepository";
+import PrismaPaymentMethodsRepository from "@/infrastructure/orders/repositories/PrismaPaymentMethodsRepository";
 import PrismaProductsRepository from "@/infrastructure/products/repositories/PrismaProductsRepository";
 import GoogleRouteOptimizationProvider from "@/infrastructure/routes/providers/GoogleRouteOptimizationProvider";
 import PrismaRoutesRepository from "@/infrastructure/routes/repositories/PrismaRoutesRepository";
@@ -26,6 +28,7 @@ import ClientController from "@/presentation/clients/controllers/Client.controll
 import CompanyController from "@/presentation/companies/controllers/Company.controller";
 import LocationController from "@/presentation/geolocation/controllers/LocationController";
 import OrdersController from "@/presentation/orders/controllers/Orders.controller";
+import PaymentMethodsController from "@/presentation/orders/controllers/PaymentMethods.controller";
 import ProductController from "@/presentation/products/controllers/Product.controller";
 import RoutesContoller from "@/presentation/routes/controllers/Routes.controller";
 import StatsController from "@/presentation/stats/controllers/Stats.controller";
@@ -40,6 +43,7 @@ export const clientsRepository = new PrismaClientsRepository();
 export const productsRepository = new PrismaProductsRepository();
 export const ordersRepository = new PrismaOrdersRepository();
 export const routesRepository = new PrismaRoutesRepository();
+export const paymentMethodsRepository = new PrismaPaymentMethodsRepository();
 
 // providers
 export const idGenerator = new UuidIDGenerator();
@@ -67,6 +71,7 @@ export const routeOptimizationService = new RouteOptimizationService(routesRepos
 export const routesService = new RouteService(routesRepository, routeOptimizationService, orderDeliveryStatusManager);
 export const financialSummaryCalculator = new FinancialSummaryCalculator(ordersRepository)
 export const locationService = new LocationService(placesProvider);
+export const paymentMethodsService = new PaymentMethodsService(paymentMethodsRepository);
 
 
 //  ==================== PRESENTATION ====================
@@ -81,4 +86,5 @@ export const ordersController = new OrdersController(ordersService);
 export const routesController = new RoutesContoller(routesService);
 export const statsController = new StatsController(financialSummaryCalculator);
 export const locationController = new LocationController(locationService);
+export const paymentMethodsController = new PaymentMethodsController(paymentMethodsService)
 
