@@ -13,7 +13,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install all dependencies (including devDependencies for build)
-RUN npm ci
+# Use npm ci if package-lock.json exists, otherwise use npm install
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 # Copy prisma schema and config
 COPY prisma.config.ts ./
@@ -44,7 +45,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install only production dependencies
-RUN npm ci --omit=dev && npm cache clean --force
+# Use npm ci if package-lock.json exists, otherwise use npm install
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi && npm cache clean --force
 
 # Copy Prisma files for runtime
 COPY --chown=nodejs:nodejs prisma.config.ts ./
@@ -60,9 +62,8 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 # Switch to non-root user
 USER nodejs
 
-# Expose port (adjust if needed)
+# Expose port (will use PORT env var, default 7500)
 EXPOSE 3000
-
 
 # Start command - runs migrations and starts the server
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/presentation/server.js"]
