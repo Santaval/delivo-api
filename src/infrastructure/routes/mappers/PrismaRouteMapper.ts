@@ -50,6 +50,11 @@ export default class PrismaRouteMapper {
                 include: {
                   product: true
                 }
+              },
+              payments: {
+                include: {
+                  method: true
+                }
               }
             }
           }

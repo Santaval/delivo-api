@@ -38,7 +38,13 @@ export default class PrismaRoutePointMapper {
               include: {
                 product: true
               }
+            },
+            payments: {
+              include: {
+                method: true
+              }
             }
+
           }
         }
       }
@@ -62,6 +68,11 @@ export default class PrismaRoutePointMapper {
             items: {
               include: {
                 product: true
+              }
+            },
+            payments: {
+              include: {
+                method: true
               }
             }
           }

@@ -45,7 +45,12 @@ export default class PrismaOrderMapper {
             product: true
           }
         },
-        client: true
+        client: true,
+        payments: {
+          include: {
+            method: true
+          }
+        }
       }
     };
   }
@@ -72,7 +77,12 @@ export default class PrismaOrderMapper {
             product: true
           }
         },
-        client: true
+        client: true,
+        payments: {
+          include: {
+            method: true
+          }
+        }
       }
     };
   }

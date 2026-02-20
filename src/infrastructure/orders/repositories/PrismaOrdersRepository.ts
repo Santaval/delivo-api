@@ -6,6 +6,7 @@ import InfrastructureError from "@/infrastructure/core/errors/InfrastructureErro
 import PrismaOrderItemMapper from "../mappers/PrismaOrderItemMapper";
 import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
+import DatabaseError from "@/infrastructure/core/errors/DatabaseError";
 
 export default class PrismaOrderRepository implements IOrderRepository {
   constructor() { }
@@ -39,7 +40,8 @@ export default class PrismaOrderRepository implements IOrderRepository {
       // @ts-expect-error 
       return PrismaOrderMapper.toDomain(result);
     } catch (error) {
-      throw new Error("Error creating order");
+      console.log(error);
+      throw new DatabaseError("Error creating order");
     }
   }
 
