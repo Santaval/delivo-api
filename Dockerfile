@@ -1,34 +1,45 @@
-# Production Dockerfile for Node.js + TypeScript + Prisma
-# Runs TypeScript directly with ts-node for reliability
+# syntax = docker/dockerfile:1
 
-FROM node:20-alpine AS production
+# Adjust NODE_VERSION as desired
+ARG NODE_VERSION=22.14.0
+FROM node:${NODE_VERSION}-slim AS base
 
-# Install runtime dependencies
-RUN apk add --no-cache openssl libc6-compat
+LABEL fly_launch_runtime="Node.js"
 
-# Create app user
-RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
-
-# Set working directory
+# Node.js app lives here
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Set production environment
+ENV NODE_ENV="production"
 
-# Install ALL dependencies (need dev deps for ts-node and tsconfig-paths)
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi && npm cache clean --force
 
-# Copy application files
-COPY --chown=nodejs:nodejs . .
+# Throw-away build stage to reduce size of final image
+FROM base AS build
 
-# Generate Prisma Client
-RUN npx prisma generate
+# Install packages needed to build node modules
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3
 
-# Switch to non-root user
-USER nodejs
+# Install node modules
+COPY package-lock.json package.json ./
+RUN npm ci --include=dev
 
-# Expose port (will use PORT env var from environment)
+# Copy application code
+COPY . .
+
+# Build application
+RUN npm run build
+
+# Remove development dependencies
+RUN npm prune --omit=dev
+
+
+# Final stage for app image
+FROM base
+
+# Copy built application
+COPY --from=build /app /app
+
+# Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
-
-# Start command - runs migrations and starts the server with ts-node
-CMD ["sh", "-c", "npx prisma migrate deploy && node -r ts-node/register -r tsconfig-paths/register src/presentation/server.ts"]
+CMD [ "npm", "run", "start" ]
