@@ -36,8 +36,6 @@ RUN npm run build
 # Remove development dependencies
 RUN npm prune --omit=dev
 
-# Migrate database
-RUN npx prisma migrate deploy
 
 # Final stage for app image
 FROM base
@@ -47,4 +45,4 @@ COPY --from=build /app /app
 
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
-CMD [ "npm", "run", "start" ]
+CMD [ "sh", "-c", "npx prisma migrate deploy && npm run start:prod" ]
