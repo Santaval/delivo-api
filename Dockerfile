@@ -27,12 +27,17 @@ RUN npm ci --include=dev
 # Copy application code
 COPY . .
 
+# Generate prisma client
+RUN npx prisma generate
+
 # Build application
 RUN npm run build
 
 # Remove development dependencies
 RUN npm prune --omit=dev
 
+# Migrate database
+RUN npx prisma migrate deploy
 
 # Final stage for app image
 FROM base
