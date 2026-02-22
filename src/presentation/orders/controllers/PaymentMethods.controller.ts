@@ -18,6 +18,7 @@ export default class PaymentMethodsController {
   async create(req: Request, res: Response) {
     const paymentMethodData: CreatePaymentMethodRequest = req.body;
     const paymentMethodEntity = PaymentMethodDtoMapper.fromCreateToDomain(paymentMethodData, CompanyIdParser(req));
+    console.log(paymentMethodEntity);
     const paymentMethod = await this.paymentMethodsService.create(paymentMethodEntity);
     return res.status(201).json(PaymentMethodDtoMapper.toResponse(paymentMethod));
   }

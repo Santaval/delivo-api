@@ -15,20 +15,20 @@ export default class AuthController {
   async googleLogin(req: Request, res: Response): Promise<void> {
     try {
       const { token } = req.body;
-      
       if (!token) {
         res.status(400).json({ message: "Token de Google es requerido" });
         return;
       }
-
+      
       // Authenticate with Google and get/create user
       const user = await this.oAuthService.google(token);
-
+      
       // Generate JWT token
       const jwtToken = this.jwtService.generateToken({
         id: user.id,
         email: user.email.value,
       });
+      console.log("Token:", jwtToken);
 
       const userResponse = UserDtoMapper.toResponse(user);
 
