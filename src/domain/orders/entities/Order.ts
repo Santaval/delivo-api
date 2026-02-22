@@ -85,6 +85,10 @@ export default class Order {
     return this.props.updatedAt;
   }
 
+  setStatus(status: OrderStatusType): void {
+    this.props.status = OrderStatus.create(status);
+  }
+
   setDeliveryStatus(status: OrderDeliveryStatusType): void {
     this.props.deliveryStatus = OrderDeliveryStatus.create(status);
   }
@@ -93,6 +97,9 @@ export default class Order {
     this.props.totals = OrderTotal.create(subtotal, ivaTotal, due);
   }
 
+  setPaid(paid: number): void {
+    this.props.totals = OrderTotal.create(this.props.totals.subtotal, this.props.totals.ivaTotal, paid);
+  }
 
 }
 

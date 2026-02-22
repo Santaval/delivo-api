@@ -3,6 +3,7 @@ import { ClientService } from "@/application/clients/services/implementations/Cl
 import { CompanyService } from "@/application/companies/services/implementations/CompanyService";
 import LocationService from "@/application/geolocation/services/implementations/LocationService";
 import OrderDeliveryStatusManager from "@/application/orders/services/implementations/OrderDeliveryStatusManger";
+import OrderPaymentsService from "@/application/orders/services/implementations/OrderPaymentsService";
 import OrderPricingCalculator from "@/application/orders/services/implementations/OrderPricingCalculator";
 import OrdersService from "@/application/orders/services/implementations/OrdersService";
 import PaymentMethodsService from "@/application/orders/services/implementations/PaymentmethodsService";
@@ -19,6 +20,7 @@ import UuidIDGenerator from "@/infrastructure/core/services/UuidIDGenerator";
 import { GooglePlacesService } from "@/infrastructure/geolocation/services/GooglePlacesService";
 import PrismaOrdersRepository from "@/infrastructure/orders/repositories/PrismaOrdersRepository";
 import PrismaPaymentMethodsRepository from "@/infrastructure/orders/repositories/PrismaPaymentMethodsRepository";
+import PrismaPaymentsRepository from "@/infrastructure/orders/repositories/PrismaPaymentsRepository";
 import PrismaProductsRepository from "@/infrastructure/products/repositories/PrismaProductsRepository";
 import GoogleRouteOptimizationProvider from "@/infrastructure/routes/providers/GoogleRouteOptimizationProvider";
 import PrismaRoutesRepository from "@/infrastructure/routes/repositories/PrismaRoutesRepository";
@@ -44,6 +46,8 @@ export const productsRepository = new PrismaProductsRepository();
 export const ordersRepository = new PrismaOrdersRepository();
 export const routesRepository = new PrismaRoutesRepository();
 export const paymentMethodsRepository = new PrismaPaymentMethodsRepository();
+export const paymentsRepository = new PrismaPaymentsRepository();
+
 
 // providers
 export const idGenerator = new UuidIDGenerator();
@@ -72,6 +76,7 @@ export const routesService = new RouteService(routesRepository, routeOptimizatio
 export const financialSummaryCalculator = new FinancialSummaryCalculator(ordersRepository)
 export const locationService = new LocationService(placesProvider);
 export const paymentMethodsService = new PaymentMethodsService(paymentMethodsRepository);
+export const orderPaymentsService = new OrderPaymentsService(paymentsRepository, ordersRepository);
 
 
 //  ==================== PRESENTATION ====================
@@ -82,7 +87,7 @@ export const companyController = new CompanyController(companiesService, idGener
 export const authController = new AuthController(oAuthService, jwtService, userService);
 export const clientsController = new ClientController(clientsService);
 export const productsController = new ProductController(productsService);
-export const ordersController = new OrdersController(ordersService);
+export const ordersController = new OrdersController(ordersService, orderPaymentsService);
 export const routesController = new RoutesContoller(routesService);
 export const statsController = new StatsController(financialSummaryCalculator);
 export const locationController = new LocationController(locationService);

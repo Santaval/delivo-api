@@ -9,6 +9,7 @@ export default class PrismaPaymentMapper {
 
   static toDomain(raw: FullPaymentType): Payment {
     return new Payment({
+      id: raw.id,
       amount: raw.amount.toNumber(),
       orderId: raw.billId,
       method: PrismaPaymentMethodMapper.toDomain(raw.method),
@@ -17,12 +18,15 @@ export default class PrismaPaymentMapper {
     })
   }
 
-  static toPersistence(domain: Payment): ClientPaymentCreateArgs{
+  static toPersistence(domain: Payment): ClientPaymentCreateArgs {
     return {
       data: {
         amount: domain.amount.value,
         methodId: domain.method.id,
         billId: domain.orderId.value
+      },
+      include: {
+        method: true
       }
     }
   }

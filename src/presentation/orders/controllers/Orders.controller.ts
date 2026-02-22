@@ -5,10 +5,14 @@ import OrderDtoMapper from "../mappers/OrderMapper";
 import OrderItemMapper from "../mappers/OrderItemMapper";
 import AddOrderItemRequest from "../requests/AddOrderItem";
 import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
+import IOrderPaymentsService from "@/application/orders/services/interfaces/IOrderPaymentsService";
+import AddPaymentRequest from "../requests/AddPayment";
+import PaymentMapper from "../mappers/PaymentMapper";
 
 export default class OrdersController {
   constructor(
-    private readonly ordersService: IOrdersService
+    private readonly ordersService: IOrdersService,
+    private readonly orderPaymentsService: IOrderPaymentsService
   ) {}
 
   async findByCompany(req: Request, res: Response): Promise<void> {
@@ -52,6 +56,14 @@ export default class OrdersController {
     const clientId = ClientId.create(req.params.clientId);
     const orders = await this.ordersService.byClient(clientId);
     res.json(orders.map(OrderDtoMapper.toResponse));
+  }
+
+  async addPayment(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    const paymentData: AddPaymentRequest = req.body;
+    const paymentEntity = PaymentMapper.fromAddToDomain(paymentData, id);
+    const payment = await this.orderPaymentsService.add(paymentEntity);
+    res.status(201).json(PaymentMapper.toResponse(payment));
   }
 
 }

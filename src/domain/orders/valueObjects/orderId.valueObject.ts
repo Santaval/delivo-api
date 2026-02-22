@@ -1,3 +1,4 @@
+import DataError from "@/domain/core/errors/DataError";
 import DomainError from "@/domain/core/errors/DomainError";
 
 export class OrderId {
@@ -9,7 +10,7 @@ export class OrderId {
 
   static create(value: string): OrderId {
     if (!value || value.trim().length === 0) {
-      throw new DomainError("OrderId cannot be empty");
+      throw new DataError("OrderId cannot be empty");
     }
     return new OrderId(value);
   }
