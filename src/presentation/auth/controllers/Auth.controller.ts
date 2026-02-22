@@ -28,7 +28,6 @@ export default class AuthController {
         id: user.id,
         email: user.email.value,
       });
-      console.log("Token:", jwtToken);
 
       const userResponse = UserDtoMapper.toResponse(user);
 

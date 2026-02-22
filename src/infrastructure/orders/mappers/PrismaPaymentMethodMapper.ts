@@ -16,7 +16,6 @@ export default class PrismaPaymentMethodMapper {
   static toPersistenceCreate(paymentMethod: PaymentMethod): PaymentMethodCreateArgs {
     return {
       data: {
-        id: paymentMethod.id,
         name: paymentMethod.name,
         companyId: paymentMethod.companyId,
       }
