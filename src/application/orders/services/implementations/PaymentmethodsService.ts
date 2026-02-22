@@ -9,4 +9,8 @@ export default class PaymentMethodsService implements IPaymentMethodsService {
   async getAllByCompany(companyId: CompanyId): Promise<PaymentMethod[]> {
     return this.paymentMethodsRepository.allByCompany(companyId);
   }
+
+  async create(paymentMethod: PaymentMethod): Promise<PaymentMethod> {
+    return this.paymentMethodsRepository.create(paymentMethod);
+  }
 }

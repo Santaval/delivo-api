@@ -13,4 +13,22 @@ export default class PrismaPaymentMethodsRepository implements IPaymentMethodRep
     });
     return paymentMethods.map(PrismaPaymentMethodMapper.toDomain);
   }
+
+  async create(paymentMethod: PaymentMethod): Promise<PaymentMethod> {
+    const createdPaymentMethod = await prisma.paymentMethod.create(PrismaPaymentMethodMapper.toPersistenceCreate(paymentMethod));
+    return PrismaPaymentMethodMapper.toDomain(createdPaymentMethod);
+  }
+
+  async update(paymentMethod: PaymentMethod): Promise<PaymentMethod> {
+    const updatedPaymentMethod = await prisma.paymentMethod.update(
+      PrismaPaymentMethodMapper.toPersistenceUpdate(paymentMethod)
+    );
+    return PrismaPaymentMethodMapper.toDomain(updatedPaymentMethod);
+  }
+
+  async delete(paymentMethodId: string): Promise<void> {
+    await prisma.paymentMethod.delete({
+      where: { id: paymentMethodId }
+    });
+  }
 }

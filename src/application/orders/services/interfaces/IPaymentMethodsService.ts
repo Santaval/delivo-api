@@ -3,4 +3,5 @@ import PaymentMethod from "@/domain/orders/entities/PaymentMethod";
 
 export default interface IPaymentMethodsService {
   getAllByCompany(companyId: CompanyId): Promise<PaymentMethod[]>;
+  create(paymentMethod: PaymentMethod): Promise<PaymentMethod>;
 }

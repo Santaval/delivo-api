@@ -25,6 +25,10 @@ export default class PaymentMethod {
     return this.props.name.value;
   }
 
+  get companyId(): string {
+    return this.props.companyId.value;
+  }
+
   get createdAt(): Date {
     return this.props.createdAt;
   }
