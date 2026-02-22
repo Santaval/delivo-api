@@ -10,6 +10,7 @@ export default interface OrderResponse {
     ivaTotal: number;
     total: number;
   };
+  paid: number;
   items: OrderItemResponse[];
   status: "PENDING" | "PAID" | "CANCELLED";
   deliveryStatus: "PENDING" | "ON_ROUTE" | "IN_TRANSIT" | "DELIVERED" | "RETURNED";

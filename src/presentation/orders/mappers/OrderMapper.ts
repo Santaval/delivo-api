@@ -17,6 +17,7 @@ export default class OrdersDtoMapper {
         total: order.total,
       },
       items: order.items.map(OrderItemMapper.toResponse),
+      paid: order.paid,
       // @ts-expect-error
       status: order.status,
       deliveryStatus: order.deliveryStatus as "PENDING" | "ON_ROUTE" | "IN_TRANSIT" | "DELIVERED" | "RETURNED",
