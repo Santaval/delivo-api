@@ -57,13 +57,34 @@ export default class RouteService implements IRouteService {
     return updatedRoute;
   }
 
+  async finish(routeId: RouteId): Promise<Route> {
+    const route = await this.routeRepository.findById(routeId);
+    if (!route) throw new Error("Route not found");
+    route.setStatus("COMPLETED");
+
+    // mark all orders of skipped points as pending
+    const skippedPoints = route.points.filter(point => point.status === "SKIPPED");
+    const promises = skippedPoints.map(point => this.orderDeliveryStatusManager.change(point.order.id, "PENDING"));
+    await Promise.all(promises);
+    return this.routeRepository.update(route);
+  }
 
   async completeDelivery(routePointId: RoutePointId): Promise<RoutePoint> {
     const routePoint = await this.routeRepository.findPointById(routePointId);
     if (!routePoint) throw new Error("Route point not found");
-    await this.orderDeliveryStatusManager.change(routePoint.order.id, "DELIVERED");
-    await this.tryMarkAsFinished(RouteId.create(routePointId.value));
-    return routePoint;
+    routePoint.setStatus("VISITED");
+    const updatedRoutePoint = await this.routeRepository.updatePoint(routePoint);
+    // change order status to "DELIVERED"
+    await this.orderDeliveryStatusManager.change(updatedRoutePoint.order.id, "DELIVERED");
+    await this.tryMarkAsFinished(RouteId.create(updatedRoutePoint.routeId));
+    return updatedRoutePoint;
+  }
+
+  async skipDelivery(routePointId: RoutePointId): Promise<void> {
+    const routePoint = await this.routeRepository.findPointById(routePointId);
+    if (!routePoint) throw new Error("Route point not found");
+    routePoint.setStatus("SKIPPED");
+    await this.routeRepository.updatePoint(routePoint);
   }
 
   async markAsFinished(routeId: RouteId): Promise<Route> {
@@ -71,9 +92,7 @@ export default class RouteService implements IRouteService {
     if (!route) throw new Error("Route not found");
     const arePointsFinished = route.points.every(point => point.status !== "CREATED");
     if (!arePointsFinished) throw new ApplicationError("Not all points are finished");
-    route.setStatus("COMPLETED");
-    const updatedRoute = await this.routeRepository.update(route);
-    return updatedRoute;
+    return this.finish(routeId);
   }
 
   async tryMarkAsFinished(routeId: RouteId): Promise<Route | null> {
