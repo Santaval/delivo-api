@@ -19,6 +19,9 @@ export default class PrismaRoutesRepository implements IRouteRepository {
         where: {
           companyId: companyId.value,
         },
+        orderBy: {
+          createdAt: "desc",
+        },
         include: this.getIncludeConditions(),
       });
 
