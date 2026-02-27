@@ -20,6 +20,9 @@ export default class PrismaOrderRepository implements IOrderRepository {
     try {
       const result = await prisma.clientBill.findMany({
         where: { companyId },
+        orderBy: {
+          createdAt: "desc",
+        },
         include: this.getIncludes(),
       });
       return result.map((order) => PrismaOrderMapper.toDomain(order));
