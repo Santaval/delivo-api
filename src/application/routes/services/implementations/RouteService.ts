@@ -61,10 +61,9 @@ export default class RouteService implements IRouteService {
   async completeDelivery(routePointId: RoutePointId): Promise<RoutePoint> {
     const routePoint = await this.routeRepository.findPointById(routePointId);
     if (!routePoint) throw new Error("Route point not found");
-    routePoint.setStatus("VISITED");
-    const updatedRoutePoint = await this.routeRepository.updatePoint(routePoint);
-    await this.tryMarkAsFinished(RouteId.create(updatedRoutePoint.routeId));
-    return updatedRoutePoint;
+    await this.orderDeliveryStatusManager.change(routePoint.order.id, "DELIVERED");
+    await this.tryMarkAsFinished(RouteId.create(routePointId.value));
+    return routePoint;
   }
 
   async markAsFinished(routeId: RouteId): Promise<Route> {
