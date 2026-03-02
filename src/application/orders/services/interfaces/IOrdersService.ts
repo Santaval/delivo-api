@@ -1,5 +1,5 @@
 import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
-import { Order, OrderItem } from "@/domain/orders";
+import { Order } from "@/domain/orders";
 
 export interface IOrdersService {
   findByCompany(companyId: string): Promise<Order[]>;
