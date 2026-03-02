@@ -9,5 +9,6 @@ export interface IOrdersService {
   findById(id: string): Promise<Order | null>;
   delete(id: string): Promise<void>;
   update(order: Order): Promise<Order>;
+  markAsDelivered(id: string): Promise<Order>;
   byClient(clientId: ClientId): Promise<Order[]>;
 }

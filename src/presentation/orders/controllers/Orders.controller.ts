@@ -52,6 +52,12 @@ export default class OrdersController {
     res.status(201).json(OrderDtoMapper.toResponse(order));
   }
 
+  async markAsDelivered(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    const order = await this.ordersService.markAsDelivered(id);
+    res.status(200).json(OrderDtoMapper.toResponse(order));
+  }
+
   async removeItem(req: Request, res: Response): Promise<void> {
     const { id, itemId } = req.params;
     const order = await this.orderItemsManager.removeItem(id, itemId);

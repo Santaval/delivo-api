@@ -3,6 +3,7 @@ import { IOrdersService } from "../interfaces/IOrdersService";
 import { Order } from "@/domain/orders";
 import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
 import { OrderDeliveryStatusType } from "@/domain/orders/valueObjects/orderDeliveryStatus";
+import ApplicationError from "@/application/core/errors/ApplicationError";
 
 export default class OrdersService implements IOrdersService {
 
@@ -38,6 +39,14 @@ export default class OrdersService implements IOrdersService {
 
   update(order: Order): Promise<Order> {
     return this.ordersRepository.update(order);
+  }
+
+  async markAsDelivered(id: string): Promise<Order> {
+    const order = await this.ordersRepository.findById(id);
+    if (!order) throw new ApplicationError("Order not found");
+    order.setDeliveryStatus("DELIVERED");
+    const updated = await this.ordersRepository.update(order);
+    return updated;
   }
 
   async byClient(clientId: ClientId): Promise<Order[]> {
