@@ -73,7 +73,7 @@ export default class Order {
     return this.props.status.value;
   }
 
-  get deliveryStatus(): string {
+  get deliveryStatus(): OrderDeliveryStatusType {
     return this.props.deliveryStatus.value;
   }
 

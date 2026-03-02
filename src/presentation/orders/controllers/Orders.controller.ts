@@ -2,17 +2,18 @@ import { IOrdersService } from "@/application/orders/services/interfaces/IOrders
 import CompanyIdParser from "@/presentation/core/utils/companyIdParser";
 import { Request, Response } from "express";
 import OrderDtoMapper from "../mappers/OrderMapper";
-import OrderItemMapper from "../mappers/OrderItemMapper";
 import AddOrderItemRequest from "../requests/AddOrderItem";
 import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
 import IOrderPaymentsService from "@/application/orders/services/interfaces/IOrderPaymentsService";
 import AddPaymentRequest from "../requests/AddPayment";
 import PaymentMapper from "../mappers/PaymentMapper";
+import IOrderItemsManager from "@/application/orders/services/interfaces/IOrderItemsManager";
 
 export default class OrdersController {
   constructor(
     private readonly ordersService: IOrdersService,
-    private readonly orderPaymentsService: IOrderPaymentsService
+    private readonly orderPaymentsService: IOrderPaymentsService,
+    private readonly orderItemsManager: IOrderItemsManager
   ) {}
 
   async findByCompany(req: Request, res: Response): Promise<void> {
@@ -22,7 +23,6 @@ export default class OrdersController {
   }
 
   async create(req: Request, res: Response): Promise<void> {
-
     const companyId = CompanyIdParser(req);
     const newOrder = OrderDtoMapper.fromCreateToDomain(req.body, companyId);
     const order = await this.ordersService.create(newOrder);
@@ -42,13 +42,13 @@ export default class OrdersController {
   async addItem(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
     const request: AddOrderItemRequest = req.body;
-    const order = await this.ordersService.addItem(request.productId, request.quantity, id);
+    const order = await this.orderItemsManager.addItem(request.productId, request.quantity, id);
     res.status(201).json(OrderDtoMapper.toResponse(order));
   }
 
   async removeItem(req: Request, res: Response): Promise<void> {
     const { id, itemId } = req.params;
-    const order = await this.ordersService.removeItem(id, itemId);
+    const order = await this.orderItemsManager.removeItem(id, itemId);
     res.status(200).json(OrderDtoMapper.toResponse(order));
   }
 

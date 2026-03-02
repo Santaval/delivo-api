@@ -7,7 +7,5 @@ export interface IOrdersService {
   findById(id: string): Promise<Order | null>;
   delete(id: string): Promise<void>;
   update(order: Order): Promise<Order>;
-  addItem(productId: string, quantity: number, orderId: string): Promise<Order>;
-  removeItem(orderId: string, itemId: string): Promise<Order>;
   byClient(clientId: ClientId): Promise<Order[]>;
 }

@@ -3,6 +3,7 @@ import { ClientService } from "@/application/clients/services/implementations/Cl
 import { CompanyService } from "@/application/companies/services/implementations/CompanyService";
 import LocationService from "@/application/geolocation/services/implementations/LocationService";
 import OrderDeliveryStatusManager from "@/application/orders/services/implementations/OrderDeliveryStatusManger";
+import OrderItemsManager from "@/application/orders/services/implementations/OrderItemsManager";
 import OrderPaymentsService from "@/application/orders/services/implementations/OrderPaymentsService";
 import OrderPricingCalculator from "@/application/orders/services/implementations/OrderPricingCalculator";
 import OrdersService from "@/application/orders/services/implementations/OrdersService";
@@ -69,7 +70,7 @@ export const companiesService = new CompanyService(companiesRepository);
 export const clientsService = new ClientService(clientsRepository);
 export const productsService = new ProductService(productsRepository);
 export const ordersPricingCalculator = new OrderPricingCalculator(ordersRepository, productsRepository);
-export const ordersService = new OrdersService(ordersRepository, productsRepository, ordersPricingCalculator);
+export const ordersService = new OrdersService(ordersRepository);
 export const orderDeliveryStatusManager = new OrderDeliveryStatusManager(ordersRepository);
 export const routeOptimizationService = new RouteOptimizationService(routesRepository, routeOptimizationProvider);
 export const routesService = new RouteService(routesRepository, routeOptimizationService, orderDeliveryStatusManager);
@@ -77,6 +78,7 @@ export const financialSummaryCalculator = new FinancialSummaryCalculator(ordersR
 export const locationService = new LocationService(placesProvider);
 export const paymentMethodsService = new PaymentMethodsService(paymentMethodsRepository);
 export const orderPaymentsService = new OrderPaymentsService(paymentsRepository, ordersRepository);
+export const orderItemsManager = new OrderItemsManager(ordersRepository, productsRepository, ordersPricingCalculator);
 
 
 //  ==================== PRESENTATION ====================
@@ -87,7 +89,7 @@ export const companyController = new CompanyController(companiesService, idGener
 export const authController = new AuthController(oAuthService, jwtService, userService);
 export const clientsController = new ClientController(clientsService);
 export const productsController = new ProductController(productsService);
-export const ordersController = new OrdersController(ordersService, orderPaymentsService);
+export const ordersController = new OrdersController(ordersService, orderPaymentsService, orderItemsManager);
 export const routesController = new RoutesContoller(routesService);
 export const statsController = new StatsController(financialSummaryCalculator);
 export const locationController = new LocationController(locationService);
