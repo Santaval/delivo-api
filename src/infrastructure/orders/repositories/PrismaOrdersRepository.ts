@@ -7,6 +7,7 @@ import PrismaOrderItemMapper from "../mappers/PrismaOrderItemMapper";
 import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
 import DatabaseError from "@/infrastructure/core/errors/DatabaseError";
+import { OrderDeliveryStatusType } from "@/domain/orders/valueObjects/orderDeliveryStatus";
 
 export default class PrismaOrderRepository implements IOrderRepository {
   constructor() { }
@@ -31,6 +32,28 @@ export default class PrismaOrderRepository implements IOrderRepository {
       throw new Error("Error fetching orders");
     }
   }
+
+  async byCompanyAndManyDeliveryStatus(companyId: string, statuses: OrderDeliveryStatusType[]): Promise<Order[]> {
+    try {
+      const result = await prisma.clientBill.findMany({
+        where: {
+          companyId,
+          deliveryStatus: {
+            in: statuses
+          }
+        },
+        orderBy: {
+          createdAt: "desc"
+        },
+        include: this.getIncludes()
+      });
+      return result.map((order) => PrismaOrderMapper.toDomain(order));
+    } catch (error) {
+      console.log(error);
+      throw new Error("Error fetching orders");
+    }
+  }
+
   /**
    * Create a new order
    * @param order The order to create

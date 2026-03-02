@@ -16,9 +16,15 @@ export default class OrdersController {
     private readonly orderItemsManager: IOrderItemsManager
   ) {}
 
-  async findByCompany(req: Request, res: Response): Promise<void> {
+  async ordersByCompany(req: Request, res: Response): Promise<void> {
     const companyId = CompanyIdParser(req);
-    const orders = await this.ordersService.findByCompany(companyId);
+    const orders = await this.ordersService.openedByCompany(companyId);
+    res.json(orders.map(OrderDtoMapper.toResponse));
+  }
+
+  async billsByCompany(req: Request, res: Response): Promise<void> {
+    const companyId = CompanyIdParser(req);
+    const orders = await this.ordersService.closedByCompany(companyId);
     res.json(orders.map(OrderDtoMapper.toResponse));
   }
 

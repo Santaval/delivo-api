@@ -8,7 +8,8 @@ import addPaymentSchema from "../validators/addPayment";
 
 const ordersRouter = Router();
 
-ordersRouter.get("/", asyncHandler(ordersController.findByCompany.bind(ordersController)));
+ordersRouter.get("/", asyncHandler(ordersController.ordersByCompany.bind(ordersController)));
+ordersRouter.get("/bills", asyncHandler(ordersController.billsByCompany.bind(ordersController)));
 ordersRouter.post("/", validateSchema(createOrderSchema), asyncHandler(ordersController.create.bind(ordersController)));
 ordersRouter.get("/:id", asyncHandler(ordersController.findById.bind(ordersController)));
 ordersRouter.post("/:id/items", validateSchema(addOrderItemSchema), asyncHandler(ordersController.addItem.bind(ordersController)));
