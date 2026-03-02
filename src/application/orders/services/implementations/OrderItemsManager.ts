@@ -23,10 +23,10 @@ export default class OrderItemsManager implements IOrderItemsManager {
     if (!product) throw new ApplicationError("Product not found", 404);
 
     const item = this.fromProduct(product, quantity, orderId);
-    return this.ordersRepo.addItem(item);
+    await this.ordersRepo.addItem(item);
 
     const updatedorder = await this.orderPricingCalculator.onAddItem(item);
-    await this.ordersRepo.update(updatedorder);
+    return this.ordersRepo.update(updatedorder);
   }
 
   async removeItem(orderId: string, itemId: string): Promise<Order> {
