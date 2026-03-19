@@ -6,7 +6,7 @@ export default class GoogleOAuthProvider implements IOAuthProvider {
   async getUserInfo(accessToken: string): Promise<OAuthUserPayload> {
     const ticket = await googleClient.verifyIdToken({
       idToken: accessToken,
-      audience: process.env.GOOGLE_CLIENT_ID
+      audience: [process.env.GOOGLE_IOS_CLIENT_ID!, process.env.GOOGLE_ANDROID_CLIENT_ID!]
     });
 
     const payload = ticket.getPayload()
