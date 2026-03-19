@@ -11,4 +11,5 @@ export interface IOrdersService {
   update(order: Order): Promise<Order>;
   markAsDelivered(id: string): Promise<Order>;
   byClient(clientId: ClientId): Promise<Order[]>;
+  byClientBilled(clientId: ClientId): Promise<Order[]>;
 }

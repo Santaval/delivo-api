@@ -70,6 +70,12 @@ export default class OrdersController {
     res.json(orders.map(OrderDtoMapper.toResponse));
   }
 
+  async byClientBilled(req: Request, res: Response): Promise<void> {
+    const clientId = ClientId.create(req.params.clientId);
+    const orders = await this.ordersService.byClientBilled(clientId);
+    res.json(orders.map(OrderDtoMapper.toResponse));
+  }
+
   async addPayment(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
     const paymentData: AddPaymentRequest = req.body;

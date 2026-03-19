@@ -15,5 +15,5 @@ export default interface IOrderRepository {
   removeItem(orderId: string, itemId: string): Promise<Order>;
   getItem(itemId: string): Promise<OrderItem | null>;
   byTimeRange(start: Date, end: Date, companyId: CompanyId): Promise<Order[]>;
-  byClient(clientId: ClientId): Promise<Order[]>;
+  byClientAndManyDeliveryStatus(clientId: ClientId, statuses: OrderDeliveryStatusType[]): Promise<Order[]>;
 }

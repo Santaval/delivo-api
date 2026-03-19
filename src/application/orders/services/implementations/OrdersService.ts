@@ -50,6 +50,10 @@ export default class OrdersService implements IOrdersService {
   }
 
   async byClient(clientId: ClientId): Promise<Order[]> {
-    return this.ordersRepository.byClient(clientId);
+    return this.ordersRepository.byClientAndManyDeliveryStatus(clientId, this.OPENED_STATES);
+  }
+
+  async byClientBilled(clientId: ClientId): Promise<Order[]> {
+    return this.ordersRepository.byClientAndManyDeliveryStatus(clientId, this.CLOSED_STATES);
   }
 }

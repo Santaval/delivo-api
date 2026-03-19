@@ -176,10 +176,10 @@ export default class PrismaOrderRepository implements IOrderRepository {
     }
   }
 
-  async byClient(clientId: ClientId): Promise<Order[]> {
+  async byClientAndManyDeliveryStatus(clientId: ClientId, statuses: OrderDeliveryStatusType[]): Promise<Order[]> {
     try {
       const result = await prisma.clientBill.findMany({
-        where: { clientId: clientId.value },
+        where: { clientId: clientId.value, deliveryStatus: { in: statuses } },
         include: this.getIncludes()
       });
       return result.map((order) => PrismaOrderMapper.toDomain(order));

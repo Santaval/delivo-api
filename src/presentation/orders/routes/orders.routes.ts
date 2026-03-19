@@ -16,6 +16,7 @@ ordersRouter.patch("/:id/delivered", asyncHandler(ordersController.markAsDeliver
 ordersRouter.post("/:id/items", validateSchema(addOrderItemSchema), asyncHandler(ordersController.addItem.bind(ordersController)));
 ordersRouter.delete("/:id/items/:itemId", asyncHandler(ordersController.removeItem.bind(ordersController)));
 ordersRouter.get("/client/:clientId", asyncHandler(ordersController.byClient.bind(ordersController)));
+ordersRouter.get("/client/:clientId/billed", asyncHandler(ordersController.byClientBilled.bind(ordersController)));
 ordersRouter.post("/:id/payments", validateSchema(addPaymentSchema), asyncHandler(ordersController.addPayment.bind(ordersController)));
 
 export default ordersRouter;
