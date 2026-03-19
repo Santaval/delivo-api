@@ -17,7 +17,7 @@ export default class CompanyController {
     const request: CreateCompanyRequest = req.body;
     const company = CompanyDtoMapper.fromCreateRequest(request, this.idGenerator);
     const createdCompany = await this.companyService.create(company, userId);
-    res.status(201).json(CompanyDtoMapper.toResponse(createdCompany));
+    res.json(CompanyDtoMapper.toResponse(createdCompany));
   }
 
   async findAll(req: Request, res: Response): Promise<void> {
