@@ -43,7 +43,6 @@ export default class PrismaProductsRepository implements IProductRepository {
       const product = await this.client.product.findFirst({
         where: {
           [field || "id"]: value,
-          deletedAt: null,
         },
       });
       return product ? PrismaProductMapper.toDomain(product) : null;
@@ -133,7 +132,6 @@ export default class PrismaProductsRepository implements IProductRepository {
         where: {
           name,
           companyId,
-          deletedAt: null,
         },
       });
       return product ? PrismaProductMapper.toDomain(product) : null;
