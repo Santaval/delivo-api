@@ -44,8 +44,7 @@ export class ProductService implements IProductService {
       const product = await context.getProductRepository().find(productId, "id");
       if (!product) throw new ProductNotFoundError();
 
-      // TODO: delete product variants
-      // await context.getProductVariantRepository().deleteByProductId(productId);
+      await context.getProductRepository().delete(productId);
     });
   }
 

@@ -20,7 +20,11 @@ export default class PrismaProductsRepository implements IProductRepository {
    */
   async all(): Promise<Product[]> {
     try {
-      const products = await this.client.product.findMany();
+      const products = await this.client.product.findMany({
+        where: {
+          deletedAt: null,
+        },
+      });
       return products.map((product) => PrismaProductMapper.toDomain(product));
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -39,6 +43,7 @@ export default class PrismaProductsRepository implements IProductRepository {
       const product = await this.client.product.findFirst({
         where: {
           [field || "id"]: value,
+          deletedAt: null,
         },
       });
       return product ? PrismaProductMapper.toDomain(product) : null;
@@ -107,7 +112,7 @@ export default class PrismaProductsRepository implements IProductRepository {
   async findByCompanyId(companyId: string): Promise<Product[]> {
     try {
       const products = await this.client.product.findMany({
-        where: { companyId },
+        where: { companyId, deletedAt: null },
       });
       return products.map((product) => PrismaProductMapper.toDomain(product));
     } catch (error) {
@@ -127,7 +132,8 @@ export default class PrismaProductsRepository implements IProductRepository {
       const product = await this.client.product.findFirst({
         where: {
           name,
-          companyId
+          companyId,
+          deletedAt: null,
         },
       });
       return product ? PrismaProductMapper.toDomain(product) : null;
@@ -153,6 +159,7 @@ export default class PrismaProductsRepository implements IProductRepository {
             gte: minPrice,
             lte: maxPrice,
           },
+          deletedAt: null,
         },
       });
       return products.map((product) => PrismaProductMapper.toDomain(product));
