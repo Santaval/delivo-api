@@ -4,10 +4,15 @@ import { prisma } from "@/infrastructure/prisma/client";
 import { PrismaProductMapper } from "../mappers/PrismaProductMapper";
 import DatabaseError from "@/infrastructure/core/errors/DatabaseError";
 import DatabaseInsertError from "@/infrastructure/core/errors/DatabaseInsertError";
+import { Prisma } from "@/infrastructure/prisma/generated/prisma/client";
 
 export default class PrismaProductsRepository implements IProductRepository {
 
-  constructor() { }
+  private readonly client: Prisma.TransactionClient;
+
+  constructor(client?: Prisma.TransactionClient) {
+    this.client = client || prisma;
+  }
 
   /**
    * Fetch all products from the database.
@@ -15,7 +20,7 @@ export default class PrismaProductsRepository implements IProductRepository {
    */
   async all(): Promise<Product[]> {
     try {
-      const products = await prisma.product.findMany();
+      const products = await this.client.product.findMany();
       return products.map((product) => PrismaProductMapper.toDomain(product));
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -31,7 +36,7 @@ export default class PrismaProductsRepository implements IProductRepository {
    */
   async find(value: string, field?: string): Promise<Product | null> {
     try {
-      const product = await prisma.product.findFirst({
+      const product = await this.client.product.findFirst({
         where: {
           [field || "id"]: value,
         },
@@ -50,7 +55,7 @@ export default class PrismaProductsRepository implements IProductRepository {
    */
   async create(product: Product): Promise<Product> {
     try {
-      const createdProduct = await prisma.product.create(PrismaProductMapper.toPersistence(product));
+      const createdProduct = await this.client.product.create(PrismaProductMapper.toPersistence(product));
       return PrismaProductMapper.toDomain(createdProduct);
     } catch (error) {
       console.error("Error creating product:", error);
@@ -65,7 +70,7 @@ export default class PrismaProductsRepository implements IProductRepository {
    */
   async update(product: Product): Promise<void> {
     try {
-      await prisma.product.update({
+      await this.client.product.update({
         where: { id: product.id },
         data: PrismaProductMapper.toPersistence(product).data,
       });
@@ -82,7 +87,7 @@ export default class PrismaProductsRepository implements IProductRepository {
    */
   async delete(productId: string): Promise<void> {
     try {
-      await prisma.product.delete({
+      await this.client.product.delete({
         where: { id: productId },
       });
     } catch (error) {
@@ -98,7 +103,7 @@ export default class PrismaProductsRepository implements IProductRepository {
    */
   async findByCompanyId(companyId: string): Promise<Product[]> {
     try {
-      const products = await prisma.product.findMany({
+      const products = await this.client.product.findMany({
         where: { companyId },
       });
       return products.map((product) => PrismaProductMapper.toDomain(product));
@@ -116,10 +121,10 @@ export default class PrismaProductsRepository implements IProductRepository {
    */
   async findByName(name: string, companyId: string): Promise<Product | null> {
     try {
-      const product = await prisma.product.findFirst({
-        where: { 
+      const product = await this.client.product.findFirst({
+        where: {
           name,
-          companyId 
+          companyId
         },
       });
       return product ? PrismaProductMapper.toDomain(product) : null;
@@ -138,7 +143,7 @@ export default class PrismaProductsRepository implements IProductRepository {
    */
   async findByPriceRange(minPrice: number, maxPrice: number, companyId: string): Promise<Product[]> {
     try {
-      const products = await prisma.product.findMany({
+      const products = await this.client.product.findMany({
         where: {
           companyId,
           grossPrice: {

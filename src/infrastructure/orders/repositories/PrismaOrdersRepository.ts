@@ -8,9 +8,15 @@ import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject
 import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
 import DatabaseError from "@/infrastructure/core/errors/DatabaseError";
 import { OrderDeliveryStatusType } from "@/domain/orders/valueObjects/orderDeliveryStatus";
+import { Prisma } from "@/infrastructure/prisma/generated/prisma/client";
 
 export default class PrismaOrderRepository implements IOrderRepository {
-  constructor() { }
+
+  private client: Prisma.TransactionClient;
+
+  constructor(client?: Prisma.TransactionClient) {
+    this.client = client ?? prisma;
+  }
 
   /**
    * Find orders by company ID
@@ -19,7 +25,7 @@ export default class PrismaOrderRepository implements IOrderRepository {
    */
   async findByCompany(companyId: string): Promise<Order[]> {
     try {
-      const result = await prisma.clientBill.findMany({
+      const result = await this.client.clientBill.findMany({
         where: { companyId },
         orderBy: {
           createdAt: "desc",
@@ -35,7 +41,7 @@ export default class PrismaOrderRepository implements IOrderRepository {
 
   async byCompanyAndManyDeliveryStatus(companyId: string, statuses: OrderDeliveryStatusType[]): Promise<Order[]> {
     try {
-      const result = await prisma.clientBill.findMany({
+      const result = await this.client.clientBill.findMany({
         where: {
           companyId,
           deliveryStatus: {
@@ -62,7 +68,7 @@ export default class PrismaOrderRepository implements IOrderRepository {
   async create(order: Order): Promise<Order> {
     try {
       const data = PrismaOrderMapper.toPrisma(order);
-      const result = await prisma.clientBill.create(data);
+      const result = await this.client.clientBill.create(data);
       // @ts-expect-error 
       return PrismaOrderMapper.toDomain(result);
     } catch (error) {
@@ -78,7 +84,7 @@ export default class PrismaOrderRepository implements IOrderRepository {
    */
   async findById(id: string): Promise<Order | null> {
     try {
-      const result = await prisma.clientBill.findUnique({
+      const result = await this.client.clientBill.findUnique({
         where: { id },
         include: this.getIncludes()
       });
@@ -95,7 +101,7 @@ export default class PrismaOrderRepository implements IOrderRepository {
    */
   async delete(id: string): Promise<void> {
     try {
-      await prisma.clientBill.delete({
+      await this.client.clientBill.delete({
         where: { id }
       });
     } catch (error) {
@@ -106,7 +112,7 @@ export default class PrismaOrderRepository implements IOrderRepository {
   async update(order: Order): Promise<Order> {
     try {
       const data = PrismaOrderMapper.toPrismaUpdate(order);
-      const result = await prisma.clientBill.update(data);
+      const result = await this.client.clientBill.update(data);
       // @ts-expect-error
       return PrismaOrderMapper.toDomain(result);
     } catch (error) {
@@ -117,7 +123,7 @@ export default class PrismaOrderRepository implements IOrderRepository {
   async addItem(item: OrderItem): Promise<Order> {
     try {
       const data = PrismaOrderItemMapper.toPrisma(item);
-      await prisma.clientBillItem.create(data)
+      await this.client.clientBillItem.create(data)
       const updatedOrder = await this.findById(item.billId);
       if (!updatedOrder)
         throw new InfrastructureError("Order not found");
@@ -130,7 +136,7 @@ export default class PrismaOrderRepository implements IOrderRepository {
 
   async removeItem(orderId: string, itemId: string): Promise<Order> {
     try {
-      await prisma.clientBillItem.delete({
+      await this.client.clientBillItem.delete({
         where: { id: itemId }
       });
       const modifiedOrder = await this.findById(orderId);
@@ -145,7 +151,7 @@ export default class PrismaOrderRepository implements IOrderRepository {
 
   async getItem(itemId: string): Promise<OrderItem | null> {
     try {
-      const result = await prisma.clientBillItem.findUnique({
+      const result = await this.client.clientBillItem.findUnique({
         where: { id: itemId },
         include: {
           product: true
@@ -159,7 +165,7 @@ export default class PrismaOrderRepository implements IOrderRepository {
 
   async byTimeRange(start: Date, end: Date, companyId: CompanyId): Promise<Order[]> {
     try {
-      const result = await prisma.clientBill.findMany({
+      const result = await this.client.clientBill.findMany({
         where: {
           companyId: companyId.value,
           createdAt: {
@@ -178,7 +184,7 @@ export default class PrismaOrderRepository implements IOrderRepository {
 
   async byClientAndManyDeliveryStatus(clientId: ClientId, statuses: OrderDeliveryStatusType[]): Promise<Order[]> {
     try {
-      const result = await prisma.clientBill.findMany({
+      const result = await this.client.clientBill.findMany({
         where: { clientId: clientId.value, deliveryStatus: { in: statuses } },
         include: this.getIncludes()
       });
