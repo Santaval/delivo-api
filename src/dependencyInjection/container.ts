@@ -23,6 +23,7 @@ import PrismaOrdersRepository from "@/infrastructure/orders/repositories/PrismaO
 import PrismaPaymentMethodsRepository from "@/infrastructure/orders/repositories/PrismaPaymentMethodsRepository";
 import PrismaPaymentsRepository from "@/infrastructure/orders/repositories/PrismaPaymentsRepository";
 import PrismaProductsRepository from "@/infrastructure/products/repositories/PrismaProductsRepository";
+import { PrismaProductDeletionUnitOfWork } from "@/infrastructure/products/unitsOfWork/PrismaProductDeletionUnitOfWork";
 import GoogleRouteOptimizationProvider from "@/infrastructure/routes/providers/GoogleRouteOptimizationProvider";
 import PrismaRoutesRepository from "@/infrastructure/routes/repositories/PrismaRoutesRepository";
 import PrismaUsersRepository from "@/infrastructure/users/repositories/PrismaUsersRepository";
@@ -49,6 +50,8 @@ export const routesRepository = new PrismaRoutesRepository();
 export const paymentMethodsRepository = new PrismaPaymentMethodsRepository();
 export const paymentsRepository = new PrismaPaymentsRepository();
 
+// unit of work
+export const productDeletionUOW = new PrismaProductDeletionUnitOfWork();
 
 // providers
 export const idGenerator = new UuidIDGenerator();
@@ -68,7 +71,7 @@ export const userService = new UserService(userRepository);
 export const oAuthService = new OAuthService(userService, googleOAuthProvider, idGenerator);
 export const companiesService = new CompanyService(companiesRepository);
 export const clientsService = new ClientService(clientsRepository);
-export const productsService = new ProductService(productsRepository);
+export const productsService = new ProductService(productsRepository, productDeletionUOW);
 export const ordersPricingCalculator = new OrderPricingCalculator(ordersRepository, productsRepository);
 export const ordersService = new OrdersService(ordersRepository);
 export const orderDeliveryStatusManager = new OrderDeliveryStatusManager(ordersRepository);

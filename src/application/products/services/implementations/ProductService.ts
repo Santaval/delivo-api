@@ -4,10 +4,12 @@ import { IProductRepository } from "@/domain/products/repositories/IProductRepos
 import { IProductService } from "../interfaces/IProductService";
 import { ProductCreationError } from "../../errors/ProductCreationError";
 import { ProductNotFoundError } from "../../errors/ProductNotFoundError";
+import { IProductDeletionUnitOfWork } from "@/domain/products/unitsOfWork/ProductDeletionUnitOfWork";
 
 export class ProductService implements IProductService {
   constructor(
     private readonly productRepository: IProductRepository,
+    private readonly productDeletionUnitOfWork: IProductDeletionUnitOfWork,
   ) {
   }
 
@@ -38,11 +40,13 @@ export class ProductService implements IProductService {
   }
 
   async delete(productId: string): Promise<void> {
-    // Verify product exists
-    const existingProduct = await this.productRepository.find(productId, "id");
-    if (!existingProduct) throw new ProductNotFoundError();
+    await this.productDeletionUnitOfWork.runInTransaction(async (context) => {
+      const product = await context.getProductRepository().find(productId, "id");
+      if (!product) throw new ProductNotFoundError();
 
-    await this.productRepository.delete(productId);
+      // TODO: delete product variants
+      // await context.getProductVariantRepository().deleteByProductId(productId);
+    });
   }
 
   async findAll(): Promise<Product[]> {

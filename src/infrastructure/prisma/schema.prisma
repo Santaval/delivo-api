@@ -18,8 +18,8 @@ datasource db {
 /// ===============================
 
 model User {
-  id       String  @id @default(uuid())
-  email    String  @unique
+  id       String @id @default(uuid())
+  email    String @unique
   name     String
   surnames String
 
@@ -30,20 +30,20 @@ model User {
 }
 
 model Company {
-  id   String    @id @default(uuid())
+  id   String @id @default(uuid())
   name String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users         UserCompany[]
-  clients       Client[]
-  suppliers     Supplier[]
-  products      Product[]
-  taxPeriods    TaxPeriod[]
-  clientBills   ClientBill[]
-  supplierBills SupplierBill[]
-  routes        Route[]
+  users          UserCompany[]
+  clients        Client[]
+  suppliers      Supplier[]
+  products       Product[]
+  taxPeriods     TaxPeriod[]
+  clientBills    ClientBill[]
+  supplierBills  SupplierBill[]
+  routes         Route[]
   paymentMethods PaymentMethod[]
 }
 
@@ -72,13 +72,13 @@ enum CompanyRole {
 /// ===============================
 
 model Client {
-  id          String     @id @default(uuid())
-  name        String     
-  phoneNumber String?    
-  email       String?   
+  id          String  @id @default(uuid())
+  name        String
+  phoneNumber String?
+  email       String?
 
-  lat        Decimal? @db.Decimal(10, 8)
-  lng        Decimal? @db.Decimal(11, 8)
+  lat Decimal? @db.Decimal(10, 8)
+  lng Decimal? @db.Decimal(11, 8)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -94,7 +94,7 @@ model Client {
 }
 
 model Supplier {
-  id   String    @id @default(uuid())
+  id   String @id @default(uuid())
   name String
 
   createdAt DateTime @default(now())
@@ -111,14 +111,15 @@ model Supplier {
 /// ===============================
 
 model Product {
-  id   String    @id @default(uuid())
+  id   String @id @default(uuid())
   name String
 
   grossPrice Decimal @db.Decimal(12, 2)
-  ivaRate  Decimal @default(13.00) @db.Decimal(5, 2)
+  ivaRate    Decimal @default(13.00) @db.Decimal(5, 2)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? @default(dbgenerated("NULL"))
 
   companyId       String
   company         Company          @relation(fields: [companyId], references: [id])
@@ -130,17 +131,17 @@ model Product {
 /// ===============================
 
 model ClientBill {
-  id        String      @id @default(uuid())
-  number    Int   @unique @default(autoincrement())
+  id        String   @id @default(uuid())
+  number    Int      @unique @default(autoincrement())
   issueDate DateTime @default(now())
 
-  status BillStatus @default(PENDING)
+  status         BillStatus         @default(PENDING)
   deliveryStatus BillDeliveryStatus @default(PENDING)
 
   subtotal Decimal @db.Decimal(12, 2)
   ivaTotal Decimal @db.Decimal(12, 2)
   total    Decimal @db.Decimal(12, 2)
-  paid     Decimal @db.Decimal(12, 2) @default(0)
+  paid     Decimal @default(0) @db.Decimal(12, 2)
 
   clientId String
   client   Client @relation(fields: [clientId], references: [id])
@@ -152,7 +153,7 @@ model ClientBill {
 
   routePoint RoutePoint?
 
-  payments   ClientPayment[]
+  payments ClientPayment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -168,11 +169,11 @@ model ClientBillItem {
   product   Product @relation(fields: [productId], references: [id])
 
   unitGrossPrice Decimal @db.Decimal(12, 2)
-  ivaRate   Decimal @db.Decimal(5, 2)
-  quantity    Decimal @db.Decimal(12, 2)
+  ivaRate        Decimal @db.Decimal(5, 2)
+  quantity       Decimal @db.Decimal(12, 2)
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model PaymentMethod {
@@ -185,13 +186,13 @@ model PaymentMethod {
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
 
-  payments   ClientPayment[]
+  payments ClientPayment[]
 }
 
 model ClientPayment {
-  id   String @id @default(uuid())
-  amount Decimal @db.Decimal(12, 2)
-  method PaymentMethod @relation(fields: [methodId], references: [id])
+  id       String        @id @default(uuid())
+  amount   Decimal       @db.Decimal(12, 2)
+  method   PaymentMethod @relation(fields: [methodId], references: [id])
   methodId String
 
   createdAt DateTime @default(now())
@@ -199,7 +200,6 @@ model ClientPayment {
 
   billId String
   bill   ClientBill @relation(fields: [billId], references: [id])
-
 }
 
 /// ===============================
@@ -207,7 +207,7 @@ model ClientPayment {
 /// ===============================
 
 model SupplierBill {
-  id        String      @id @default(uuid())
+  id        String   @id @default(uuid())
   number    String?
   issueDate DateTime @default(now())
 
@@ -275,37 +275,36 @@ model TaxPeriod {
   @@unique([month, year, companyId])
 }
 
-
 /// ===============================
 /// Route
 /// ===============================
 
 model Route {
-  id        String   @id @default(uuid())
+  id        String      @id @default(uuid())
   name      String
   status    RouteStatus @default(CREATED)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  polyline  String? @db.Text
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  polyline  String?     @db.Text
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
 
-  points    RoutePoint[]
+  points RoutePoint[]
 }
 
 model RoutePoint {
-  id        String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  status    RoutePointStatus @default(CREATED)
-  index     Int?
-  polyline  String? @db.Text
+  status   RoutePointStatus @default(CREATED)
+  index    Int?
+  polyline String?          @db.Text
 
-  billId   String   @unique
-  bill     ClientBill @relation(fields: [billId], references: [id])
+  billId String     @unique
+  bill   ClientBill @relation(fields: [billId], references: [id])
 
-  routeId  String
-  route    Route @relation(fields: [routeId], references: [id])
+  routeId String
+  route   Route  @relation(fields: [routeId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -81,14 +81,17 @@ export default class PrismaProductsRepository implements IProductRepository {
   }
 
   /**
-   * Delete a product from the database.
+   * Delete a product from the database (logical deletion).
    * @param productId The ID of the product to delete.
    * @returns A promise that resolves when the product is deleted.
    */
   async delete(productId: string): Promise<void> {
     try {
-      await this.client.product.delete({
+      await this.client.product.update({
         where: { id: productId },
+        data: {
+          deletedAt: new Date(),
+        },
       });
     } catch (error) {
       console.error("Error deleting product:", error);
