@@ -17,6 +17,7 @@ export default class OrderItemMapper {
       productId: item.id,
       createdAt: item.createdAt.toISOString(),
       updatedAt: item.updatedAt.toISOString(),
+      deletedAt: item.deletedAt?.toISOString() ?? null,
     };
   }
 

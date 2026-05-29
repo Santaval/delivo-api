@@ -13,6 +13,7 @@ export class Product {
       companyId: CompanyId.create(props.companyId),
       createdAt: new Date(props.createdAt),
       updatedAt: new Date(props.updatedAt),
+      deletedAt: props.deletedAt ? new Date(props.deletedAt) : null,
     };
   }
 
@@ -23,6 +24,7 @@ export class Product {
   get companyId() { return this.props.companyId.value; }
   get createdAt() { return this.props.createdAt; }
   get updatedAt() { return this.props.updatedAt; }
+  get deletedAt() { return this.props.deletedAt; }
 }
 
 export interface ProductProps {
@@ -32,6 +34,7 @@ export interface ProductProps {
   companyId: CompanyId;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 }
 
 export interface ProductConstructorProps {
@@ -42,4 +45,5 @@ export interface ProductConstructorProps {
   companyId: string;
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string | null;
 }

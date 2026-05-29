@@ -13,6 +13,7 @@ export default class ProductDtoMapper {
       grossPrice: request.grossPrice,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      deletedAt: null,
     });
   }
 
@@ -25,6 +26,7 @@ export default class ProductDtoMapper {
       companyId: existingProduct.companyId,
       createdAt: existingProduct.createdAt.toISOString(),
       updatedAt: new Date().toISOString(),
+      deletedAt: existingProduct.deletedAt?.toISOString() ?? null,
     });
   }
 
@@ -40,6 +42,7 @@ export default class ProductDtoMapper {
       },
       createdAt: product.createdAt.toISOString(),
       updatedAt: product.updatedAt.toISOString(),
+      deletedAt: product.deletedAt?.toISOString() ?? null,
     };
   }
 

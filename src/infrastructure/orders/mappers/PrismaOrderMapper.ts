@@ -6,7 +6,7 @@ import { PrismaClientMapper } from "@/infrastructure/clients/mappers/PrismaClien
 import PrismaPaymentMapper, { FullPaymentType } from "./PrismaPaymentMapper";
 
 export default class PrismaOrderMapper {
-  static toDomain(raw: ClientBill & {items: ClientBillItem[], client: Client, payments: FullPaymentType[]}): Order {
+  static toDomain(raw: ClientBill & { items: ClientBillItem[], client: Client, payments: FullPaymentType[] }): Order {
     return new Order({
       client: PrismaClientMapper.toDomain(raw.client),
       companyId: raw.companyId,
@@ -70,7 +70,7 @@ export default class PrismaOrderMapper {
         deliveryStatus: order.deliveryStatus as BillDeliveryStatus,
         issueDate: order.createdAt
       },
-      
+
       include: {
         items: {
           include: {

@@ -9,4 +9,5 @@ export interface ProductResponse {
   };
   createdAt: string;
   updatedAt: string;
+  deletedAt: string | null;
 }

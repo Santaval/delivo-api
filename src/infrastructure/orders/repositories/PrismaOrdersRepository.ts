@@ -88,6 +88,7 @@ export default class PrismaOrderRepository implements IOrderRepository {
         where: { id },
         include: this.getIncludes()
       });
+
       return result ? PrismaOrderMapper.toDomain(result) : null;
     } catch (error) {
       throw new Error("Error fetching order");

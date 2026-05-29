@@ -14,6 +14,7 @@ export class PrismaProductMapper {
       companyId: row.companyId,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
+      deletedAt: row.deletedAt?.toISOString() ?? null,
     });
   }
 
@@ -26,6 +27,7 @@ export class PrismaProductMapper {
         companyId: product.companyId,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
+        deletedAt: product.deletedAt,
       },
     };
   }
