@@ -37,7 +37,16 @@ Required env vars (see `.env.example`): `DATABASE_URL`, `DB_HOST`, `DB_USER`, `D
 - `npm run start` — runs built JS with tsconfig-paths (production debugging)
 - `npm run start:prod` — runs built JS directly (Docker CMD)
 
-No test, lint, or typecheck scripts are configured.
+No lint or typecheck scripts are configured.
+
+## Tests
+
+- `npm run test` — run all unit tests once (Jest + ts-jest)
+- `npm run test:watch` — run tests in watch mode
+- `npm run test:coverage` — run tests with coverage report
+
+Test files live in `tests/unit/` and mirror the `src/` structure.
+See `.opencode/skills/tests/SKILL.md` for full testing conventions.
 
 ## Path Aliases
 
