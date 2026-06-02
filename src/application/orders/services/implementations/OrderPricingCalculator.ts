@@ -2,6 +2,7 @@ import { OrderItem, Order } from "@/domain/orders";
 import IOrderRepository from "@/domain/orders/repositories/IOrderRepository";
 import IOrderPricingCalculator from "@/domain/orders/services/IOrderPricingCalculator";
 import { IProductRepository } from "@/domain/products/repositories/IProductRepository";
+import console from "node:console";
 
 export default class OrderPricingCalculator implements IOrderPricingCalculator {
 
@@ -51,8 +52,7 @@ export default class OrderPricingCalculator implements IOrderPricingCalculator {
 
     const newSubtotal = order.subtotal - subtotal;
     const newIvaTotal = order.ivaTotal - itemIvaAmount;
-    const newDue = (newSubtotal + newIvaTotal) ;
-    order.setTotals(newSubtotal, newIvaTotal, newDue);
+    order.setTotals(newSubtotal, newIvaTotal, order.paid);
 
     return order;
   }
