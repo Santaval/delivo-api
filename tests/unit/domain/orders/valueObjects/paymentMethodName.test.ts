@@ -8,10 +8,10 @@ describe('PaymentMethodName', () => {
     expect(name.value).toBe('Cash');
   });
 
-  it('should preserve whitespace in value', () => {
+  it('should trim whitespace from value', () => {
     const name = PaymentMethodName.create('  Credit Card  ');
 
-    expect(name.value).toBe('  Credit Card  ');
+    expect(name.value).toBe('Credit Card');
   });
 
   it('should check equality with equals', () => {

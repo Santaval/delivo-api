@@ -15,13 +15,6 @@ export class Money {
     const numericGrossPrice = typeof grossPrice === 'string' ? parseFloat(grossPrice) : grossPrice;
     const numericIvaRate = typeof ivaRate === 'string' ? parseFloat(ivaRate) : ivaRate;
 
-    // calculate net price if not provided
-    const netPrice = numericGrossPrice / (1 + numericIvaRate / 100);
-
-    if (isNaN(netPrice) || netPrice < 0) {
-      throw new DataException("Net price must be a non-negative number");
-    }
-
     if (isNaN(numericGrossPrice) || numericGrossPrice < 0) {
       throw new DataException("Gross price must be a non-negative number");
     }
@@ -30,8 +23,10 @@ export class Money {
       throw new DataException("IVA rate must be between 0 and 100");
     }
 
-    if (isNaN(numericGrossPrice) || numericGrossPrice < 0) {
-      throw new DataException("Gross price must be a non-negative number");
+    const netPrice = numericGrossPrice / (1 + numericIvaRate / 100);
+
+    if (isNaN(netPrice) || netPrice < 0) {
+      throw new DataException("Net price must be a non-negative number");
     }
 
     return new Money(netPrice, numericGrossPrice, numericIvaRate);

@@ -19,9 +19,7 @@ describe('UserId', () => {
     expect(() => UserId.create('')).toThrow('UserId cannot be empty');
   });
 
-  it('should allow whitespace-only string and trim to empty (bug in source)', () => {
-    const userId = UserId.create('   ');
-
-    expect(userId.value).toBe('');
+  it('should throw DataException when value is only whitespace', () => {
+    expect(() => UserId.create('   ')).toThrow(DataException);
   });
 });

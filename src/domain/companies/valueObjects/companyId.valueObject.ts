@@ -7,8 +7,9 @@ export class CompanyId {
   }
 
   static create(value: string) {
-    if (!value) throw new DataException("CompanyId cannot be empty");
-    return new CompanyId(value.trim());
+    const trimmed = value?.trim();
+    if (!trimmed) throw new DataException("CompanyId cannot be empty");
+    return new CompanyId(trimmed);
   }
 
   get value() {

@@ -85,6 +85,10 @@ export default class Order {
     return this.props.updatedAt;
   }
 
+  get payments(): Payment[] {
+    return [...this.props.payments];
+  }
+
   setStatus(status: OrderStatusType): void {
     this.props.status = OrderStatus.create(status);
   }

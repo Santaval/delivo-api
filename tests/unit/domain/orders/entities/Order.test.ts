@@ -1,5 +1,4 @@
 import { createOrder } from '@/tests/mocks/domain';
-import { createOrderItem } from '@/tests/mocks/domain';
 
 describe('Order', () => {
   it('should create an order with valid properties', () => {
@@ -16,6 +15,7 @@ describe('Order', () => {
     expect(order.status).toBe('PENDING');
     expect(order.deliveryStatus).toBe('PENDING');
     expect(order.items).toHaveLength(1);
+    expect(order.payments).toHaveLength(1);
     expect(order.createdAt).toBeInstanceOf(Date);
     expect(order.updatedAt).toBeInstanceOf(Date);
   });
@@ -27,6 +27,15 @@ describe('Order', () => {
 
     expect(itemsBefore).not.toBe(itemsAfter);
     expect(itemsBefore).toEqual(itemsAfter);
+  });
+
+  it('should return payments as a copy for immutability', () => {
+    const order = createOrder();
+    const paymentsBefore = order.payments;
+    const paymentsAfter = order.payments;
+
+    expect(paymentsBefore).not.toBe(paymentsAfter);
+    expect(paymentsBefore).toEqual(paymentsAfter);
   });
 
   it('should set status correctly', () => {
@@ -61,6 +70,7 @@ describe('Order', () => {
   });
 
   it('should create order with custom items', () => {
+    const { createOrderItem } = require('@/tests/mocks/domain');
     const order = createOrder({
       items: [createOrderItem({ id: 'item-1', quantity: 3 }), createOrderItem({ id: 'item-2', quantity: 1 })],
     });

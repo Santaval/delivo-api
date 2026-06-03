@@ -51,10 +51,12 @@ describe('Money', () => {
 
   it('should throw DataException when gross price is negative', () => {
     expect(() => Money.create(-10)).toThrow(DataException);
+    expect(() => Money.create(-10)).toThrow('Gross price must be a non-negative number');
   });
 
   it('should throw DataException when gross price is NaN', () => {
     expect(() => Money.create(NaN)).toThrow(DataException);
+    expect(() => Money.create(NaN)).toThrow('Gross price must be a non-negative number');
   });
 
   it('should throw DataException when IVA rate is negative', () => {
@@ -69,6 +71,7 @@ describe('Money', () => {
 
   it('should throw DataException when IVA rate is NaN', () => {
     expect(() => Money.create(100, NaN)).toThrow(DataException);
+    expect(() => Money.create(100, NaN)).toThrow('IVA rate must be between 0 and 100');
   });
 
   it('should handle zero gross price', () => {
