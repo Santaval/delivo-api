@@ -1,0 +1,12 @@
+export { createCompany } from './companies.factory';
+export { createSupplier } from './suppliers.factory';
+export { createUser } from './users.factory';
+export { createClient } from './clients.factory';
+export { createProduct } from './products.factory';
+export { createOrderItem } from './orderItems.factory';
+export { createPaymentMethod } from './paymentMethods.factory';
+export { createPayment } from './payments.factory';
+export { createOrder } from './orders.factory';
+export { createRoute } from './routes.factory';
+export { createRoutePoint } from './routePoints.factory';
+export { createGeolocationLocation } from './geolocation.factory';

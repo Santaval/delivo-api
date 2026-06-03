@@ -6,7 +6,22 @@ const config: Config = {
   roots: ['<rootDir>/tests'],
   testMatch: ['**/*.test.ts'],
   moduleNameMapper: {
+    '^@/tests/(.*)$': '<rootDir>/tests/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
+  },
+  transform: {
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          baseUrl: '.',
+          paths: {
+            '@/tests/*': ['tests/*'],
+            '@/*': ['src/*'],
+          },
+        },
+      },
+    ],
   },
   collectCoverageFrom: [
     'src/**/*.ts',
