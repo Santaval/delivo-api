@@ -7,6 +7,7 @@ export default class ApplicationError extends Error {
   constructor(message: string, statusCode: number = 500) {
     super(message);
     this.name = "ApplicationError";
+    this.statusCode = statusCode;
     this.stack = new Error().stack;
     this.status = `${this.statusCode}`.startsWith('4') ? 'fail' : 'error';
   }
