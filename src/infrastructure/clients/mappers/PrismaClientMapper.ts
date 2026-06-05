@@ -16,6 +16,7 @@ export class PrismaClientMapper {
       companyId: row.companyId,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
+      deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
     });
   }
 

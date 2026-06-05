@@ -15,7 +15,7 @@ export default class PrismaClientsRepository implements IClientRepository {
    */
   async all(): Promise<Client[]> {
     try {
-      const clients = await prisma.client.findMany();
+      const clients = await prisma.client.findMany({ where: { deletedAt: null } });
       return clients.map((client) => PrismaClientMapper.toDomain(client));
     } catch (error) {
       console.error("Error fetching clients:", error);
@@ -34,6 +34,7 @@ export default class PrismaClientsRepository implements IClientRepository {
       const client = await prisma.client.findFirst({
         where: {
           [field || "id"]: value,
+          deletedAt: null,
         },
       });
       return client ? PrismaClientMapper.toDomain(client) : null;
@@ -82,8 +83,9 @@ export default class PrismaClientsRepository implements IClientRepository {
    */
   async delete(clientId: string): Promise<void> {
     try {
-      await prisma.client.delete({
+      await prisma.client.update({
         where: { id: clientId },
+        data: { deletedAt: new Date() },
       });
     } catch (error) {
       console.error("Error deleting client:", error);
@@ -99,7 +101,7 @@ export default class PrismaClientsRepository implements IClientRepository {
   async findByCompanyId(companyId: string): Promise<Client[]> {
     try {
       const clients = await prisma.client.findMany({
-        where: { companyId },
+        where: { companyId, deletedAt: null },
       });
       return clients.map((client) => PrismaClientMapper.toDomain(client));
     } catch (error) {
@@ -116,7 +118,7 @@ export default class PrismaClientsRepository implements IClientRepository {
   async findByEmail(email: string): Promise<Client | null> {
     try {
       const client = await prisma.client.findFirst({
-        where: { email },
+        where: { email, deletedAt: null },
       });
       return client ? PrismaClientMapper.toDomain(client) : null;
     } catch (error) {
