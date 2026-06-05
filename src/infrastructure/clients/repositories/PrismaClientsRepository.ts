@@ -66,10 +66,7 @@ export default class PrismaClientsRepository implements IClientRepository {
    */
   async update(client: Client): Promise<void> {
     try {
-      await prisma.client.update({
-        where: { id: client.id.value },
-        data: PrismaClientMapper.toPersistence(client).data,
-      });
+      await prisma.client.update(PrismaClientMapper.toPersistenceUpdate(client));
     } catch (error) {
       console.error("Error updating client:", error);
       throw new DatabaseInsertError("Could not update client");
@@ -124,6 +121,49 @@ export default class PrismaClientsRepository implements IClientRepository {
     } catch (error) {
       console.error("Error finding client by email:", error);
       throw new DatabaseError("Could not find client by email");
+    }
+  }
+
+  /**
+   * Find a soft-deleted client by name and companyId.
+   * Used to detect unique-constraint conflicts before re-creating a client.
+   * @param name The client name.
+   * @param companyId The company ID.
+   * @returns A promise that resolves to a soft-deleted Client entity or null.
+   */
+  async findSoftDeleted(name: string, companyId: string, phoneNumber?: string): Promise<Client | null> {
+    try {
+      const client = await prisma.client.findFirst({
+        where: {
+          companyId,
+          deletedAt: { not: null },
+          OR: [
+            { name },
+            ...(phoneNumber ? [{ phoneNumber }] : []),
+          ],
+        },
+      });
+      return client ? PrismaClientMapper.toDomain(client) : null;
+    } catch (error) {
+      console.error("Error finding soft-deleted client:", error);
+      throw new DatabaseError("Could not find soft-deleted client");
+    }
+  }
+
+  /**
+   * Restore a soft-deleted client by overwriting its fields and clearing deletedAt.
+   * @param existingId The ID of the soft-deleted record to restore.
+   * @param client The Client entity with the new field values.
+   * @returns A promise that resolves to the restored Client entity.
+   */
+  async restore(existingId: string, client: Client): Promise<Client> {
+    try {
+      await prisma.client.update(PrismaClientMapper.toPersistenceRestore(existingId, client));
+      const restored = await prisma.client.findFirst({ where: { id: existingId } });
+      return PrismaClientMapper.toDomain(restored!);
+    } catch (error) {
+      console.error("Error restoring client:", error);
+      throw new DatabaseInsertError("Could not restore client");
     }
   }
 }

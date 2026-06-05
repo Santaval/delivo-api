@@ -18,6 +18,19 @@ export class ClientService implements IClientService {
      */
     async create(client: Client): Promise<Client> {
 
+        // If a soft-deleted client with the same name+company exists, restore it
+        // instead of inserting — avoids unique-constraint violations on (name, companyId),
+        // (phoneNumber, companyId) and (email, companyId).
+        const softDeleted = await this.clientRepository.findSoftDeleted(
+            client.name,
+            client.companyId.value,
+            client.phoneNumber?.value,
+        );
+
+        if (softDeleted) {
+            return this.clientRepository.restore(softDeleted.id.value, client);
+        }
+
         const createdClient = await this.clientRepository.create(client);
         if (!createdClient) throw new ClientCreationError();
 

@@ -25,8 +25,8 @@ export default class ClientDtoMapper {
       phoneNumber: request.phoneNumber !== undefined ? request.phoneNumber : existingClient.phoneNumber?.value,
       email: request.email !== undefined ? request.email : existingClient.email?.value,
       companyId: existingClient.companyId.value,
-      lat: request.lat || null,
-      lng: request.lng || null,
+      lat: null,
+      lng: null,
       createdAt: existingClient.createdAt.toISOString(),
       updatedAt: new Date().toISOString(),
     });
