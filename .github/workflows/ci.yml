@@ -27,6 +27,8 @@ jobs:
         run: npx prisma generate --schema=src/infrastructure/prisma/schema.prisma
 
       - name: Drop and recreate database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           url="${DATABASE_URL#mysql://}"
           creds="${url%%@*}"
@@ -35,18 +37,20 @@ jobs:
           hostport="${hostpart%%/*}"
           host="${hostport%%:*}"
           port="${hostport#*:}"
-          if [ "$port" = "$host" ]; then
-            port=3306
-          fi
+          if [ "$port" = "$host" ]; then port=3306; fi
           user="${creds%%:*}"
           password="${creds#*:}"
           mysql -h "$host" -P "$port" -u "$user" -p"$password" \
             -e "DROP DATABASE IF EXISTS \`$db\`; CREATE DATABASE \`$db\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON \`$db\`.* TO '$user'@'%'; FLUSH PRIVILEGES;"
 
       - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npx prisma migrate deploy --schema=src/infrastructure/prisma/schema.prisma
 
       - name: Run tests with coverage
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run test:coverage
 
       - name: Upload coverage report
