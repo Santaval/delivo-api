@@ -6,10 +6,33 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  DB_NAME: delivo
+  DB_USER: delivo
+  DB_PASSWORD: delivo_secret
+  DB_HOST: 127.0.0.1
+  DB_PORT: 3306
+
 jobs:
   test:
     name: Test & Coverage
     runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: root_secret
+          MARIADB_DATABASE: ${{ env.DB_NAME }}
+          MARIADB_USER: ${{ env.DB_USER }}
+          MARIADB_PASSWORD: ${{ env.DB_PASSWORD }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
       - name: Checkout
@@ -26,7 +49,20 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate --schema=src/infrastructure/prisma/schema.prisma
 
+      - name: Drop and recreate database
+        run: |
+          mysql -h ${{ env.DB_HOST }} -P ${{ env.DB_PORT }} \
+                -u root -proot_secret \
+                -e "DROP DATABASE IF EXISTS \`${{ env.DB_NAME }}\`; CREATE DATABASE \`${{ env.DB_NAME }}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON \`${{ env.DB_NAME }}\`.* TO '${{ env.DB_USER }}'@'%'; FLUSH PRIVILEGES;"
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: mysql://${{ env.DB_USER }}:${{ env.DB_PASSWORD }}@${{ env.DB_HOST }}:${{ env.DB_PORT }}/${{ env.DB_NAME }}
+        run: npx prisma migrate deploy --schema=src/infrastructure/prisma/schema.prisma
+
       - name: Run tests with coverage
+        env:
+          DATABASE_URL: mysql://${{ env.DB_USER }}:${{ env.DB_PASSWORD }}@${{ env.DB_HOST }}:${{ env.DB_PORT }}/${{ env.DB_NAME }}
         run: npm run test:coverage
 
       - name: Upload coverage report
