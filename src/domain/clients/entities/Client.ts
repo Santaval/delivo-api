@@ -17,6 +17,7 @@ export class Client {
       companyId: CompanyId.create(props.companyId),
       createdAt: new Date(props.createdAt),
       updatedAt: new Date(props.updatedAt),
+      deletedAt: props.deletedAt ? new Date(props.deletedAt) : null,
     };
   }
 
@@ -28,7 +29,8 @@ export class Client {
   get companyId() { return this.props.companyId; }
   get createdAt() { return this.props.createdAt; }
   get updatedAt() { return this.props.updatedAt; }
-  
+  get deletedAt() { return this.props.deletedAt; }
+
 }
 
 export interface ClientProps {
@@ -37,9 +39,10 @@ export interface ClientProps {
   phoneNumber?: PhoneNumber;
   email?: Email;
   companyId: CompanyId;
-  location: Location  
+  location: Location;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 }
 
 export interface ClientConstructorProps {
@@ -52,4 +55,5 @@ export interface ClientConstructorProps {
   updatedAt: string;
   lat: number | null;
   lng: number | null;
+  deletedAt?: string | null;
 }

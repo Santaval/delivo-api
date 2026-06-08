@@ -44,6 +44,7 @@ describe('PrismaClientsRepository', () => {
     companyId: 'company-uuid-1',
     createdAt: new Date('2024-01-15T10:00:00Z'),
     updatedAt: new Date('2024-01-15T12:00:00Z'),
+    deletedAt: null,
   };
 
   beforeEach(() => {
@@ -60,7 +61,7 @@ describe('PrismaClientsRepository', () => {
       expect(result).toHaveLength(1);
       expect(result[0]).toBeInstanceOf(Client);
       expect(result[0].id.value).toBe(mockPrismaRow.id);
-      expect(mockFindMany).toHaveBeenCalledWith();
+      expect(mockFindMany).toHaveBeenCalledWith({ where: { deletedAt: null } });
     });
 
     it('throws DatabaseError on failure', async () => {
@@ -79,7 +80,7 @@ describe('PrismaClientsRepository', () => {
       expect(result).toBeInstanceOf(Client);
       expect(result?.id.value).toBe(mockPrismaRow.id);
       expect(mockFindFirst).toHaveBeenCalledWith({
-        where: { id: 'client-uuid-1' },
+        where: { id: 'client-uuid-1', deletedAt: null },
       });
     });
 
@@ -94,10 +95,10 @@ describe('PrismaClientsRepository', () => {
     it('uses custom field when specified', async () => {
       mockFindFirst.mockResolvedValue(mockPrismaRow);
 
-      const result = await repository.find('test@example.com', 'email');
+      await repository.find('test@example.com', 'email');
 
       expect(mockFindFirst).toHaveBeenCalledWith({
-        where: { email: 'test@example.com' },
+        where: { email: 'test@example.com', deletedAt: null },
       });
     });
 
@@ -167,10 +168,9 @@ describe('PrismaClientsRepository', () => {
 
       await repository.update(domainClient);
 
-      expect(mockUpdate).toHaveBeenCalledWith({
-        where: { id: 'client-uuid-1' },
-        data: PrismaClientMapper.toPersistence(domainClient).data,
-      });
+      expect(mockUpdate).toHaveBeenCalledWith(
+        PrismaClientMapper.toPersistenceUpdate(domainClient)
+      );
     });
 
     it('throws DatabaseInsertError on failure', async () => {
@@ -191,18 +191,19 @@ describe('PrismaClientsRepository', () => {
   });
 
   describe('delete', () => {
-    it('deletes client with correct clientId', async () => {
-      mockDelete.mockResolvedValue(mockPrismaRow);
+    it('soft-deletes client by setting deletedAt', async () => {
+      mockUpdate.mockResolvedValue(mockPrismaRow);
 
       await repository.delete('client-uuid-1');
 
-      expect(mockDelete).toHaveBeenCalledWith({
+      expect(mockUpdate).toHaveBeenCalledWith({
         where: { id: 'client-uuid-1' },
+        data: { deletedAt: expect.any(Date) },
       });
     });
 
     it('throws DatabaseInsertError on failure', async () => {
-      mockDelete.mockRejectedValue(new Error('DB Error'));
+      mockUpdate.mockRejectedValue(new Error('DB Error'));
 
       await expect(repository.delete('client-uuid-1')).rejects.toThrow(DatabaseInsertError);
     });
@@ -217,7 +218,7 @@ describe('PrismaClientsRepository', () => {
       expect(result).toHaveLength(1);
       expect(result[0]).toBeInstanceOf(Client);
       expect(mockFindMany).toHaveBeenCalledWith({
-        where: { companyId: 'company-uuid-1' },
+        where: { companyId: 'company-uuid-1', deletedAt: null },
       });
     });
 
@@ -237,7 +238,7 @@ describe('PrismaClientsRepository', () => {
       expect(result).toBeInstanceOf(Client);
       expect(result?.email?.value).toBe('test@example.com');
       expect(mockFindFirst).toHaveBeenCalledWith({
-        where: { email: 'test@example.com' },
+        where: { email: 'test@example.com', deletedAt: null },
       });
     });
 
@@ -253,6 +254,97 @@ describe('PrismaClientsRepository', () => {
       mockFindFirst.mockRejectedValue(new Error('DB Error'));
 
       await expect(repository.findByEmail('test@example.com')).rejects.toThrow(DatabaseError);
+    });
+  });
+
+  describe('findSoftDeleted', () => {
+    const softDeletedRow = { ...mockPrismaRow, deletedAt: new Date('2024-02-01T00:00:00Z') };
+
+    it('returns soft-deleted client matching name and companyId', async () => {
+      mockFindFirst.mockResolvedValue(softDeletedRow);
+
+      const result = await repository.findSoftDeleted('Test Client', 'company-uuid-1');
+
+      expect(result).toBeInstanceOf(Client);
+      expect(mockFindFirst).toHaveBeenCalledWith({
+        where: {
+          companyId: 'company-uuid-1',
+          deletedAt: { not: null },
+          OR: [{ name: 'Test Client' }],
+        },
+      });
+    });
+
+    it('includes phoneNumber in OR clause when provided', async () => {
+      mockFindFirst.mockResolvedValue(softDeletedRow);
+
+      await repository.findSoftDeleted('Test Client', 'company-uuid-1', '1234567890');
+
+      expect(mockFindFirst).toHaveBeenCalledWith({
+        where: {
+          companyId: 'company-uuid-1',
+          deletedAt: { not: null },
+          OR: [{ name: 'Test Client' }, { phoneNumber: '1234567890' }],
+        },
+      });
+    });
+
+    it('returns null when no soft-deleted client found', async () => {
+      mockFindFirst.mockResolvedValue(null);
+
+      const result = await repository.findSoftDeleted('No Client', 'company-uuid-1');
+
+      expect(result).toBeNull();
+    });
+
+    it('throws DatabaseError on failure', async () => {
+      mockFindFirst.mockRejectedValue(new Error('DB Error'));
+
+      await expect(repository.findSoftDeleted('Test Client', 'company-uuid-1')).rejects.toThrow(DatabaseError);
+    });
+  });
+
+  describe('restore', () => {
+    it('restores soft-deleted client and returns updated entity', async () => {
+      const domainClient = new Client({
+        id: 'client-uuid-1',
+        name: 'Restored Client',
+        phoneNumber: '1234567890',
+        email: 'restored@example.com',
+        lat: 41.387917,
+        lng: 2.112892,
+        companyId: 'company-uuid-1',
+        createdAt: '2024-01-15T10:00:00.000Z',
+        updatedAt: '2024-01-15T12:00:00.000Z',
+      });
+
+      const restoredRow = { ...mockPrismaRow, name: 'Restored Client', deletedAt: null };
+      mockUpdate.mockResolvedValue(restoredRow);
+      mockFindFirst.mockResolvedValue(restoredRow);
+
+      const result = await repository.restore('client-uuid-1', domainClient);
+
+      expect(result).toBeInstanceOf(Client);
+      expect(mockUpdate).toHaveBeenCalledWith(
+        PrismaClientMapper.toPersistenceRestore('client-uuid-1', domainClient)
+      );
+      expect(mockFindFirst).toHaveBeenCalledWith({ where: { id: 'client-uuid-1' } });
+    });
+
+    it('throws DatabaseInsertError on failure', async () => {
+      const domainClient = new Client({
+        id: 'client-uuid-1',
+        name: 'Restored Client',
+        lat: 41.387917,
+        lng: 2.112892,
+        companyId: 'company-uuid-1',
+        createdAt: '2024-01-15T10:00:00.000Z',
+        updatedAt: '2024-01-15T12:00:00.000Z',
+      });
+
+      mockUpdate.mockRejectedValue(new Error('DB Error'));
+
+      await expect(repository.restore('client-uuid-1', domainClient)).rejects.toThrow(DatabaseInsertError);
     });
   });
 });

@@ -18,6 +18,8 @@ describe('ClientService', () => {
       delete: jest.fn(),
       findByCompanyId: jest.fn(),
       findByEmail: jest.fn(),
+      findSoftDeleted: jest.fn(),
+      restore: jest.fn(),
     };
     service = new ClientService(mockRepository);
   });

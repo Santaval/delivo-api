@@ -2,7 +2,7 @@
 
 import { Client } from "@/domain/clients/entities/Client";
 import { Client as PrismaClient } from "@/infrastructure/prisma/generated/prisma/client";
-import { ClientCreateArgs } from "@/infrastructure/prisma/generated/prisma/models";
+import { ClientCreateArgs, ClientUpdateArgs } from "@/infrastructure/prisma/generated/prisma/models/Client";
 
 export class PrismaClientMapper {
   static toDomain(row: PrismaClient): Client {
@@ -16,6 +16,7 @@ export class PrismaClientMapper {
       companyId: row.companyId,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
+      deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
     });
   }
 
@@ -31,6 +32,31 @@ export class PrismaClientMapper {
         createdAt: client.createdAt,
         updatedAt: client.updatedAt,
       },
+    };
+  }
+
+  static toPersistenceUpdate(client: Client): ClientUpdateArgs {
+    return {
+      data: {
+        name: client.name,
+        phoneNumber: client.phoneNumber?.value || null,
+        email: client.email?.value || null,
+      },
+      where: { id: client.id.value },
+    };
+  }
+
+  static toPersistenceRestore(existingId: string, client: Client): ClientUpdateArgs {
+    return {
+      data: {
+        name: client.name,
+        phoneNumber: client.phoneNumber?.value || null,
+        email: client.email?.value || null,
+        lat: client.location.lat,
+        lng: client.location.lng,
+        deletedAt: null,
+      },
+      where: { id: existingId },
     };
   }
 }

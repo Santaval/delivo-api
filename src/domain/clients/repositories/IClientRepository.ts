@@ -8,4 +8,6 @@ export interface IClientRepository {
   delete(clientId: string): Promise<void>;
   findByCompanyId(companyId: string): Promise<Client[]>;
   findByEmail(email: string): Promise<Client | null>;
+  findSoftDeleted(name: string, companyId: string, phoneNumber?: string): Promise<Client | null>;
+  restore(existingId: string, client: Client): Promise<Client>;
 }
