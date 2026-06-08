@@ -29,7 +29,15 @@ const config: Config = {
     '!src/infrastructure/prisma/generated/**',
   ],
   coverageDirectory: '<rootDir>/coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
+  coverageReporters: ['text', 'text-summary', 'lcov', 'html'],
+  coverageThreshold: {
+    global: {
+      statements: 90,
+      branches: 90,
+      functions: 90,
+      lines: 90,
+    },
+  },
   clearMocks: true,
 };
 
