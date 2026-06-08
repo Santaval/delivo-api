@@ -53,6 +53,7 @@ export interface ClientConstructorProps {
   companyId: string;
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string | null;
   lat: number | null;
   lng: number | null;
   deletedAt?: string | null;
