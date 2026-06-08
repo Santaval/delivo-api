@@ -8,10 +8,11 @@ export default class PaymentMethodName {
   }
 
   static create(value: string): PaymentMethodName {
-    if (!value || value.trim().length === 0) {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.length === 0) {
       throw new DataError("PaymentMethodName cannot be empty");
     }
-    return new PaymentMethodName(value);
+    return new PaymentMethodName(trimmed);
   }
 
   get value(): string {

@@ -11,7 +11,7 @@ export default class PrismaClientsRepository implements IClientRepository {
 
   /**
    * Fetch all clients from the database.
-   * @returns A promise that resolves to an array of Client entities. 
+   * @returns A promise that resolves to an array of Client entities.
    */
   async all(): Promise<Client[]> {
     try {

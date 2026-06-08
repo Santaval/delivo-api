@@ -7,8 +7,9 @@ export class ProductId {
   }
 
   static create(value: string) {
-    if (!value) throw new DataException("ProductId cannot be empty");
-    return new ProductId(value.trim());
+    const trimmed = value?.trim();
+    if (!trimmed) throw new DataException("ProductId cannot be empty");
+    return new ProductId(trimmed);
   }
 
   get value() {

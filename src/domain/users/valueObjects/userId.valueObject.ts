@@ -7,8 +7,9 @@ export class UserId {
   }
 
   static create(value: string) {
-    if (!value) throw new DataException("UserId cannot be empty");
-    return new UserId(value.trim());
+    const trimmed = value?.trim();
+    if (!trimmed) throw new DataException("UserId cannot be empty");
+    return new UserId(trimmed);
   }
 
   get value() {

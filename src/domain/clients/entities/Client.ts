@@ -39,7 +39,7 @@ export interface ClientProps {
   phoneNumber?: PhoneNumber;
   email?: Email;
   companyId: CompanyId;
-  location: Location  
+  location: Location;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
@@ -56,4 +56,5 @@ export interface ClientConstructorProps {
   deletedAt?: string | null;
   lat: number | null;
   lng: number | null;
+  deletedAt?: string | null;
 }
