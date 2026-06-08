@@ -1,4 +1,5 @@
-import { ClientBill, ClientBillItem, ClientPayment, PaymentMethod as PrismaPaymentMethod, Prisma } from '@/infrastructure/prisma/generated/prisma/client';
+import { Client as PrismaClientModel, ClientBill, ClientBillItem, ClientPayment, PaymentMethod as PrismaPaymentMethod, Prisma } from '@/infrastructure/prisma/generated/prisma/client';
+import { FullPaymentType } from '@/infrastructure/orders/mappers/PrismaPaymentMapper';
 import { ClientBillCreateArgs, ClientBillUpdateArgs } from '@/infrastructure/prisma/generated/prisma/models';
 import PrismaOrderMapper from '@/infrastructure/orders/mappers/PrismaOrderMapper';
 import { Order } from '@/domain/orders';
@@ -58,11 +59,25 @@ describe('PrismaOrderMapper', () => {
     updatedAt: '2024-01-15T12:00:00.000Z',
   });
 
-  const mockPrismaOrder: ClientBill & { items: ClientBillItem[]; client: Client; payments: unknown[] } = {
+  const mockPrismaClient: PrismaClientModel = {
+    id: 'client-uuid-1',
+    name: 'Test Client',
+    companyId: 'company-uuid-1',
+    phoneNumber: null,
+    email: null,
+    lat: null,
+    lng: null,
+    createdAt: new Date('2024-01-15T10:00:00Z'),
+    updatedAt: new Date('2024-01-15T12:00:00Z'),
+    deletedAt: null,
+  };
+
+  const mockPrismaOrder: ClientBill & { items: ClientBillItem[]; client: PrismaClientModel; payments: FullPaymentType[] } = {
     id: 'order-uuid-1',
+    clientId: 'client-uuid-1',
     companyId: 'company-uuid-1',
     number: 1,
-    status: 'DRAFT',
+    status: 'PENDING',
     deliveryStatus: 'PENDING',
     subtotal: createDecimal('100.00'),
     ivaTotal: createDecimal('13.00'),
@@ -71,7 +86,7 @@ describe('PrismaOrderMapper', () => {
     issueDate: new Date('2024-01-15T10:00:00Z'),
     createdAt: new Date('2024-01-15T10:00:00Z'),
     updatedAt: new Date('2024-01-15T12:00:00Z'),
-    client: mockClient,
+    client: mockPrismaClient,
     items: [],
     payments: [],
   };
@@ -98,7 +113,7 @@ describe('PrismaOrderMapper', () => {
       const order = PrismaOrderMapper.toDomain(mockPrismaOrder);
 
       expect(order.client).toBeInstanceOf(Client);
-      expect(order.client.id).toBe(mockClient.id);
+      expect(order.client.id.value).toBe(mockPrismaClient.id);
     });
   });
 
@@ -114,7 +129,7 @@ describe('PrismaOrderMapper', () => {
         paid: 0,
         companyId: 'company-uuid-1',
         items: [],
-        status: 'DRAFT',
+        status: 'PENDING',
         deliveryStatus: 'PENDING',
         payments: [],
         createdAt: '2024-01-15T10:00:00.000Z',
@@ -128,7 +143,7 @@ describe('PrismaOrderMapper', () => {
         companyId: 'company-uuid-1',
         subtotal: 100,
         ivaTotal: 13,
-        status: 'DRAFT',
+        status: 'PENDING',
         deliveryStatus: 'PENDING',
       });
       expect(result.include).toBeDefined();
@@ -145,7 +160,7 @@ describe('PrismaOrderMapper', () => {
         paid: 0,
         companyId: 'company-uuid-1',
         items: [],
-        status: 'DRAFT',
+        status: 'PENDING',
         deliveryStatus: 'PENDING',
         payments: [],
         createdAt: '2024-01-15T10:00:00.000Z',
@@ -170,7 +185,7 @@ describe('PrismaOrderMapper', () => {
         paid: 50,
         companyId: 'company-uuid-1',
         items: [],
-        status: 'CONFIRMED',
+        status: 'PAID',
         deliveryStatus: 'PENDING',
         payments: [],
         createdAt: '2024-01-15T10:00:00.000Z',
@@ -181,7 +196,7 @@ describe('PrismaOrderMapper', () => {
 
       expect(result.where).toEqual({ id: 'order-uuid-1' });
       expect(result.data).toMatchObject({
-        status: 'CONFIRMED',
+        status: 'PAID',
         paid: 50,
       });
     });

@@ -25,8 +25,15 @@ describe('PrismaPaymentsRepository', () => {
   const mockPaymentRow = {
     id: 'payment-uuid-1',
     billId: 'order-uuid-1',
-    amount: '100.00',
+    amount: { toNumber: () => 100 },
     methodId: 'pm-uuid-1',
+    method: {
+      id: 'pm-uuid-1',
+      name: 'Cash',
+      companyId: 'company-uuid-1',
+      createdAt: new Date('2024-01-15T10:00:00Z'),
+      updatedAt: new Date('2024-01-15T12:00:00Z'),
+    },
     createdAt: new Date('2024-01-15T10:00:00Z'),
     updatedAt: new Date('2024-01-15T12:00:00Z'),
   };
@@ -40,8 +47,8 @@ describe('PrismaPaymentsRepository', () => {
     it('creates payment and returns mapped entity', async () => {
       mockCreate.mockResolvedValue(mockPaymentRow);
 
-      const { Payment } = await import('@/domain/orders/entities/Payment');
-      const { PaymentMethod } = await import('@/domain/orders/entities/PaymentMethod');
+      const Payment = (await import('@/domain/orders/entities/Payment')).default;
+      const PaymentMethod = (await import('@/domain/orders/entities/PaymentMethod')).default;
 
       const method = new PaymentMethod({
         id: 'pm-uuid-1',
@@ -70,7 +77,7 @@ describe('PrismaPaymentsRepository', () => {
     it('deletes payment with correct id', async () => {
       mockDelete.mockResolvedValue(mockPaymentRow);
 
-      const paymentId = new PaymentId('payment-uuid-1');
+      const paymentId = PaymentId.create('payment-uuid-1');
       await repository.delete(paymentId);
 
       expect(mockDelete).toHaveBeenCalledWith({

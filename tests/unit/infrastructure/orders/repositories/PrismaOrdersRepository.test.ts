@@ -55,16 +55,19 @@ const {
 describe('PrismaOrderRepository', () => {
   let repository: PrismaOrderRepository;
 
+  const dec = (n: number) => ({ toNumber: () => n });
+
   const mockOrderRow = {
     id: 'order-uuid-1',
+    clientId: 'client-uuid-1',
     companyId: 'company-uuid-1',
     number: 1,
-    status: 'DRAFT',
+    status: 'PENDING',
     deliveryStatus: 'PENDING',
-    subtotal: '100.00',
-    ivaTotal: '13.00',
-    total: '113.00',
-    paid: '0.00',
+    subtotal: dec(100),
+    ivaTotal: dec(13),
+    total: dec(113),
+    paid: dec(0),
     issueDate: new Date('2024-01-15T10:00:00Z'),
     createdAt: new Date('2024-01-15T10:00:00Z'),
     updatedAt: new Date('2024-01-15T12:00:00Z'),
@@ -72,6 +75,11 @@ describe('PrismaOrderRepository', () => {
       id: 'client-uuid-1',
       name: 'Test Client',
       companyId: 'company-uuid-1',
+      phoneNumber: null,
+      email: null,
+      lat: null,
+      lng: null,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -150,7 +158,7 @@ describe('PrismaOrderRepository', () => {
         paid: 0,
         companyId: 'company-uuid-1',
         items: [],
-        status: 'DRAFT',
+        status: 'PENDING',
         deliveryStatus: 'PENDING',
         payments: [],
         createdAt: '2024-01-15T10:00:00.000Z',
@@ -188,7 +196,7 @@ describe('PrismaOrderRepository', () => {
         paid: 0,
         companyId: 'company-uuid-1',
         items: [],
-        status: 'DRAFT',
+        status: 'PENDING',
         deliveryStatus: 'PENDING',
         payments: [],
         createdAt: '2024-01-15T10:00:00.000Z',
@@ -272,7 +280,7 @@ describe('PrismaOrderRepository', () => {
         paid: 50,
         companyId: 'company-uuid-1',
         items: [],
-        status: 'CONFIRMED',
+        status: 'PAID',
         deliveryStatus: 'PENDING',
         payments: [],
         createdAt: '2024-01-15T10:00:00.000Z',
@@ -310,7 +318,7 @@ describe('PrismaOrderRepository', () => {
         paid: 0,
         companyId: 'company-uuid-1',
         items: [],
-        status: 'DRAFT',
+        status: 'CANCELLED',
         deliveryStatus: 'PENDING',
         payments: [],
         createdAt: '2024-01-15T10:00:00.000Z',
@@ -327,16 +335,16 @@ describe('PrismaOrderRepository', () => {
         id: 'item-uuid-1',
         billId: 'order-uuid-1',
         productId: 'product-uuid-1',
-        quantity: '2',
-        unitGrossPrice: '50.00',
-        ivaRate: '0.13',
+        quantity: dec(2),
+        unitGrossPrice: dec(50),
+        ivaRate: dec(0.13),
         createdAt: new Date(),
         updatedAt: new Date(),
         product: {
           id: 'product-uuid-1',
           name: 'Test Product',
-          ivaRate: '0.13',
-          grossPrice: '50.00',
+          ivaRate: dec(0.13),
+          grossPrice: dec(50),
           companyId: 'company-uuid-1',
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -370,7 +378,7 @@ describe('PrismaOrderRepository', () => {
 
       const start = new Date('2024-01-01');
       const end = new Date('2024-01-31');
-      const companyId = new CompanyId('company-uuid-1');
+      const companyId = CompanyId.create('company-uuid-1');
 
       await repository.byTimeRange(start, end, companyId);
 
@@ -388,7 +396,7 @@ describe('PrismaOrderRepository', () => {
     it('filters by client and delivery statuses', async () => {
       mockClientBillFindMany.mockResolvedValue([mockOrderRow]);
 
-      const clientId = new ClientId('client-uuid-1');
+      const clientId = ClientId.create('client-uuid-1');
       const statuses: OrderDeliveryStatusType[] = ['PENDING'];
 
       await repository.byClientAndManyDeliveryStatus(clientId, statuses);

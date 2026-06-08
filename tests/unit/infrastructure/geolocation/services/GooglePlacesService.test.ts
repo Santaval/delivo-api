@@ -1,20 +1,20 @@
-import { Client } from '@googlemaps/google-maps-services-js';
-import GooglePlacesService from '@/infrastructure/geolocation/services/GooglePlacesService';
+import { GooglePlacesService } from '@/infrastructure/geolocation/services/GooglePlacesService';
+
+const mockPlaceAutocomplete = jest.fn();
+const mockPlaceDetails = jest.fn();
 
 jest.mock('@googlemaps/google-maps-services-js', () => ({
   Client: jest.fn().mockImplementation(() => ({
-    placeAutocomplete: jest.fn(),
-    placeDetails: jest.fn(),
+    placeAutocomplete: mockPlaceAutocomplete,
+    placeDetails: mockPlaceDetails,
   })),
 }));
 
 describe('GooglePlacesService', () => {
   let service: GooglePlacesService;
-  let mockClient: jest.Mocked<Client>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockClient = new Client() as jest.Mocked<Client>;
     service = new GooglePlacesService();
   });
 
@@ -25,7 +25,7 @@ describe('GooglePlacesService', () => {
         { description: 'San Pedro, Costa Rica', place_id: 'place2' },
       ];
 
-      (mockClient.placeAutocomplete as jest.Mock).mockResolvedValue({
+      (mockPlaceAutocomplete as jest.Mock).mockResolvedValue({
         data: { predictions: mockPredictions },
       });
 
@@ -37,13 +37,13 @@ describe('GooglePlacesService', () => {
     });
 
     it('passes country restriction to API', async () => {
-      (mockClient.placeAutocomplete as jest.Mock).mockResolvedValue({
+      (mockPlaceAutocomplete as jest.Mock).mockResolvedValue({
         data: { predictions: [] },
       });
 
       await service.autocomplete('test');
 
-      expect(mockClient.placeAutocomplete).toHaveBeenCalledWith({
+      expect(mockPlaceAutocomplete).toHaveBeenCalledWith({
         params: expect.objectContaining({
           components: ['country:cr'],
         }),
@@ -53,13 +53,13 @@ describe('GooglePlacesService', () => {
     it('uses GOOGLE_MAPS_API_KEY from environment', async () => {
       process.env.GOOGLE_MAPS_API_KEY = 'test-api-key';
 
-      (mockClient.placeAutocomplete as jest.Mock).mockResolvedValue({
+      (mockPlaceAutocomplete as jest.Mock).mockResolvedValue({
         data: { predictions: [] },
       });
 
       await service.autocomplete('test');
 
-      expect(mockClient.placeAutocomplete).toHaveBeenCalledWith({
+      expect(mockPlaceAutocomplete).toHaveBeenCalledWith({
         params: expect.objectContaining({
           key: 'test-api-key',
         }),
@@ -69,7 +69,7 @@ describe('GooglePlacesService', () => {
     });
 
     it('throws InfrastructureError on API failure', async () => {
-      (mockClient.placeAutocomplete as jest.Mock).mockRejectedValue(new Error('API Error'));
+      (mockPlaceAutocomplete as jest.Mock).mockRejectedValue(new Error('API Error'));
 
       await expect(service.autocomplete('test')).rejects.toThrow(
         'Failed to fetch place autocomplete'
@@ -94,7 +94,7 @@ describe('GooglePlacesService', () => {
     };
 
     it('returns place details for valid placeId', async () => {
-      (mockClient.placeDetails as jest.Mock).mockResolvedValue(mockDetailsResponse);
+      (mockPlaceDetails as jest.Mock).mockResolvedValue(mockDetailsResponse);
 
       const result = await service.details('place123');
 
@@ -108,11 +108,11 @@ describe('GooglePlacesService', () => {
     });
 
     it('passes correct fields to API', async () => {
-      (mockClient.placeDetails as jest.Mock).mockResolvedValue(mockDetailsResponse);
+      (mockPlaceDetails as jest.Mock).mockResolvedValue(mockDetailsResponse);
 
       await service.details('place123');
 
-      expect(mockClient.placeDetails).toHaveBeenCalledWith({
+      expect(mockPlaceDetails).toHaveBeenCalledWith({
         params: expect.objectContaining({
           place_id: 'place123',
           fields: ['geometry', 'name', 'place_id'],
@@ -121,7 +121,7 @@ describe('GooglePlacesService', () => {
     });
 
     it('throws InfrastructureError when geometry is missing', async () => {
-      (mockClient.placeDetails as jest.Mock).mockResolvedValue({
+      (mockPlaceDetails as jest.Mock).mockResolvedValue({
         data: {
           result: {
             name: 'Test Place',
@@ -136,7 +136,7 @@ describe('GooglePlacesService', () => {
     });
 
     it('throws InfrastructureError when location is missing in geometry', async () => {
-      (mockClient.placeDetails as jest.Mock).mockResolvedValue({
+      (mockPlaceDetails as jest.Mock).mockResolvedValue({
         data: {
           result: {
             name: 'Test Place',
@@ -151,7 +151,7 @@ describe('GooglePlacesService', () => {
     });
 
     it('throws InfrastructureError on API failure', async () => {
-      (mockClient.placeDetails as jest.Mock).mockRejectedValue(new Error('API Error'));
+      (mockPlaceDetails as jest.Mock).mockRejectedValue(new Error('API Error'));
 
       await expect(service.details('place123')).rejects.toThrow(
         'Failed to fetch place details'

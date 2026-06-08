@@ -35,7 +35,7 @@ describe('PrismaRouteMapper', () => {
     paid: 0,
     companyId: 'company-uuid-1',
     items: [],
-    status: 'DRAFT',
+    status: 'PENDING',
     deliveryStatus: 'PENDING',
     payments: [],
     createdAt: '2024-01-15T10:00:00.000Z',
@@ -44,7 +44,7 @@ describe('PrismaRouteMapper', () => {
 
   const mockRoutePoint = new RoutePoint({
     id: 'point-uuid-1',
-    status: 'PENDING',
+    status: 'CREATED',
     index: 0,
     order: mockOrder,
     polyline: 'test-polyline',
@@ -56,7 +56,7 @@ describe('PrismaRouteMapper', () => {
   const mockPrismaRoute: PrismaRoute & { points: unknown[] } = {
     id: 'route-uuid-1',
     name: 'Test Route',
-    status: 'UNASSIGNED',
+    status: 'CREATED',
     polyline: null,
     points: [],
     companyId: 'company-uuid-1',
@@ -66,7 +66,7 @@ describe('PrismaRouteMapper', () => {
 
   describe('toDomain', () => {
     it('maps all fields correctly from Prisma row to Route entity', () => {
-      const route = PrismaRouteMapper.toDomain(mockPrismaRoute);
+      const route = PrismaRouteMapper.toDomain(mockPrismaRoute as unknown as Parameters<typeof PrismaRouteMapper.toDomain>[0]);
 
       expect(route).toBeInstanceOf(Route);
       expect(route.id).toBe(mockPrismaRoute.id);
@@ -76,7 +76,7 @@ describe('PrismaRouteMapper', () => {
     });
 
     it('handles null polyline', () => {
-      const route = PrismaRouteMapper.toDomain(mockPrismaRoute);
+      const route = PrismaRouteMapper.toDomain(mockPrismaRoute as unknown as Parameters<typeof PrismaRouteMapper.toDomain>[0]);
 
       expect(route.polyline).toBeNull();
     });
@@ -87,7 +87,7 @@ describe('PrismaRouteMapper', () => {
       const domainRoute = new Route({
         id: 'route-uuid-1',
         name: 'Test Route',
-        status: 'UNASSIGNED',
+        status: 'CREATED',
         companyId: 'company-uuid-1',
         polyline: null,
         points: [],
@@ -108,7 +108,7 @@ describe('PrismaRouteMapper', () => {
       const domainRoute = new Route({
         id: 'route-uuid-1',
         name: 'Updated Route',
-        status: 'ASSIGNED',
+        status: 'STARTED',
         companyId: 'company-uuid-1',
         polyline: 'updated-polyline',
         points: [],
@@ -120,7 +120,7 @@ describe('PrismaRouteMapper', () => {
       expect(result.data).toEqual({
         name: 'Updated Route',
         polyline: 'updated-polyline',
-        status: 'ASSIGNED' as RouteStatus,
+        status: 'STARTED' as RouteStatus,
       });
     });
   });

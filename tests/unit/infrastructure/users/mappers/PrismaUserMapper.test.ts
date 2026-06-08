@@ -1,4 +1,4 @@
-import { Company as PrismaCompany, User as PrismaUser, UserCompany } from '@/infrastructure/prisma/generated/prisma/client';
+import { Company as PrismaCompany, User as PrismaUser } from '@/infrastructure/prisma/generated/prisma/client';
 import { UserCreateArgs } from '@/infrastructure/prisma/generated/prisma/models';
 import { PrismaUserMapper } from '@/infrastructure/users/mappers/PrismaUserMapper';
 import { User } from '@/domain/users/entities/User';
@@ -12,7 +12,7 @@ describe('PrismaUserMapper', () => {
     updatedAt: new Date('2024-01-15T12:00:00Z'),
   };
 
-  const mockUserCompanyRegistry: UserCompany = {
+  const mockUserCompanyRegistry = {
     id: 'uc-uuid-1',
     userId: 'user-uuid-1',
     companyId: 'company-uuid-1',
@@ -20,7 +20,7 @@ describe('PrismaUserMapper', () => {
     role: 'OWNER',
   };
 
-  const mockPrismaRow: PrismaUser & { companies: UserCompany[] } = {
+  const mockPrismaRow: PrismaUser & { companies: (typeof mockUserCompanyRegistry)[] } = {
     id: 'user-uuid-1',
     name: 'Test',
     surnames: 'User',

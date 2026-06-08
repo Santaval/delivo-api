@@ -60,7 +60,8 @@ export class GooglePlacesService implements IPlacesService {
       };
 
       return location;
-    } catch {
+    } catch (error) {
+      if (error instanceof InfrastructureError) throw error;
       throw new InfrastructureError("Failed to fetch place details");
     }
   }

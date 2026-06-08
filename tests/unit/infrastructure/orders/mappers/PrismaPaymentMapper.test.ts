@@ -30,7 +30,7 @@ describe('PrismaPaymentMapper', () => {
       const payment = PrismaPaymentMapper.toDomain(mockPrismaPayment);
 
       expect(payment).toBeInstanceOf(Payment);
-      expect(payment.id).toBe(mockPrismaPayment.id);
+      expect(payment.id.value).toBe(mockPrismaPayment.id);
       expect(payment.amount.value).toBe(100);
     });
 

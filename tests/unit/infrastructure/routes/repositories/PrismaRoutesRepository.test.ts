@@ -59,7 +59,7 @@ describe('PrismaRoutesRepository', () => {
   const mockRouteRow = {
     id: 'route-uuid-1',
     name: 'Test Route',
-    status: 'UNASSIGNED',
+    status: 'CREATED',
     polyline: null,
     companyId: 'company-uuid-1',
     createdAt: new Date('2024-01-15T10:00:00Z'),
@@ -76,7 +76,7 @@ describe('PrismaRoutesRepository', () => {
     it('returns array of Route entities', async () => {
       mockRouteFindMany.mockResolvedValue([mockRouteRow]);
 
-      const companyId = new CompanyId('company-uuid-1');
+      const companyId = CompanyId.create('company-uuid-1');
       const result = await repository.findAllByCompany(companyId);
 
       expect(result).toHaveLength(1);
@@ -90,7 +90,7 @@ describe('PrismaRoutesRepository', () => {
     it('throws DatabaseError on failure', async () => {
       mockRouteFindMany.mockRejectedValue(new Error('DB Error'));
 
-      const companyId = new CompanyId('company-uuid-1');
+      const companyId = CompanyId.create('company-uuid-1');
       await expect(repository.findAllByCompany(companyId)).rejects.toThrow(DatabaseError);
     });
   });
@@ -103,7 +103,7 @@ describe('PrismaRoutesRepository', () => {
       const route = new Route({
         id: 'route-uuid-1',
         name: 'Test Route',
-        status: 'UNASSIGNED',
+        status: 'CREATED',
         companyId: 'company-uuid-1',
         polyline: null,
       });
@@ -120,7 +120,7 @@ describe('PrismaRoutesRepository', () => {
       const route = new Route({
         id: 'route-uuid-1',
         name: 'Test Route',
-        status: 'UNASSIGNED',
+        status: 'CREATED',
         companyId: 'company-uuid-1',
         polyline: null,
       });
@@ -133,7 +133,7 @@ describe('PrismaRoutesRepository', () => {
     it('returns Route when found', async () => {
       mockRouteFindUnique.mockResolvedValue(mockRouteRow);
 
-      const routeId = new RouteId('route-uuid-1');
+      const routeId = RouteId.create('route-uuid-1');
       const result = await repository.findById(routeId);
 
       expect(result).not.toBeNull();
@@ -146,7 +146,7 @@ describe('PrismaRoutesRepository', () => {
     it('returns null when not found', async () => {
       mockRouteFindUnique.mockResolvedValue(null);
 
-      const routeId = new RouteId('non-existent');
+      const routeId = RouteId.create('non-existent');
       const result = await repository.findById(routeId);
 
       expect(result).toBeNull();
@@ -155,7 +155,7 @@ describe('PrismaRoutesRepository', () => {
     it('returns null on error (silent failure)', async () => {
       mockRouteFindUnique.mockRejectedValue(new Error('DB Error'));
 
-      const routeId = new RouteId('route-uuid-1');
+      const routeId = RouteId.create('route-uuid-1');
       const result = await repository.findById(routeId);
 
       expect(result).toBeNull();
@@ -166,7 +166,7 @@ describe('PrismaRoutesRepository', () => {
     it('deletes route with correct id', async () => {
       mockRouteDelete.mockResolvedValue(mockRouteRow);
 
-      const routeId = new RouteId('route-uuid-1');
+      const routeId = RouteId.create('route-uuid-1');
       await repository.delete(routeId);
 
       expect(mockRouteDelete).toHaveBeenCalledWith({
@@ -177,7 +177,7 @@ describe('PrismaRoutesRepository', () => {
     it('throws DatabaseError on failure', async () => {
       mockRouteDelete.mockRejectedValue(new Error('DB Error'));
 
-      const routeId = new RouteId('route-uuid-1');
+      const routeId = RouteId.create('route-uuid-1');
       await expect(repository.delete(routeId)).rejects.toThrow(DatabaseError);
     });
   });
@@ -190,7 +190,7 @@ describe('PrismaRoutesRepository', () => {
       const route = new Route({
         id: 'route-uuid-1',
         name: 'Updated Route',
-        status: 'ASSIGNED',
+        status: 'STARTED',
         companyId: 'company-uuid-1',
         polyline: 'updated-polyline',
       });
@@ -207,7 +207,7 @@ describe('PrismaRoutesRepository', () => {
       const route = new Route({
         id: 'route-uuid-1',
         name: 'Updated Route',
-        status: 'ASSIGNED',
+        status: 'STARTED',
         companyId: 'company-uuid-1',
         polyline: 'updated-polyline',
       });
@@ -218,15 +218,45 @@ describe('PrismaRoutesRepository', () => {
 
   describe('addPoint', () => {
     it('creates route point', async () => {
+      const dec = (n: number) => ({ toNumber: () => n });
       const mockPointRow = {
         id: 'point-uuid-1',
-        status: 'PENDING',
+        status: 'CREATED',
         index: 0,
         polyline: null,
         routeId: 'route-uuid-1',
         billId: 'order-uuid-1',
         createdAt: new Date(),
         updatedAt: new Date(),
+        bill: {
+          id: 'bill-uuid-1',
+          clientId: 'client-uuid-1',
+          client: {
+            id: 'client-uuid-1',
+            name: 'Test Client',
+            companyId: 'company-uuid-1',
+            phoneNumber: null,
+            email: null,
+            lat: null,
+            lng: null,
+            deletedAt: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          items: [],
+          payments: [],
+          companyId: 'company-uuid-1',
+          number: 1,
+          status: 'PENDING',
+          deliveryStatus: 'PENDING',
+          issueDate: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          subtotal: dec(100),
+          ivaTotal: dec(13),
+          total: dec(113),
+          paid: dec(0),
+        },
       };
       mockPointCreate.mockResolvedValue(mockPointRow);
 
@@ -262,14 +292,14 @@ describe('PrismaRoutesRepository', () => {
         paid: 0,
         companyId: 'company-uuid-1',
         items: [],
-        status: 'DRAFT',
+        status: 'PENDING',
         deliveryStatus: 'PENDING',
         payments: [],
       });
 
       const point = new RoutePoint({
         id: 'point-uuid-1',
-        status: 'PENDING',
+        status: 'CREATED',
         index: 0,
         order,
         polyline: null,
@@ -318,14 +348,14 @@ describe('PrismaRoutesRepository', () => {
         paid: 0,
         companyId: 'company-uuid-1',
         items: [],
-        status: 'DRAFT',
+        status: 'PENDING',
         deliveryStatus: 'PENDING',
         payments: [],
       });
 
       const point = new RoutePoint({
         id: 'point-uuid-1',
-        status: 'PENDING',
+        status: 'CREATED',
         index: 0,
         order,
         polyline: null,
@@ -340,7 +370,7 @@ describe('PrismaRoutesRepository', () => {
     it('deletes route point with correct id', async () => {
       mockPointDelete.mockResolvedValue({});
 
-      const pointId = new RoutePointId('point-uuid-1');
+      const pointId =  RoutePointId.create('point-uuid-1');
       await repository.removePoint(pointId);
 
       expect(mockPointDelete).toHaveBeenCalledWith({
@@ -351,16 +381,17 @@ describe('PrismaRoutesRepository', () => {
     it('throws DatabaseError on failure', async () => {
       mockPointDelete.mockRejectedValue(new Error('DB Error'));
 
-      const pointId = new RoutePointId('point-uuid-1');
+      const pointId =  RoutePointId.create('point-uuid-1');
       await expect(repository.removePoint(pointId)).rejects.toThrow(DatabaseError);
     });
   });
 
   describe('findPointById', () => {
     it('returns RoutePoint when found', async () => {
+      const dec = (n: number) => ({ toNumber: () => n });
       const mockPointRow = {
         id: 'point-uuid-1',
-        status: 'PENDING',
+        status: 'CREATED',
         index: 0,
         polyline: null,
         routeId: 'route-uuid-1',
@@ -369,10 +400,16 @@ describe('PrismaRoutesRepository', () => {
         updatedAt: new Date(),
         bill: {
           id: 'bill-uuid-1',
+          clientId: 'client-uuid-1',
           client: {
             id: 'client-uuid-1',
             name: 'Test Client',
             companyId: 'company-uuid-1',
+            phoneNumber: null,
+            email: null,
+            lat: null,
+            lng: null,
+            deletedAt: null,
             createdAt: new Date(),
             updatedAt: new Date(),
           },
@@ -380,20 +417,21 @@ describe('PrismaRoutesRepository', () => {
           payments: [],
           companyId: 'company-uuid-1',
           number: 1,
-          status: 'DRAFT',
+          status: 'PENDING',
           deliveryStatus: 'PENDING',
+          issueDate: new Date(),
           createdAt: new Date(),
           updatedAt: new Date(),
-          subtotal: 100,
-          ivaTotal: 13,
-          total: 113,
-          paid: 0,
+          subtotal: dec(100),
+          ivaTotal: dec(13),
+          total: dec(113),
+          paid: dec(0),
         },
       };
 
       mockPointFindUnique.mockResolvedValue(mockPointRow);
 
-      const pointId = new RoutePointId('point-uuid-1');
+      const pointId =  RoutePointId.create('point-uuid-1');
       const result = await repository.findPointById(pointId);
 
       expect(result).not.toBeNull();
@@ -402,7 +440,7 @@ describe('PrismaRoutesRepository', () => {
     it('returns null when not found', async () => {
       mockPointFindUnique.mockResolvedValue(null);
 
-      const pointId = new RoutePointId('non-existent');
+      const pointId =  RoutePointId.create('non-existent');
       const result = await repository.findPointById(pointId);
 
       expect(result).toBeNull();
@@ -411,7 +449,7 @@ describe('PrismaRoutesRepository', () => {
     it('returns null on error (silent failure)', async () => {
       mockPointFindUnique.mockRejectedValue(new Error('DB Error'));
 
-      const pointId = new RoutePointId('point-uuid-1');
+      const pointId = RoutePointId.create('point-uuid-1');
       const result = await repository.findPointById(pointId);
 
       expect(result).toBeNull();

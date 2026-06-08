@@ -30,13 +30,13 @@ describe('PrismaProductMapper', () => {
     it('converts ivaRate Decimal to string', () => {
       const product = PrismaProductMapper.toDomain(mockPrismaRow);
 
-      expect(product.pricing.ivaRate).toBe('0.13');
+      expect(product.pricing.ivaRate).toBe(0.13);
     });
 
     it('converts grossPrice Decimal to string', () => {
       const product = PrismaProductMapper.toDomain(mockPrismaRow);
 
-      expect(product.pricing.grossPrice).toBe('100.00');
+      expect(product.pricing.grossPrice).toBe(100);
     });
 
     it('handles null deletedAt', () => {
@@ -74,8 +74,8 @@ describe('PrismaProductMapper', () => {
 
       expect(result.data).toEqual({
         name: 'Test Product',
-        ivaRate: '0.13',
-        grossPrice: '100.00',
+        ivaRate: 0.13,
+        grossPrice: 100,
         companyId: 'company-uuid-1',
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),

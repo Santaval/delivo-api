@@ -40,8 +40,8 @@ describe('PrismaOrderItemMapper', () => {
     it('converts Decimal fields to numbers', () => {
       const item = PrismaOrderItemMapper.toDomain(mockPrismaItem);
 
-      expect(item.pricing.grossPrice).toBe('50.00');
-      expect(item.pricing.ivaRate).toBe('0.13');
+      expect(item.pricing.grossPrice).toBe(50);
+      expect(item.pricing.ivaRate).toBe(0.13);
     });
 
     it('handles null deletedAt on product', () => {

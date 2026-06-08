@@ -46,7 +46,7 @@ describe('PrismaPaymentMethodsRepository', () => {
     it('returns array of PaymentMethod entities', async () => {
       mockFindMany.mockResolvedValue([mockPrismaRow]);
 
-      const companyId = new CompanyId('company-uuid-1');
+      const companyId = CompanyId.create('company-uuid-1');
       const result = await repository.allByCompany(companyId);
 
       expect(result).toHaveLength(1);
@@ -60,7 +60,7 @@ describe('PrismaPaymentMethodsRepository', () => {
     it('returns empty array when no payment methods found', async () => {
       mockFindMany.mockResolvedValue([]);
 
-      const companyId = new CompanyId('company-uuid-1');
+      const companyId = CompanyId.create('company-uuid-1');
       const result = await repository.allByCompany(companyId);
 
       expect(result).toHaveLength(0);

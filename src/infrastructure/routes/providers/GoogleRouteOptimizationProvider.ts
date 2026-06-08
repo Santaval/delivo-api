@@ -59,6 +59,7 @@ export default class GoogleRouteOptimizationProvider implements IRouteOptimizati
 
     } catch (error) {
       console.error('Error optimizing tours:', error);
+      if (error instanceof InfrastructureError) throw error;
       throw new InfrastructureError('Error optimizing tours');
     }
   }

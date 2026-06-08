@@ -23,7 +23,6 @@ describe('ClientController', () => {
       lng: -66.8,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      deletedAt: null,
       ...overrides,
     });
 

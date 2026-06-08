@@ -34,7 +34,7 @@ describe('PrismaRoutePointMapper', () => {
     paid: 0,
     companyId: 'company-uuid-1',
     items: [],
-    status: 'DRAFT',
+    status: 'PENDING',
     deliveryStatus: 'PENDING',
     payments: [],
     createdAt: '2024-01-15T10:00:00.000Z',
@@ -43,7 +43,7 @@ describe('PrismaRoutePointMapper', () => {
 
   const mockPrismaRoutePoint: PrismaRoutePoint = {
     id: 'point-uuid-1',
-    status: 'PENDING',
+    status: 'CREATED',
     index: 0,
     polyline: 'test-polyline',
     routeId: 'route-uuid-1',
@@ -54,27 +54,41 @@ describe('PrismaRoutePointMapper', () => {
 
   describe('toDomain', () => {
     it('maps all fields correctly from Prisma row to RoutePoint entity', () => {
+      const dec = (n: number) => ({ toNumber: () => n });
       const mockRawPoint = {
         ...mockPrismaRoutePoint,
         bill: {
           id: 'bill-uuid-1',
-          client: mockClient,
+          clientId: 'client-uuid-1',
+          client: {
+            id: 'client-uuid-1',
+            name: 'Test Client',
+            companyId: 'company-uuid-1',
+            phoneNumber: null,
+            email: null,
+            lat: null,
+            lng: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+          },
           items: [],
           payments: [],
           companyId: 'company-uuid-1',
           number: 1,
-          status: 'DRAFT',
+          status: 'PENDING',
           deliveryStatus: 'PENDING',
+          issueDate: new Date(),
           createdAt: new Date(),
           updatedAt: new Date(),
-          subtotal: 100,
-          ivaTotal: 13,
-          total: 113,
-          paid: 0,
+          subtotal: dec(100),
+          ivaTotal: dec(13),
+          total: dec(113),
+          paid: dec(0),
         },
       };
 
-      const point = PrismaRoutePointMapper.toDomain(mockRawPoint as Parameters<typeof PrismaRoutePointMapper.toDomain>[0]);
+      const point = PrismaRoutePointMapper.toDomain(mockRawPoint as unknown as Parameters<typeof PrismaRoutePointMapper.toDomain>[0]);
 
       expect(point).toBeInstanceOf(RoutePoint);
       expect(point.id).toBe(mockPrismaRoutePoint.id);
@@ -86,7 +100,7 @@ describe('PrismaRoutePointMapper', () => {
     it('returns correct RoutePointCreateArgs with data object', () => {
       const domainPoint = new RoutePoint({
         id: 'point-uuid-1',
-        status: 'PENDING',
+        status: 'CREATED',
         index: 0,
         order: mockOrder,
         polyline: 'test-polyline',
@@ -111,7 +125,7 @@ describe('PrismaRoutePointMapper', () => {
     it('returns correct RoutePointUpdateArgs with index, polyline, and status', () => {
       const domainPoint = new RoutePoint({
         id: 'point-uuid-1',
-        status: 'COMPLETED',
+        status: 'VISITED',
         index: 1,
         order: mockOrder,
         polyline: 'updated-polyline',
@@ -126,7 +140,7 @@ describe('PrismaRoutePointMapper', () => {
       expect(result.data).toMatchObject({
         index: 1,
         polyline: 'updated-polyline',
-        status: 'COMPLETED' as RoutePointStatus,
+        status: 'VISITED' as RoutePointStatus,
       });
     });
   });
