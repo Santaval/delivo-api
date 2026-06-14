@@ -45,6 +45,32 @@ export default class AuthController {
     }
   }
 
+  async appleLogin(req: Request, res: Response): Promise<void> {
+    try {
+      const { identityToken, firstName, lastName } = req.body;
+
+      const user = await this.oAuthService.apple(identityToken, firstName, lastName);
+
+      const jwtToken = this.jwtService.generateToken({
+        id: user.id,
+        email: user.email.value,
+      });
+
+      const userResponse = UserDtoMapper.toResponse(user);
+
+      const response: AuthResponse = {
+        user: userResponse,
+        token: jwtToken,
+        expiresIn: "7d",
+      };
+
+      res.json(response);
+    } catch (error) {
+      console.error("Apple login error:", error);
+      res.status(401).json({ message: "Autenticación fallida" });
+    }
+  }
+
   async me(req: Request, res: Response): Promise<void> {
     const authHeader = req.headers.authorization;
 

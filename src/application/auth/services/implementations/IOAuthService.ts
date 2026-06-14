@@ -9,8 +9,10 @@ export default class OAuthService implements IOAuthService {
   constructor(
     private readonly usersService: IUserService,
     private readonly googleOAuthProvider: IOAuthProvider,
+    private readonly appleOAuthProvider: IOAuthProvider,
     private readonly idGenerator: IIDGenerator
   ) {}
+
   async google(accessToken: string): Promise<User> {
     try {
       const userInfo = await this.googleOAuthProvider.getUserInfo(accessToken);
@@ -26,6 +28,31 @@ export default class OAuthService implements IOAuthService {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         })
+        user = await this.usersService.create(newUser);
+      }
+
+      return user;
+    } catch (error) {
+      console.error(error);
+      throw new InvalidCredentialsError();
+    }
+  }
+
+  async apple(identityToken: string, firstName?: string, lastName?: string): Promise<User> {
+    try {
+      const userInfo = await this.appleOAuthProvider.getUserInfo(identityToken);
+      let user = await this.usersService.find(userInfo.email, "email");
+      if (!user) {
+        const id = this.idGenerator.generate();
+        const newUser = new User({
+          email: userInfo.email,
+          id,
+          name: firstName ?? "",
+          surnames: lastName ?? "",
+          companies: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
         user = await this.usersService.create(newUser);
       }
 

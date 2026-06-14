@@ -14,6 +14,7 @@ import RouteService from "@/application/routes/services/implementations/RouteSer
 import FinancialSummaryCalculator from "@/application/stats/services/implementations/FinancialSummaryCalculator";
 import { UserService } from "@/application/users/services/implementations/UserService";
 import GoogleOAuthProvider from "@/infrastructure/auth/providers/GoogleOAuthProvider";
+import AppleOAuthProvider from "@/infrastructure/auth/providers/AppleOAuthProvider";
 import JwtTokenService from "@/infrastructure/auth/services/JwtTokenService";
 import PrismaClientsRepository from "@/infrastructure/clients/repositories/PrismaClientsRepository";
 import PrismaCompaniesRepository from "@/infrastructure/companies/repositories/PrismaCompaniesRepository";
@@ -56,6 +57,7 @@ export const productDeletionUOW = new PrismaProductDeletionUnitOfWork();
 // providers
 export const idGenerator = new UuidIDGenerator();
 export const googleOAuthProvider = new GoogleOAuthProvider();
+export const appleOAuthProvider = new AppleOAuthProvider();
 export const placesProvider = new GooglePlacesService();
 export const routeOptimizationProvider = new GoogleRouteOptimizationProvider();
 
@@ -68,7 +70,7 @@ export const jwtService = new JwtTokenService();
 
 // services
 export const userService = new UserService(userRepository);
-export const oAuthService = new OAuthService(userService, googleOAuthProvider, idGenerator);
+export const oAuthService = new OAuthService(userService, googleOAuthProvider, appleOAuthProvider, idGenerator);
 export const companiesService = new CompanyService(companiesRepository);
 export const clientsService = new ClientService(clientsRepository);
 export const productsService = new ProductService(productsRepository, productDeletionUOW);
