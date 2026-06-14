@@ -80,8 +80,9 @@ model Client {
   lat Decimal? @db.Decimal(10, 8)
   lng Decimal? @db.Decimal(11, 8)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? @default(dbgenerated("NULL"))
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
