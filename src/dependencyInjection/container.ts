@@ -1,3 +1,4 @@
+import ENV from "@/presentation/core/config/env";
 import OAuthService from "@/application/auth/services/implementations/IOAuthService";
 import { ClientService } from "@/application/clients/services/implementations/ClientService";
 import { CompanyService } from "@/application/companies/services/implementations/CompanyService";
@@ -28,6 +29,7 @@ import { PrismaProductDeletionUnitOfWork } from "@/infrastructure/products/units
 import GoogleRouteOptimizationProvider from "@/infrastructure/routes/providers/GoogleRouteOptimizationProvider";
 import PrismaRoutesRepository from "@/infrastructure/routes/repositories/PrismaRoutesRepository";
 import PrismaUsersRepository from "@/infrastructure/users/repositories/PrismaUsersRepository";
+import ResendEmailProvider from "@/infrastructure/email/providers/ResendEmailProvider";
 import AuthController from "@/presentation/auth/controllers/Auth.controller";
 import ClientController from "@/presentation/clients/controllers/Client.controller";
 import CompanyController from "@/presentation/companies/controllers/Company.controller";
@@ -38,6 +40,7 @@ import ProductController from "@/presentation/products/controllers/Product.contr
 import RoutesContoller from "@/presentation/routes/controllers/Routes.controller";
 import StatsController from "@/presentation/stats/controllers/Stats.controller";
 import MyProfileController from "@/presentation/users/controllers/MyProfile.controller";
+import { IEmailService } from "@/domain/core/services/IEmailService";
 
 // ==================== INFRASTRUCTURE ====================
 
@@ -60,6 +63,7 @@ export const googleOAuthProvider = new GoogleOAuthProvider();
 export const appleOAuthProvider = new AppleOAuthProvider();
 export const placesProvider = new GooglePlacesService();
 export const routeOptimizationProvider = new GoogleRouteOptimizationProvider();
+export const emailService: IEmailService = new ResendEmailProvider(ENV.RESEND_API_KEY, ENV.MAIL_FROM);
 
 
 // services
