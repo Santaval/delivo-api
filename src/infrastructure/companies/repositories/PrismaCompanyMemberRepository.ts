@@ -1,5 +1,6 @@
 import { CompanyMember } from "@/domain/companies/entities/CompanyMember";
 import { ICompanyMemberRepository } from "@/domain/companies/repositories/ICompanyMemberRepository";
+import { CompanyRoleType } from "@/domain/companies/valueObjects/companyRole.valueObject";
 import { prisma } from "@/infrastructure/prisma/client";
 import { PrismaCompanyMemberMapper } from "../mappers/PrismaCompanyMemberMapper";
 import DatabaseError from "@/infrastructure/core/errors/DatabaseError";
@@ -62,6 +63,23 @@ export default class PrismaCompanyMemberRepository implements ICompanyMemberRepo
     } catch (error) {
       console.error("Error removing member:", error);
       throw new DatabaseInsertError("Could not remove member");
+    }
+  }
+
+  /**
+   * Count company members holding a specific role.
+   * @param companyId The ID of the company.
+   * @param role The company role to filter by.
+   * @returns A promise that resolves to the number of matching members.
+   */
+  async countByCompanyAndRole(companyId: string, role: CompanyRoleType): Promise<number> {
+    try {
+      return await prisma.userCompany.count({
+        where: { companyId, role },
+      });
+    } catch (error) {
+      console.error("Error counting members by role:", error);
+      throw new DatabaseError("Could not count members by role");
     }
   }
 }

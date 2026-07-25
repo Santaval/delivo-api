@@ -16,4 +16,12 @@ export default interface IOrderRepository {
   getItem(itemId: string): Promise<OrderItem | null>;
   byTimeRange(start: Date, end: Date, companyId: CompanyId): Promise<Order[]>;
   byClientAndManyDeliveryStatus(clientId: ClientId, statuses: OrderDeliveryStatusType[]): Promise<Order[]>;
+  /**
+   * Count fiscal documents (`ClientBill`) issued by a company within a half-open date range `[start, end)`.
+   * @param companyId The ID of the company.
+   * @param start Inclusive lower bound of `issueDate`.
+   * @param end Exclusive upper bound of `issueDate`.
+   * @returns A promise that resolves to the number of matching documents.
+   */
+  countByCompanyAndIssueDateRange(companyId: string, start: Date, end: Date): Promise<number>;
 }

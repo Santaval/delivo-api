@@ -14,4 +14,12 @@ export default interface IRouteRepository {
   removePoint(pointId: RoutePointId): Promise<void>;
   updatePoint(point: RoutePoint): Promise<RoutePoint>;
   findPointById(id: RoutePointId): Promise<RoutePoint | null>;
+  /**
+   * Count routes created by a company within a half-open date range `[start, end)`.
+   * @param companyId The ID of the company.
+   * @param start Inclusive lower bound of `createdAt`.
+   * @param end Exclusive upper bound of `createdAt`.
+   * @returns A promise that resolves to the number of matching routes.
+   */
+  countByCompanyAndCreatedAtRange(companyId: string, start: Date, end: Date): Promise<number>;
 }

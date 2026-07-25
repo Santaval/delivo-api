@@ -48,6 +48,8 @@ import StatsController from "@/presentation/stats/controllers/Stats.controller";
 import MyProfileController from "@/presentation/users/controllers/MyProfile.controller";
 import { IEmailService } from "@/domain/core/services/IEmailService";
 import { ICompanyMemberService } from "@/application/companies/services/interfaces/ICompanyMemberService";
+import { UsageService } from "@/application/billing/services/implementations/UsageService";
+import { IUsageService } from "@/application/billing/services/interfaces/IUsageService";
 
 // ==================== INFRASTRUCTURE ====================
 
@@ -107,6 +109,7 @@ export const locationService = new LocationService(placesProvider);
 export const paymentMethodsService = new PaymentMethodsService(paymentMethodsRepository);
 export const orderPaymentsService = new OrderPaymentsService(paymentsRepository, ordersRepository);
 export const orderItemsManager = new OrderItemsManager(ordersRepository, productsRepository, ordersPricingCalculator);
+export const usageService: IUsageService = new UsageService(ordersRepository, routesRepository, clientsRepository, productsRepository, companyMemberRepository);
 
 
 //  ==================== PRESENTATION ====================

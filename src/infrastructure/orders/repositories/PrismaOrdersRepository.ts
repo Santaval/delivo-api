@@ -196,6 +196,30 @@ export default class PrismaOrderRepository implements IOrderRepository {
     }
   }
 
+  /**
+   * Count fiscal documents (`ClientBill`) issued by a company within a half-open date range `[start, end)`.
+   * @param companyId The ID of the company.
+   * @param start Inclusive lower bound of `issueDate`.
+   * @param end Exclusive upper bound of `issueDate`.
+   * @returns A promise that resolves to the number of matching documents.
+   */
+  async countByCompanyAndIssueDateRange(companyId: string, start: Date, end: Date): Promise<number> {
+    try {
+      return await this.client.clientBill.count({
+        where: {
+          companyId,
+          issueDate: {
+            gte: start,
+            lt: end,
+          },
+        },
+      });
+    } catch (error) {
+      console.log(error);
+      throw new DatabaseError("Error counting orders");
+    }
+  }
+
   getIncludes() {
     return {
       items: {
