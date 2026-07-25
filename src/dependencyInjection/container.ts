@@ -50,6 +50,8 @@ import { IEmailService } from "@/domain/core/services/IEmailService";
 import { ICompanyMemberService } from "@/application/companies/services/interfaces/ICompanyMemberService";
 import { UsageService } from "@/application/billing/services/implementations/UsageService";
 import { IUsageService } from "@/application/billing/services/interfaces/IUsageService";
+import { EntitlementService } from "@/application/billing/services/implementations/EntitlementService";
+import { IEntitlementService } from "@/application/billing/services/interfaces/IEntitlementService";
 
 // ==================== INFRASTRUCTURE ====================
 
@@ -110,6 +112,7 @@ export const paymentMethodsService = new PaymentMethodsService(paymentMethodsRep
 export const orderPaymentsService = new OrderPaymentsService(paymentsRepository, ordersRepository);
 export const orderItemsManager = new OrderItemsManager(ordersRepository, productsRepository, ordersPricingCalculator);
 export const usageService: IUsageService = new UsageService(ordersRepository, routesRepository, clientsRepository, productsRepository, companyMemberRepository);
+export const entitlementService: IEntitlementService = new EntitlementService(subscriptionRepository, usageService);
 
 
 //  ==================== PRESENTATION ====================
