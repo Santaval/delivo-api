@@ -47,6 +47,7 @@ model Company {
   routes         Route[]
   paymentMethods PaymentMethod[]
   invitations    CompanyInvitation[]
+  subscription   Subscription?
 }
 
 model UserCompany {
@@ -338,6 +339,48 @@ model RoutePoint {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/// ===============================
+/// BILLING
+/// ===============================
+
+model Subscription {
+  id     String             @id @default(uuid())
+  tier   PlanTier           @default(FREE)
+  status SubscriptionStatus @default(ACTIVE)
+
+  provider            PaymentProvider?
+  providerCustomerId  String?
+  providerEntitlement String?
+
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+
+  companyId String  @unique
+  company   Company @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([providerCustomerId])
+}
+
+enum PlanTier {
+  FREE
+  BASIC // "Arranque"
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  IN_GRACE_PERIOD
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentProvider {
+  REVENUECAT
+  // TILOPAY -> phase 2
 }
 
 /// ===============================

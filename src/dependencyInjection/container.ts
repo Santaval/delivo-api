@@ -20,6 +20,7 @@ import GoogleOAuthProvider from "@/infrastructure/auth/providers/GoogleOAuthProv
 import AppleOAuthProvider from "@/infrastructure/auth/providers/AppleOAuthProvider";
 import JwtTokenService from "@/infrastructure/auth/services/JwtTokenService";
 import PrismaClientsRepository from "@/infrastructure/clients/repositories/PrismaClientsRepository";
+import PrismaSubscriptionRepository from "@/infrastructure/billing/repositories/PrismaSubscriptionRepository";
 import PrismaCompaniesRepository from "@/infrastructure/companies/repositories/PrismaCompaniesRepository";
 import PrismaCompanyMemberRepository from "@/infrastructure/companies/repositories/PrismaCompanyMemberRepository";
 import PrismaCompanyInvitationRepository from "@/infrastructure/companies/repositories/PrismaCompanyInvitationRepository";
@@ -61,6 +62,7 @@ export const ordersRepository = new PrismaOrdersRepository();
 export const routesRepository = new PrismaRoutesRepository();
 export const paymentMethodsRepository = new PrismaPaymentMethodsRepository();
 export const paymentsRepository = new PrismaPaymentsRepository();
+export const subscriptionRepository = new PrismaSubscriptionRepository();
 
 // unit of work
 export const productDeletionUOW = new PrismaProductDeletionUnitOfWork();
