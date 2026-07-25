@@ -2,6 +2,8 @@ import ENV from "@/presentation/core/config/env";
 import OAuthService from "@/application/auth/services/implementations/IOAuthService";
 import { ClientService } from "@/application/clients/services/implementations/ClientService";
 import { CompanyService } from "@/application/companies/services/implementations/CompanyService";
+import { CompanyMemberService } from "@/application/companies/services/implementations/CompanyMemberService";
+import InvitationEmailSender from "@/application/companies/services/invitations/InvitationEmailSender";
 import LocationService from "@/application/geolocation/services/implementations/LocationService";
 import OrderDeliveryStatusManager from "@/application/orders/services/implementations/OrderDeliveryStatusManger";
 import OrderItemsManager from "@/application/orders/services/implementations/OrderItemsManager";
@@ -19,6 +21,8 @@ import AppleOAuthProvider from "@/infrastructure/auth/providers/AppleOAuthProvid
 import JwtTokenService from "@/infrastructure/auth/services/JwtTokenService";
 import PrismaClientsRepository from "@/infrastructure/clients/repositories/PrismaClientsRepository";
 import PrismaCompaniesRepository from "@/infrastructure/companies/repositories/PrismaCompaniesRepository";
+import PrismaCompanyMemberRepository from "@/infrastructure/companies/repositories/PrismaCompanyMemberRepository";
+import PrismaCompanyInvitationRepository from "@/infrastructure/companies/repositories/PrismaCompanyInvitationRepository";
 import UuidIDGenerator from "@/infrastructure/core/services/UuidIDGenerator";
 import { GooglePlacesService } from "@/infrastructure/geolocation/services/GooglePlacesService";
 import PrismaOrdersRepository from "@/infrastructure/orders/repositories/PrismaOrdersRepository";
@@ -33,6 +37,7 @@ import ResendEmailProvider from "@/infrastructure/email/providers/ResendEmailPro
 import AuthController from "@/presentation/auth/controllers/Auth.controller";
 import ClientController from "@/presentation/clients/controllers/Client.controller";
 import CompanyController from "@/presentation/companies/controllers/Company.controller";
+import CompanyMemberController from "@/presentation/companies/controllers/CompanyMember.controller";
 import LocationController from "@/presentation/geolocation/controllers/LocationController";
 import OrdersController from "@/presentation/orders/controllers/Orders.controller";
 import PaymentMethodsController from "@/presentation/orders/controllers/PaymentMethods.controller";
@@ -41,12 +46,15 @@ import RoutesContoller from "@/presentation/routes/controllers/Routes.controller
 import StatsController from "@/presentation/stats/controllers/Stats.controller";
 import MyProfileController from "@/presentation/users/controllers/MyProfile.controller";
 import { IEmailService } from "@/domain/core/services/IEmailService";
+import { ICompanyMemberService } from "@/application/companies/services/interfaces/ICompanyMemberService";
 
 // ==================== INFRASTRUCTURE ====================
 
 // repositories
 export const userRepository = new PrismaUsersRepository();
 export const companiesRepository = new PrismaCompaniesRepository();
+export const companyMemberRepository = new PrismaCompanyMemberRepository();
+export const companyInvitationRepository = new PrismaCompanyInvitationRepository();
 export const clientsRepository = new PrismaClientsRepository();
 export const productsRepository = new PrismaProductsRepository();
 export const ordersRepository = new PrismaOrdersRepository();
@@ -76,6 +84,15 @@ export const jwtService = new JwtTokenService();
 export const userService = new UserService(userRepository);
 export const oAuthService = new OAuthService(userService, googleOAuthProvider, appleOAuthProvider, idGenerator);
 export const companiesService = new CompanyService(companiesRepository);
+export const invitationEmailSender = new InvitationEmailSender(emailService, ENV.APP_INVITE_URL);
+export const companyMemberService: ICompanyMemberService = new CompanyMemberService(
+  companyMemberRepository,
+  companyInvitationRepository,
+  companiesRepository,
+  userRepository,
+  idGenerator,
+  invitationEmailSender,
+);
 export const clientsService = new ClientService(clientsRepository);
 export const productsService = new ProductService(productsRepository, productDeletionUOW);
 export const ordersPricingCalculator = new OrderPricingCalculator(ordersRepository, productsRepository);
@@ -95,6 +112,7 @@ export const orderItemsManager = new OrderItemsManager(ordersRepository, product
 // controllers
 export const myProfileController = new MyProfileController(userService);
 export const companyController = new CompanyController(companiesService, idGenerator);
+export const companyMemberController = new CompanyMemberController(companyMemberService);
 export const authController = new AuthController(oAuthService, jwtService, userService);
 export const clientsController = new ClientController(clientsService);
 export const productsController = new ProductController(productsService);
