@@ -26,7 +26,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  companies UserCompany[]
+  companies       UserCompany[]
+  sentInvitations CompanyInvitation[] @relation("InvitationsSent")
 }
 
 model Company {
@@ -45,6 +46,7 @@ model Company {
   supplierBills  SupplierBill[]
   routes         Route[]
   paymentMethods PaymentMethod[]
+  invitations    CompanyInvitation[]
 }
 
 model UserCompany {
@@ -63,8 +65,35 @@ model UserCompany {
 
 enum CompanyRole {
   OWNER
-  ACCOUNTANT
-  EMPLOYEE
+  ADMIN
+  DEALER
+}
+
+model CompanyInvitation {
+  id        String                  @id @default(uuid())
+  email     String
+  role      CompanyRole             @default(DEALER)
+  status    CompanyInvitationStatus @default(PENDING)
+  token     String                  @unique
+  expiresAt DateTime
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  invitedById String
+  invitedBy   User   @relation("InvitationsSent", fields: [invitedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([email, companyId])
+}
+
+enum CompanyInvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
 }
 
 /// ===============================
