@@ -1,6 +1,7 @@
 import authRouter from "@/presentation/auth/routes/auth.route";
 import clientsRouter from "@/presentation/clients/routes/clients.routes";
 import companyRouter from "@/presentation/companies/routes/companies.routes";
+import { companyMembersRouter, invitationsRouter } from "@/presentation/companies/routes/companyMembers.routes";
 import locationRouter from "@/presentation/geolocation/routes/location.route";
 import ordersRouter from "@/presentation/orders/routes/orders.routes";
 import paymentMethodsRouter from "@/presentation/orders/routes/paymentMethods.routes";
@@ -15,6 +16,8 @@ const router = Router();
 router.use("/auth", authRouter);
 router.use('/me', profileRouter);
 router.use("/companies", companyRouter);
+router.use("/companies", companyMembersRouter);
+router.use("/invitations", invitationsRouter);
 router.use("/clients", clientsRouter);
 router.use("/products", productsRouter)
 router.use("/orders", ordersRouter);
