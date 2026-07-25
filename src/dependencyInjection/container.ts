@@ -52,6 +52,11 @@ import { UsageService } from "@/application/billing/services/implementations/Usa
 import { IUsageService } from "@/application/billing/services/interfaces/IUsageService";
 import { EntitlementService } from "@/application/billing/services/implementations/EntitlementService";
 import { IEntitlementService } from "@/application/billing/services/interfaces/IEntitlementService";
+import { SubscriptionSyncService } from "@/application/billing/services/implementations/SubscriptionSyncService";
+import { ISubscriptionSyncService } from "@/application/billing/services/interfaces/ISubscriptionSyncService";
+import { IPaymentProvider } from "@/domain/billing/providers/IPaymentProvider";
+import RevenueCatProvider from "@/infrastructure/billing/providers/RevenueCatProvider";
+import BillingWebhookController from "@/presentation/billing/controllers/BillingWebhook.controller";
 
 // ==================== INFRASTRUCTURE ====================
 
@@ -78,6 +83,7 @@ export const appleOAuthProvider = new AppleOAuthProvider();
 export const placesProvider = new GooglePlacesService();
 export const routeOptimizationProvider = new GoogleRouteOptimizationProvider();
 export const emailService: IEmailService = new ResendEmailProvider(ENV.RESEND_API_KEY, ENV.MAIL_FROM);
+export const paymentProvider: IPaymentProvider = new RevenueCatProvider(ENV.REVENUECAT_WEBHOOK_AUTH);
 
 
 // services
@@ -113,6 +119,7 @@ export const orderPaymentsService = new OrderPaymentsService(paymentsRepository,
 export const orderItemsManager = new OrderItemsManager(ordersRepository, productsRepository, ordersPricingCalculator);
 export const usageService: IUsageService = new UsageService(ordersRepository, routesRepository, clientsRepository, productsRepository, companyMemberRepository);
 export const entitlementService: IEntitlementService = new EntitlementService(subscriptionRepository, usageService);
+export const subscriptionSyncService: ISubscriptionSyncService = new SubscriptionSyncService(subscriptionRepository);
 
 
 //  ==================== PRESENTATION ====================
@@ -129,4 +136,5 @@ export const routesController = new RoutesContoller(routesService);
 export const statsController = new StatsController(financialSummaryCalculator);
 export const locationController = new LocationController(locationService);
 export const paymentMethodsController = new PaymentMethodsController(paymentMethodsService)
+export const billingWebhookController = new BillingWebhookController(paymentProvider, subscriptionSyncService);
 

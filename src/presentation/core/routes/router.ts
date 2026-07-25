@@ -1,4 +1,5 @@
 import authRouter from "@/presentation/auth/routes/auth.route";
+import billingRouter from "@/presentation/billing/routes/billing.routes";
 import clientsRouter from "@/presentation/clients/routes/clients.routes";
 import companyRouter from "@/presentation/companies/routes/companies.routes";
 import { companyMembersRouter, invitationsRouter } from "@/presentation/companies/routes/companyMembers.routes";
@@ -25,6 +26,7 @@ router.use("/routes", routesRouter);
 router.use("/stats", statsRouter);
 router.use('/locations', locationRouter);
 router.use('/payments/methods', paymentMethodsRouter);
+router.use("/billing", billingRouter);
 
 
 export default router;

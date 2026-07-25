@@ -47,6 +47,18 @@ No test, lint, or typecheck scripts are configured.
 
 API auth uses JWT (`src/presentation/auth/middlewares/jwtAuth.ts`). Extracts `Bearer` token from `Authorization` header, sets `req.user`. Routes apply `jwtAuth` middleware as needed. Google OAuth for login flow.
 
+## Billing
+
+Plans are per `Company`, not per user. RevenueCat's `app_user_id` MUST be the `companyId` — the
+mobile client passes the organization id as the app user id when starting a purchase. Webhook
+events (`POST /api/v1/billing/webhooks/revenuecat`) are unauthenticated by JWT — there is no
+`jwtAuth`/`requireCompanyId` on that route — and are instead verified server-to-server against
+the `REVENUECAT_WEBHOOK_AUTH` shared secret in the `Authorization` header
+(`src/infrastructure/billing/providers/RevenueCatProvider.ts`). The provider is abstracted behind
+`IPaymentProvider` (`src/domain/billing/providers/`) so a future Tilopay adapter can be added
+without touching application code. Plan limits (per resource, per tier) live in code in
+`src/application/billing/PlanCatalog.ts`.
+
 ## Key Quirks
 
 - Express **5.x** (not 4) — response methods may differ from 4.x patterns
