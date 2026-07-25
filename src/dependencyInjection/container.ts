@@ -31,6 +31,7 @@ import PrismaPaymentMethodsRepository from "@/infrastructure/orders/repositories
 import PrismaPaymentsRepository from "@/infrastructure/orders/repositories/PrismaPaymentsRepository";
 import PrismaProductsRepository from "@/infrastructure/products/repositories/PrismaProductsRepository";
 import { PrismaProductDeletionUnitOfWork } from "@/infrastructure/products/unitsOfWork/PrismaProductDeletionUnitOfWork";
+import { PrismaCompanyCreationUnitOfWork } from "@/infrastructure/companies/unitsOfWork/PrismaCompanyCreationUnitOfWork";
 import GoogleRouteOptimizationProvider from "@/infrastructure/routes/providers/GoogleRouteOptimizationProvider";
 import PrismaRoutesRepository from "@/infrastructure/routes/repositories/PrismaRoutesRepository";
 import PrismaUsersRepository from "@/infrastructure/users/repositories/PrismaUsersRepository";
@@ -57,6 +58,7 @@ import { ISubscriptionSyncService } from "@/application/billing/services/interfa
 import { IPaymentProvider } from "@/domain/billing/providers/IPaymentProvider";
 import RevenueCatProvider from "@/infrastructure/billing/providers/RevenueCatProvider";
 import BillingWebhookController from "@/presentation/billing/controllers/BillingWebhook.controller";
+import BillingController from "@/presentation/billing/controllers/Billing.controller";
 
 // ==================== INFRASTRUCTURE ====================
 
@@ -75,6 +77,7 @@ export const subscriptionRepository = new PrismaSubscriptionRepository();
 
 // unit of work
 export const productDeletionUOW = new PrismaProductDeletionUnitOfWork();
+export const companyCreationUOW = new PrismaCompanyCreationUnitOfWork();
 
 // providers
 export const idGenerator = new UuidIDGenerator();
@@ -95,7 +98,7 @@ export const jwtService = new JwtTokenService();
 // services
 export const userService = new UserService(userRepository);
 export const oAuthService = new OAuthService(userService, googleOAuthProvider, appleOAuthProvider, idGenerator);
-export const companiesService = new CompanyService(companiesRepository);
+export const companiesService = new CompanyService(companiesRepository, companyCreationUOW, idGenerator);
 export const invitationEmailSender = new InvitationEmailSender(emailService, ENV.APP_INVITE_URL);
 export const companyMemberService: ICompanyMemberService = new CompanyMemberService(
   companyMemberRepository,
@@ -137,4 +140,5 @@ export const statsController = new StatsController(financialSummaryCalculator);
 export const locationController = new LocationController(locationService);
 export const paymentMethodsController = new PaymentMethodsController(paymentMethodsService)
 export const billingWebhookController = new BillingWebhookController(paymentProvider, subscriptionSyncService);
+export const billingController = new BillingController(entitlementService, subscriptionRepository);
 

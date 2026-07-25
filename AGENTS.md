@@ -59,6 +59,18 @@ the `REVENUECAT_WEBHOOK_AUTH` shared secret in the `Authorization` header
 without touching application code. Plan limits (per resource, per tier) live in code in
 `src/application/billing/PlanCatalog.ts`.
 
+Every company gets a FREE subscription at creation time, in the same transaction as the company
+itself (`PrismaCompanyCreationUnitOfWork`); companies predating this were backfilled by the
+`20260725130000_backfill_free_subscriptions` data migration. Limits are enforced in the
+presentation layer by the `enforceLimit(resource)` middleware, which returns **HTTP 402** with a
+machine-readable `PLAN_LIMIT_EXCEEDED` payload — the API never blocks silently, the client owns
+the upgrade UX. Monthly/daily windows are evaluated in `America/Costa_Rica`
+(`src/application/billing/utils/billingWindows.ts`).
+
+Optional env vars: `REVENUECAT_WEBHOOK_AUTH` (must match the `Authorization` header configured in
+the RevenueCat dashboard; when unset the webhook fails closed and rejects everything),
+`REVENUECAT_API_KEY`.
+
 ## Key Quirks
 
 - Express **5.x** (not 4) — response methods may differ from 4.x patterns

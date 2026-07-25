@@ -1,6 +1,8 @@
 import { Router } from "express";
 import asyncHandler from "@/presentation/core/handlers/asyncHandler";
-import { billingWebhookController } from "@/dependencyInjection/container";
+import jwtAuth from "@/presentation/auth/middlewares/jwtAuth";
+import requireCompanyId from "@/presentation/core/middlewares/requireCompanyId";
+import { billingController, billingWebhookController } from "@/dependencyInjection/container";
 
 const billingRouter = Router();
 
@@ -10,6 +12,13 @@ const billingRouter = Router();
 billingRouter.post("/webhooks/revenuecat", asyncHandler(billingWebhookController.revenueCat.bind(billingWebhookController)));
 
 // ==================== AUTHENTICATED ====================
-// Issue #18 adds GET /subscription (jwtAuth + requireCompanyId) here.
+// Auth middlewares are applied per-route, NOT via billingRouter.use(...), so the
+// server-to-server webhook above stays unauthenticated.
+billingRouter.get(
+  "/subscription",
+  jwtAuth,
+  requireCompanyId,
+  asyncHandler(billingController.subscriptionStatus.bind(billingController)),
+);
 
 export default billingRouter;
