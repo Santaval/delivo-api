@@ -166,4 +166,20 @@ export default class PrismaClientsRepository implements IClientRepository {
       throw new DatabaseInsertError("Could not restore client");
     }
   }
+
+  /**
+   * Count active (non soft-deleted) clients belonging to a company.
+   * @param companyId The ID of the company.
+   * @returns A promise that resolves to the number of matching clients.
+   */
+  async countByCompanyId(companyId: string): Promise<number> {
+    try {
+      return await prisma.client.count({
+        where: { companyId, deletedAt: null },
+      });
+    } catch (error) {
+      console.error("Error counting clients by company:", error);
+      throw new DatabaseError("Could not count clients by company");
+    }
+  }
 }

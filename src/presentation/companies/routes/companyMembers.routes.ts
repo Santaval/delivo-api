@@ -6,6 +6,7 @@ import { InviteMemberSchema } from "../validators/inviteMember";
 import { AcceptInvitationSchema } from "../validators/acceptInvitation";
 import requireCompanyRole from "../middlewares/requireCompanyRole";
 import { companyMemberController } from "@/dependencyInjection/container";
+import enforceLimit from "@/presentation/billing/middlewares/enforceLimit";
 
 const companyMembersRouter = Router();
 
@@ -25,6 +26,12 @@ companyMembersRouter.get(
 companyMembersRouter.post(
   "/:companyId/invitations",
   requireCompanyRole,
+  // The driver seat is only consumed by DEALER invitations; ADMIN invitations don't count
+  // against the plan's driver limit.
+  enforceLimit("drivers", {
+    companyId: (req) => req.params.companyId,
+    when: (req) => req.body?.role === "DEALER",
+  }),
   validateSchema(InviteMemberSchema),
   asyncHandler(companyMemberController.inviteMember.bind(companyMemberController)),
 );
