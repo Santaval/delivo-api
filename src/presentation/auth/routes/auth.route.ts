@@ -27,7 +27,7 @@ authRouter.post("/apple",
 // TEST_LOGIN_ENABLED === "true": with the flag off (the default) this route does not exist,
 // so it 404s instead of being reachable-but-rejecting.
 if (ENV.TEST_LOGIN_ENABLED) {
-  authRouter.post("/test-login",
+  authRouter.post("/qa",
     rateLimit({ windowMs: 15 * 60 * 1000, max: 10 }), // 10 attempts / 15 min per IP
     validateSchema(TestLoginSchema),
     asyncHandler(authController.testLogin.bind(authController))
