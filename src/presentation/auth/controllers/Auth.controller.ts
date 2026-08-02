@@ -3,13 +3,16 @@ import { IOAuthService } from "@/application/auth/services/interfaces/IOAuthServ
 import { AuthResponse } from "../responses/AuthResponse";
 import IJwtService from "@/domain/auth/services/IJwtService";
 import { IUserService } from "@/application/users/services/interfaces/IUserService";
+import { ITestLoginService } from "@/application/auth/services/interfaces/ITestLoginService";
 import UserDtoMapper from "@/presentation/users/mappers/User.mapper";
+import { TestLoginRequest } from "../requests/TestLoginRequest";
 
 export default class AuthController {
   constructor(
     private readonly oAuthService: IOAuthService,
     private readonly jwtService: IJwtService,
-    private readonly usersService: IUserService
+    private readonly usersService: IUserService,
+    private readonly testLoginService: ITestLoginService
   ) {}
 
   async googleLogin(req: Request, res: Response): Promise<void> {
@@ -128,6 +131,28 @@ export default class AuthController {
       console.error("Token refresh error:", error);
       res.status(401).json({ message: "Error renovando token" });
     }
+  }
+
+  // Fixed-credential login for App Store / Google Play reviewers. The route is only mounted
+  // when TEST_LOGIN_ENABLED is true, so this handler is unreachable in normal deployments.
+  // No try/catch here: asyncHandler forwards any rejection (InvalidCredentialsError included)
+  // to the central errorHandler.
+  async testLogin(req: Request, res: Response): Promise<void> {
+    const { email, password } = req.body as TestLoginRequest;
+    const user = await this.testLoginService.authenticate(email, password);
+
+    const jwtToken = this.jwtService.generateToken({
+      id: user.id,
+      email: user.email.value,
+    });
+
+    const response: AuthResponse = {
+      user: UserDtoMapper.toResponse(user),
+      token: jwtToken,
+      expiresIn: "7d",
+    };
+
+    res.json(response);
   }
 
   async logout(req: Request, res: Response): Promise<void> {

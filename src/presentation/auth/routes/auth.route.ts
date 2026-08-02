@@ -3,8 +3,10 @@ import asyncHandler from "@/presentation/core/handlers/asyncHandler";
 import validateSchema from "@/presentation/core/middlewares/validateSchema";
 import { GoogleLoginSchema } from "../validators/googleLogin";
 import { AppleLoginSchema } from "../validators/appleLogin";
+import { TestLoginSchema } from "../validators/testLogin";
 import { authController } from "@/dependencyInjection/container";
 import jwtAuth from "../middlewares/jwtAuth";
+import ENV from "@/presentation/core/config/env";
 
 const authRouter = Router();
 
@@ -19,6 +21,16 @@ authRouter.post("/apple",
   validateSchema(AppleLoginSchema),
   asyncHandler(authController.appleLogin.bind(authController))
 );
+
+// Fixed-credential login for App Store / Google Play review. Only mounted when
+// TEST_LOGIN_ENABLED === "true": with the flag off (the default) this route does not exist,
+// so it 404s instead of being reachable-but-rejecting.
+if (ENV.TEST_LOGIN_ENABLED) {
+  authRouter.post("/test-login",
+    validateSchema(TestLoginSchema),
+    asyncHandler(authController.testLogin.bind(authController))
+  );
+}
 
 // Refresh JWT token
 authRouter.post("/refresh",

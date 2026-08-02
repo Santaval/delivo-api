@@ -1,5 +1,7 @@
 import ENV from "@/presentation/core/config/env";
 import OAuthService from "@/application/auth/services/implementations/IOAuthService";
+import TestLoginService from "@/application/auth/services/implementations/TestLoginService";
+import { ITestLoginService } from "@/application/auth/services/interfaces/ITestLoginService";
 import { ClientService } from "@/application/clients/services/implementations/ClientService";
 import { CompanyService } from "@/application/companies/services/implementations/CompanyService";
 import { CompanyMemberService } from "@/application/companies/services/implementations/CompanyMemberService";
@@ -98,6 +100,11 @@ export const jwtService = new JwtTokenService();
 // services
 export const userService = new UserService(userRepository);
 export const oAuthService = new OAuthService(userService, googleOAuthProvider, appleOAuthProvider, idGenerator);
+export const testLoginService: ITestLoginService = new TestLoginService(userService, idGenerator, {
+  enabled: ENV.TEST_LOGIN_ENABLED,
+  email: ENV.TEST_LOGIN_EMAIL,
+  password: ENV.TEST_LOGIN_PASSWORD,
+});
 export const companiesService = new CompanyService(companiesRepository, companyCreationUOW, idGenerator);
 export const invitationEmailSender = new InvitationEmailSender(emailService, ENV.APP_INVITE_URL);
 export const companyMemberService: ICompanyMemberService = new CompanyMemberService(
@@ -131,7 +138,7 @@ export const subscriptionSyncService: ISubscriptionSyncService = new Subscriptio
 export const myProfileController = new MyProfileController(userService);
 export const companyController = new CompanyController(companiesService, idGenerator);
 export const companyMemberController = new CompanyMemberController(companyMemberService);
-export const authController = new AuthController(oAuthService, jwtService, userService);
+export const authController = new AuthController(oAuthService, jwtService, userService, testLoginService);
 export const clientsController = new ClientController(clientsService);
 export const productsController = new ProductController(productsService);
 export const ordersController = new OrdersController(ordersService, orderPaymentsService, orderItemsManager);
