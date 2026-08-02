@@ -10,6 +10,7 @@ import productsRouter from "@/presentation/products/routes/products.routes";
 import routesRouter from "@/presentation/routes/routes/routes.routes";
 import statsRouter from "@/presentation/stats/routes/stats.routes";
 import profileRouter from "@/presentation/users/routes/profiles.routes";
+import systemRouter from "@/presentation/system/routes/system.route";
 import { Router } from "express";
 const router = Router();
 
@@ -27,6 +28,7 @@ router.use("/stats", statsRouter);
 router.use('/locations', locationRouter);
 router.use('/payments/methods', paymentMethodsRouter);
 router.use("/billing", billingRouter);
+router.use("/system", systemRouter);
 
 
 export default router;

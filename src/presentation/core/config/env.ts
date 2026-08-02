@@ -1,6 +1,8 @@
 import dotenv from "dotenv" ;
 dotenv.config();
 
+const SEMVER_REGEX = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+
 function required(name: string): string {
   const value = process.env[name];
   if (!value) {
@@ -26,6 +28,9 @@ const ENV = {
   TEST_LOGIN_ENABLED: process.env.TEST_LOGIN_ENABLED === "true",
   TEST_LOGIN_EMAIL: process.env.TEST_LOGIN_EMAIL || "",
   TEST_LOGIN_PASSWORD: process.env.TEST_LOGIN_PASSWORD || "",
+  // Minimum supported frontend/app version. Required and validated as semver at boot so
+  // a typo doesn't silently ship a broken version gate to clients.
+  MIN_FRONTEND_VERSION: required("MIN_FRONTEND_VERSION"),
 };
 
 const TEST_LOGIN_MIN_PASSWORD_LENGTH = 16;
@@ -66,5 +71,18 @@ function validateTestLoginConfig(): void {
 }
 
 validateTestLoginConfig();
+
+// Fail-fast: the min frontend version must be valid semver. A malformed value
+// (e.g. "1.2" or "v1.2.0") would otherwise silently ship a broken version gate
+// to every client. Never include the value itself in the error message.
+function validateMinFrontendVersionConfig(): void {
+  if (!SEMVER_REGEX.test(ENV.MIN_FRONTEND_VERSION)) {
+    throw new Error(
+      "MIN_FRONTEND_VERSION must be a valid semver string (e.g. \"1.0.0\")."
+    );
+  }
+}
+
+validateMinFrontendVersionConfig();
 
 export default ENV;

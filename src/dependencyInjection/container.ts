@@ -63,6 +63,7 @@ import { IPaymentProvider } from "@/domain/billing/providers/IPaymentProvider";
 import RevenueCatProvider from "@/infrastructure/billing/providers/RevenueCatProvider";
 import BillingWebhookController from "@/presentation/billing/controllers/BillingWebhook.controller";
 import BillingController from "@/presentation/billing/controllers/Billing.controller";
+import SystemController from "@/presentation/system/controllers/SystemController";
 
 // ==================== INFRASTRUCTURE ====================
 
@@ -159,4 +160,5 @@ export const locationController = new LocationController(locationService);
 export const paymentMethodsController = new PaymentMethodsController(paymentMethodsService)
 export const billingWebhookController = new BillingWebhookController(paymentProvider, subscriptionSyncService);
 export const billingController = new BillingController(entitlementService, subscriptionRepository);
+export const systemController = new SystemController(ENV.MIN_FRONTEND_VERSION);
 
