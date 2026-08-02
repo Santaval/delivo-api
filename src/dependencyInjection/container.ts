@@ -2,6 +2,8 @@ import ENV from "@/presentation/core/config/env";
 import OAuthService from "@/application/auth/services/implementations/IOAuthService";
 import TestLoginService from "@/application/auth/services/implementations/TestLoginService";
 import { ITestLoginService } from "@/application/auth/services/interfaces/ITestLoginService";
+import { TestAccountSeeder } from "@/application/auth/services/implementations/TestAccountSeeder";
+import { ITestAccountSeeder } from "@/application/auth/services/interfaces/ITestAccountSeeder";
 import { ClientService } from "@/application/clients/services/implementations/ClientService";
 import { CompanyService } from "@/application/companies/services/implementations/CompanyService";
 import { CompanyMemberService } from "@/application/companies/services/implementations/CompanyMemberService";
@@ -100,11 +102,6 @@ export const jwtService = new JwtTokenService();
 // services
 export const userService = new UserService(userRepository);
 export const oAuthService = new OAuthService(userService, googleOAuthProvider, appleOAuthProvider, idGenerator);
-export const testLoginService: ITestLoginService = new TestLoginService(userService, idGenerator, {
-  enabled: ENV.TEST_LOGIN_ENABLED,
-  email: ENV.TEST_LOGIN_EMAIL,
-  password: ENV.TEST_LOGIN_PASSWORD,
-});
 export const companiesService = new CompanyService(companiesRepository, companyCreationUOW, idGenerator);
 export const invitationEmailSender = new InvitationEmailSender(emailService, ENV.APP_INVITE_URL);
 export const companyMemberService: ICompanyMemberService = new CompanyMemberService(
@@ -127,6 +124,20 @@ export const locationService = new LocationService(placesProvider);
 export const paymentMethodsService = new PaymentMethodsService(paymentMethodsRepository);
 export const orderPaymentsService = new OrderPaymentsService(paymentsRepository, ordersRepository);
 export const orderItemsManager = new OrderItemsManager(ordersRepository, productsRepository, ordersPricingCalculator);
+export const testAccountSeeder: ITestAccountSeeder = new TestAccountSeeder(
+  userService,
+  companiesService,
+  clientsService,
+  productsService,
+  ordersService,
+  orderItemsManager,
+  idGenerator,
+);
+export const testLoginService: ITestLoginService = new TestLoginService(userService, idGenerator, {
+  enabled: ENV.TEST_LOGIN_ENABLED,
+  email: ENV.TEST_LOGIN_EMAIL,
+  password: ENV.TEST_LOGIN_PASSWORD,
+}, testAccountSeeder);
 export const usageService: IUsageService = new UsageService(ordersRepository, routesRepository, clientsRepository, productsRepository, companyMemberRepository);
 export const entitlementService: IEntitlementService = new EntitlementService(subscriptionRepository, usageService);
 export const subscriptionSyncService: ISubscriptionSyncService = new SubscriptionSyncService(subscriptionRepository);

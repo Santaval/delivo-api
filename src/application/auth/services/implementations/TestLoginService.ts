@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "crypto";
 import { User } from "@/domain/users/entities/User";
 import { ITestLoginService } from "../interfaces/ITestLoginService";
+import { ITestAccountSeeder } from "../interfaces/ITestAccountSeeder";
 import { IIDGenerator } from "@/domain/core/services/IIDGenerator";
 import { IUserService } from "@/application/users/services/interfaces/IUserService";
 import { InvalidCredentialsError } from "../../errors/InvalidCredentialsError";
@@ -21,7 +22,8 @@ export default class TestLoginService implements ITestLoginService {
   constructor(
     private readonly usersService: IUserService,
     private readonly idGenerator: IIDGenerator,
-    private readonly config: TestLoginConfig
+    private readonly config: TestLoginConfig,
+    private readonly seeder: ITestAccountSeeder,
   ) {}
 
   async authenticate(email: string, password: string): Promise<User> {
@@ -44,6 +46,7 @@ export default class TestLoginService implements ITestLoginService {
     }
 
     let user = await this.usersService.find(normalizedEmail, "email");
+    let justCreated = false;
     if (!user) {
       const newUser = new User({
         id: this.idGenerator.generate(),
@@ -55,6 +58,13 @@ export default class TestLoginService implements ITestLoginService {
         updatedAt: new Date().toISOString(),
       });
       user = await this.usersService.create(newUser);
+      justCreated = true;
+    }
+
+    // Only seed demo data the first time this account is created — never on subsequent
+    // logins. The seeder swallows its own errors, so the token below is always returned.
+    if (justCreated) {
+      await this.seeder.seed(user.id);
     }
 
     return user;
