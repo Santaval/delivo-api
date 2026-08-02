@@ -6,6 +6,7 @@ import { AppleLoginSchema } from "../validators/appleLogin";
 import { TestLoginSchema } from "../validators/testLogin";
 import { authController } from "@/dependencyInjection/container";
 import jwtAuth from "../middlewares/jwtAuth";
+import rateLimit from "@/presentation/core/middlewares/rateLimit";
 import ENV from "@/presentation/core/config/env";
 
 const authRouter = Router();
@@ -27,6 +28,7 @@ authRouter.post("/apple",
 // so it 404s instead of being reachable-but-rejecting.
 if (ENV.TEST_LOGIN_ENABLED) {
   authRouter.post("/test-login",
+    rateLimit({ windowMs: 15 * 60 * 1000, max: 10 }), // 10 attempts / 15 min per IP
     validateSchema(TestLoginSchema),
     asyncHandler(authController.testLogin.bind(authController))
   );

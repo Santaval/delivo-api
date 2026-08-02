@@ -141,6 +141,10 @@ export default class AuthController {
     const { email, password } = req.body as TestLoginRequest;
     const user = await this.testLoginService.authenticate(email, password);
 
+    // Audit trail for a temporary, high-privilege-adjacent bypass of normal OAuth login.
+    // Never log the password or anything beyond the requesting IP.
+    console.warn(`[test-login] successful review login from ip=${req.ip}`);
+
     const jwtToken = this.jwtService.generateToken({
       id: user.id,
       email: user.email.value,

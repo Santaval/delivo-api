@@ -28,9 +28,12 @@ const ENV = {
   TEST_LOGIN_PASSWORD: process.env.TEST_LOGIN_PASSWORD || "",
 };
 
+const TEST_LOGIN_MIN_PASSWORD_LENGTH = 16;
+
 // Fail-fast (never fail-open): if the test-login route is enabled, its credentials must be
-// present. A deployment with TEST_LOGIN_ENABLED=true and no credentials must not boot silently
-// into a broken or, worse, wide-open review endpoint.
+// present and strong enough. A deployment with TEST_LOGIN_ENABLED=true and no/weak
+// credentials must not boot silently into a broken or, worse, easily-guessable review
+// endpoint.
 function validateTestLoginConfig(): void {
   if (!ENV.TEST_LOGIN_ENABLED) return;
 
@@ -41,6 +44,25 @@ function validateTestLoginConfig(): void {
   if (!ENV.TEST_LOGIN_PASSWORD) {
     throw new Error("TEST_LOGIN_ENABLED is true but TEST_LOGIN_PASSWORD is missing");
   }
+
+  if (ENV.TEST_LOGIN_PASSWORD.length < TEST_LOGIN_MIN_PASSWORD_LENGTH) {
+    // Never include the value itself in the message.
+    throw new Error(
+      `TEST_LOGIN_PASSWORD must be at least ${TEST_LOGIN_MIN_PASSWORD_LENGTH} characters long. ` +
+      `Generate one with: openssl rand -base64 24`
+    );
+  }
+
+  // Loud, unmissable boot warning: this is a temporary, submission-only bypass of the normal
+  // OAuth login, not a product feature. Never log the password or the email itself.
+  console.warn(
+    "\n" +
+    "==================== WARNING: TEST LOGIN ENABLED ====================\n" +
+    "Password login (POST /auth/test-login) is ENABLED on this deployment.\n" +
+    "This exists ONLY for App Store / Google Play review.\n" +
+    "TURN IT OFF (TEST_LOGIN_ENABLED=false) AS SOON AS THE APP IS APPROVED.\n" +
+    "======================================================================\n"
+  );
 }
 
 validateTestLoginConfig();
