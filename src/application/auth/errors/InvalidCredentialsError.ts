@@ -1,8 +1,8 @@
 import ApplicationError from "@/application/core/errors/ApplicationError";
 
 export class InvalidCredentialsError extends ApplicationError {
-  constructor() {
-    super("Invalid email or password");
+  constructor(message: string = "Invalid email or password") {
+    super(message);
     this.name = "InvalidCredentialsError";
     this.stack = new Error().stack;
     this.statusCode = 401;

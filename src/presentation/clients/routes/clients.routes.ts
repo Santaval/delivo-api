@@ -4,12 +4,13 @@ import { Router } from "express";
 import { CreateClientSchema } from "../validators/createClient";
 import { clientsController } from "@/dependencyInjection/container";
 import { UpdateClientSchema } from "../validators/updateClient";
+import enforceLimit from "@/presentation/billing/middlewares/enforceLimit";
 
 const clientsRouter = Router();
 
 clientsRouter.use(requireCompanyId)
 
-clientsRouter.post("/", validateSchema(CreateClientSchema),clientsController.create.bind(clientsController));
+clientsRouter.post("/", enforceLimit("clients"), validateSchema(CreateClientSchema),clientsController.create.bind(clientsController));
 
 clientsRouter.get("/", clientsController.findByCompany.bind(clientsController));
 

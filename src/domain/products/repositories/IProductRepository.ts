@@ -9,4 +9,10 @@ export interface IProductRepository {
   findByCompanyId(companyId: string): Promise<Product[]>;
   findByName(name: string, companyId: string): Promise<Product | null>;
   findByPriceRange(minPrice: number, maxPrice: number, companyId: string): Promise<Product[]>;
+  /**
+   * Count active (non soft-deleted) products belonging to a company.
+   * @param companyId The ID of the company.
+   * @returns A promise that resolves to the number of matching products.
+   */
+  countByCompanyId(companyId: string): Promise<number>;
 }

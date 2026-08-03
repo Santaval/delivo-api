@@ -4,10 +4,15 @@ import { prisma } from "@/infrastructure/prisma/client";
 import { PrismaCompanyMapper } from "../mappers/PrismaCompanyMapper";
 import DatabaseError from "@/infrastructure/core/errors/DatabaseError";
 import DatabaseInsertError from "@/infrastructure/core/errors/DatabaseInsertError";
+import { Prisma } from "@/infrastructure/prisma/generated/prisma/client";
 
 export default class PrismaCompaniesRepository implements ICompanyRepository {
 
-  constructor() { }
+  private readonly client: Prisma.TransactionClient;
+
+  constructor(client?: Prisma.TransactionClient) {
+    this.client = client || prisma;
+  }
 
   /**
    * Fetch all companies from the database.
@@ -15,7 +20,7 @@ export default class PrismaCompaniesRepository implements ICompanyRepository {
    */
   async all(): Promise<Company[]> {
     try {
-      const companies = await prisma.company.findMany();
+      const companies = await this.client.company.findMany();
       return companies.map((company) => PrismaCompanyMapper.toDomain(company));
     } catch (error) {
       console.error("Error fetching companies:", error);
@@ -31,7 +36,7 @@ export default class PrismaCompaniesRepository implements ICompanyRepository {
    */
   async find(value: string, field?: string): Promise<Company | null> {
     try {
-      const company = await prisma.company.findFirst({
+      const company = await this.client.company.findFirst({
         where: {
           [field || "id"]: value,
         },
@@ -50,7 +55,7 @@ export default class PrismaCompaniesRepository implements ICompanyRepository {
    */
   async create(company: Company): Promise<void> {
     try {
-      await prisma.company.create(PrismaCompanyMapper.toPersistence(company));
+      await this.client.company.create(PrismaCompanyMapper.toPersistence(company));
     } catch (error) {
       console.error("Error creating company:", error);
       throw new DatabaseInsertError("Could not create company");
@@ -64,7 +69,7 @@ export default class PrismaCompaniesRepository implements ICompanyRepository {
    */
   async update(company: Company): Promise<void> {
     try {
-      await prisma.company.update({
+      await this.client.company.update({
         where: { id: company.id },
         data: PrismaCompanyMapper.toPersistence(company).data,
       });
@@ -81,7 +86,7 @@ export default class PrismaCompaniesRepository implements ICompanyRepository {
    */
   async delete(companyId: string): Promise<void> {
     try {
-      await prisma.company.delete({
+      await this.client.company.delete({
         where: { id: companyId },
       });
     } catch (error) {
@@ -91,7 +96,7 @@ export default class PrismaCompaniesRepository implements ICompanyRepository {
   }
   async addUser(companyId: string, userId: string): Promise<void> {
     try {
-      await prisma.userCompany.create({
+      await this.client.userCompany.create({
         data: {
           company: {
             connect: { id: companyId },

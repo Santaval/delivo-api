@@ -26,7 +26,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  companies UserCompany[]
+  companies       UserCompany[]
+  sentInvitations CompanyInvitation[] @relation("InvitationsSent")
 }
 
 model Company {
@@ -45,6 +46,8 @@ model Company {
   supplierBills  SupplierBill[]
   routes         Route[]
   paymentMethods PaymentMethod[]
+  invitations    CompanyInvitation[]
+  subscription   Subscription?
 }
 
 model UserCompany {
@@ -63,8 +66,35 @@ model UserCompany {
 
 enum CompanyRole {
   OWNER
-  ACCOUNTANT
-  EMPLOYEE
+  ADMIN
+  DEALER
+}
+
+model CompanyInvitation {
+  id        String                  @id @default(uuid())
+  email     String
+  role      CompanyRole             @default(DEALER)
+  status    CompanyInvitationStatus @default(PENDING)
+  token     String                  @unique
+  expiresAt DateTime
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  invitedById String
+  invitedBy   User   @relation("InvitationsSent", fields: [invitedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([email, companyId])
+}
+
+enum CompanyInvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
 }
 
 /// ===============================
@@ -309,6 +339,48 @@ model RoutePoint {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/// ===============================
+/// BILLING
+/// ===============================
+
+model Subscription {
+  id     String             @id @default(uuid())
+  tier   PlanTier           @default(FREE)
+  status SubscriptionStatus @default(ACTIVE)
+
+  provider            PaymentProvider?
+  providerCustomerId  String?
+  providerEntitlement String?
+
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+
+  companyId String  @unique
+  company   Company @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([providerCustomerId])
+}
+
+enum PlanTier {
+  FREE
+  BASIC // "Arranque"
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  IN_GRACE_PERIOD
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentProvider {
+  REVENUECAT
+  // TILOPAY -> phase 2
 }
 
 /// ===============================

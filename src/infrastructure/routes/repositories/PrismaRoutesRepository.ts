@@ -179,6 +179,30 @@ export default class PrismaRoutesRepository implements IRouteRepository {
     }
   }
 
+  /**
+   * Count routes created by a company within a half-open date range `[start, end)`.
+   * @param companyId The ID of the company.
+   * @param start Inclusive lower bound of `createdAt`.
+   * @param end Exclusive upper bound of `createdAt`.
+   * @returns A promise that resolves to the number of matching routes.
+   */
+  async countByCompanyAndCreatedAtRange(companyId: string, start: Date, end: Date): Promise<number> {
+    try {
+      return await prisma.route.count({
+        where: {
+          companyId,
+          createdAt: {
+            gte: start,
+            lt: end,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Error counting routes by company ID:", error);
+      throw new DatabaseError("Could not count routes");
+    }
+  }
+
   getIncludeConditions() {
     return {
       points: {

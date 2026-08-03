@@ -1,7 +1,7 @@
 import ApplicationError from '@/application/core/errors/ApplicationError';
-import DataError from '@/domain/core/errors/DataError';
 import DomainError from '@/domain/core/errors/DomainError';
 import InfrastructureError from '@/infrastructure/core/errors/InfrastructureError';
+import { LimitExceededError } from '@/application/billing/errors/LimitExceededError';
 import { Request, Response, NextFunction } from 'express';
 
 const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
@@ -10,16 +10,18 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
     console.log(typeof err);
     console.error("Error:", err.stack);
 
-    if (err instanceof DomainError || err instanceof InfrastructureError || err instanceof ApplicationError) {
-        if (err instanceof DataError) {
-            res.status(err.statusCode).json({ message: err.message });
-            return;
-        }
-        if (err instanceof InfrastructureError) {
-            res.status(err.statusCode).json({ message: err.message});
-            return;
-        }
+    // LimitExceededError is an ApplicationError subclass, so this must be checked before the
+    // generic ApplicationError branch below.
+    if (err instanceof LimitExceededError) {
+        res.status(402).json(err.toPayload());
+        return;
     }
+
+    if (err instanceof DomainError || err instanceof InfrastructureError || err instanceof ApplicationError) {
+        res.status(err.statusCode).json({ message: err.message });
+        return;
+    }
+
     res.status(500).json({ message: 'Internal Server Error' });
     return
 };
