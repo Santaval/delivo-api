@@ -22,6 +22,7 @@ import FinancialSummaryCalculator from "@/application/stats/services/implementat
 import { UserService } from "@/application/users/services/implementations/UserService";
 import { AccountDeletionService } from "@/application/users/services/implementations/AccountDeletionService";
 import { IAccountDeletionService } from "@/application/users/services/interfaces/IAccountDeletionService";
+import AccountDeletionEmailSender from "@/application/users/services/AccountDeletionEmailSender";
 import GoogleOAuthProvider from "@/infrastructure/auth/providers/GoogleOAuthProvider";
 import AppleOAuthProvider from "@/infrastructure/auth/providers/AppleOAuthProvider";
 import JwtTokenService from "@/infrastructure/auth/services/JwtTokenService";
@@ -148,12 +149,17 @@ export const entitlementService: IEntitlementService = new EntitlementService(su
 export const subscriptionSyncService: ISubscriptionSyncService = new SubscriptionSyncService(subscriptionRepository);
 
 export const accountDeletionService: IAccountDeletionService = new AccountDeletionService(userDeletionUOW);
+export const accountDeletionEmailSender = new AccountDeletionEmailSender(emailService);
 
 
 //  ==================== PRESENTATION ====================
 
 // controllers
-export const myProfileController = new MyProfileController(userService);
+export const myProfileController = new MyProfileController(
+  userService,
+  accountDeletionService,
+  accountDeletionEmailSender,
+);
 export const companyController = new CompanyController(companiesService, idGenerator);
 export const companyMemberController = new CompanyMemberController(companyMemberService);
 export const authController = new AuthController(oAuthService, jwtService, userService, testLoginService);
