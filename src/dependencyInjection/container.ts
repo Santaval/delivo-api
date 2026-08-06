@@ -20,6 +20,8 @@ import RouteOptimizationService from "@/application/routes/services/implementati
 import RouteService from "@/application/routes/services/implementations/RouteService";
 import FinancialSummaryCalculator from "@/application/stats/services/implementations/FinancialSummaryCalculator";
 import { UserService } from "@/application/users/services/implementations/UserService";
+import { AccountDeletionService } from "@/application/users/services/implementations/AccountDeletionService";
+import { IAccountDeletionService } from "@/application/users/services/interfaces/IAccountDeletionService";
 import GoogleOAuthProvider from "@/infrastructure/auth/providers/GoogleOAuthProvider";
 import AppleOAuthProvider from "@/infrastructure/auth/providers/AppleOAuthProvider";
 import JwtTokenService from "@/infrastructure/auth/services/JwtTokenService";
@@ -144,6 +146,8 @@ export const testLoginService: ITestLoginService = new TestLoginService(userServ
 export const usageService: IUsageService = new UsageService(ordersRepository, routesRepository, clientsRepository, productsRepository, companyMemberRepository);
 export const entitlementService: IEntitlementService = new EntitlementService(subscriptionRepository, usageService);
 export const subscriptionSyncService: ISubscriptionSyncService = new SubscriptionSyncService(subscriptionRepository);
+
+export const accountDeletionService: IAccountDeletionService = new AccountDeletionService(userDeletionUOW);
 
 
 //  ==================== PRESENTATION ====================

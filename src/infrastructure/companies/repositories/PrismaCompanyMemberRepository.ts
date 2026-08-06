@@ -27,6 +27,18 @@ export default class PrismaCompanyMemberRepository implements ICompanyMemberRepo
     }
   }
 
+  async findByUser(userId: string): Promise<CompanyMember[]> {
+    try {
+      const rows = await this.client.userCompany.findMany({
+        where: { userId },
+      });
+      return rows.map((row) => PrismaCompanyMemberMapper.toDomain(row));
+    } catch (error) {
+      console.error("Error fetching memberships by user:", error);
+      throw new DatabaseError("Could not fetch memberships by user");
+    }
+  }
+
   async findMembership(userId: string, companyId: string): Promise<CompanyMember | null> {
     try {
       const row = await this.client.userCompany.findUnique({

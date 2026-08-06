@@ -83,4 +83,26 @@ export default class PrismaCompanyInvitationRepository implements ICompanyInvita
       throw new DatabaseInsertError("Could not update invitation");
     }
   }
+
+  async deleteManyByInvitedBy(invitedById: string): Promise<void> {
+    try {
+      await this.client.companyInvitation.deleteMany({
+        where: { invitedById },
+      });
+    } catch (error) {
+      console.error("Error deleting invitations by inviter:", error);
+      throw new DatabaseInsertError("Could not delete invitations by inviter");
+    }
+  }
+
+  async deleteManyByEmail(email: string): Promise<void> {
+    try {
+      await this.client.companyInvitation.deleteMany({
+        where: { email },
+      });
+    } catch (error) {
+      console.error("Error deleting invitations by email:", error);
+      throw new DatabaseInsertError("Could not delete invitations by email");
+    }
+  }
 }
