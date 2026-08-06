@@ -27,4 +27,14 @@ export default class GoogleOAuthProvider implements IOAuthProvider {
       email_verified: payload.email_verified
     }
   }
+
+  /**
+   * Google Sign In is one-shot on this server: we only verify the id token at login
+   * and never persist any access/refresh token. There is therefore nothing to
+   * revoke server-side. The mobile client owns its own Google sign-out; this is a
+   * logged no-op so the shared `IOAuthProvider` port stays uniform across providers.
+   */
+  async revokeToken(_authorizationCode: string): Promise<void> {
+    console.warn("GoogleOAuthProvider: revokeToken is not supported; ignoring.");
+  }
 }

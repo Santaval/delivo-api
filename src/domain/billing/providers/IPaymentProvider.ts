@@ -41,4 +41,15 @@ export interface IPaymentProvider {
   verifyWebhook(headers: Record<string, string | string[] | undefined>): boolean;
   /** Provider payload -> neutral event, or null when the event type is not relevant to us. */
   parseWebhookEvent(payload: unknown): SubscriptionEvent | null;
+  /**
+   * Best-effort: delete the subscriber on the provider side. By convention
+   * `providerCustomerId === companyId` (see above).
+   *
+   * Idempotent: calling it for an already-deleted (or never-existing) subscriber
+   * resolves successfully. Implementations MUST silently skip (log + return) when
+   * the provider credentials are not configured, so account deletion still succeeds
+   * on a deployment without them. Throws InfrastructureError on transient failure;
+   * the caller is expected to catch and log, never to revert the DB deletion.
+   */
+  deleteSubscriber(providerCustomerId: string): Promise<void>;
 }

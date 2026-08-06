@@ -1,6 +1,7 @@
 import { ISubscriptionSyncService } from "@/application/billing/services/interfaces/ISubscriptionSyncService";
 import { SubscriptionEvent, SubscriptionEventKind } from "@/domain/billing/providers/IPaymentProvider";
 import { ISubscriptionRepository } from "@/domain/billing/repositories/ISubscriptionRepository";
+import { ICompanyRepository } from "@/domain/companies/repositories/ICompanyRepository";
 import { SubscriptionStatusType } from "@/domain/billing/valueObjects/subscriptionStatus.valueObject";
 
 /** Maps a provider-neutral event kind to the resulting `Subscription.status`. */
@@ -20,9 +21,25 @@ const STATUS_BY_EVENT_KIND: Record<SubscriptionEventKind, SubscriptionStatusType
  * event log/dedup table is needed for this MVP.
  */
 export class SubscriptionSyncService implements ISubscriptionSyncService {
-  constructor(private readonly subscriptionRepository: ISubscriptionRepository) {}
+  constructor(
+    private readonly subscriptionRepository: ISubscriptionRepository,
+    private readonly companyRepository: ICompanyRepository,
+  ) {}
 
   async applyEvent(event: SubscriptionEvent): Promise<void> {
+    // Ignore events for a company that no longer exists (e.g. after account deletion
+    // cascaded the company away). Without this guard the upsert below would either throw
+    // on the FK RESTRICT or, worse, leave an orphan Subscription row — and RevenueCat would
+    // keep retrying the webhook because we returned 5xx. Logging + 200 is the correct
+    // response: the event is factual but the local state is gone and stays gone.
+    const company = await this.companyRepository.find(event.companyId, "id");
+    if (!company) {
+      console.log(
+        `SubscriptionSyncService: ignoring ${event.eventId} (${event.kind}) for missing company ${event.companyId}`,
+      );
+      return;
+    }
+
     const status = STATUS_BY_EVENT_KIND[event.kind];
 
     // Note: on EXPIRED we still persist tier: BASIC alongside status: EXPIRED — we don't

@@ -3,14 +3,14 @@ import { UpdateUserRequest } from "../requests/UpdateUserRequest";
 import UserDtoMapper from "../mappers/User.mapper";
 import { IUserService } from "@/application/users/services/interfaces/IUserService";
 import { IAccountDeletionService } from "@/application/users/services/interfaces/IAccountDeletionService";
-import AccountDeletionEmailSender from "@/application/users/services/AccountDeletionEmailSender";
+import { IAccountDeletionExternalCleanup } from "@/application/users/services/interfaces/IAccountDeletionExternalCleanup";
 
 export default class MyProfileController {
 
   constructor(
     private readonly userService: IUserService,
     private readonly accountDeletionService: IAccountDeletionService,
-    private readonly accountDeletionEmailSender: AccountDeletionEmailSender,
+    private readonly accountDeletionExternalCleanup: IAccountDeletionExternalCleanup,
   ) {}
 
   async update(req: Request, res: Response): Promise<void> {
@@ -52,27 +52,26 @@ export default class MyProfileController {
   }
 
   async deleteAccount(req: Request, res: Response): Promise<void> {
+    const { appleAuthorizationCode } = req.body ?? {};
     // @ts-expect-error
     const { id } = req.user;
+
     const result = await this.accountDeletionService.deleteAccount(id);
 
     // Audit trail for a destructive action: userId + counts only.
-    // Never log the email or any tokens.
+    // Never log the email, the appleAuthorizationCode, or any tokens.
     console.log(
       `[account-deletion] userId=${id} deletedCompanies=${result.deletedCompanyIds.length} unlinkedCompanies=${result.unlinkedCompanyIds.length}`,
     );
 
-    // Send the confirmation email AFTER the deletion has committed (deleteAccount
-    // returns only once the transaction is done). A Resend outage must never
-    // revert the deletion nor surface as 500 to the client.
+    // Best-effort external cleanup (Apple revoke, RevenueCat subscriber deletion,
+    // confirmation email). Each side effect is isolated inside `run`; the wrapper
+    // here is a secondary guard so an unforeseen throw still never reaches the
+    // client. The deletion has already committed and must not be reverted.
     try {
-      await this.accountDeletionEmailSender.sendDeletionConfirmationEmail(
-        result.email,
-        result.name,
-        result.deletedCompanyIds.length,
-      );
+      await this.accountDeletionExternalCleanup.run({ result, appleAuthorizationCode });
     } catch (error) {
-      console.error("Failed to send account deletion confirmation email:", error);
+      console.error("Account deletion external cleanup failed:", error);
     }
 
     res.status(204).send();

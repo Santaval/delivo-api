@@ -23,6 +23,8 @@ import { UserService } from "@/application/users/services/implementations/UserSe
 import { AccountDeletionService } from "@/application/users/services/implementations/AccountDeletionService";
 import { IAccountDeletionService } from "@/application/users/services/interfaces/IAccountDeletionService";
 import AccountDeletionEmailSender from "@/application/users/services/AccountDeletionEmailSender";
+import { AccountDeletionExternalCleanup } from "@/application/users/services/AccountDeletionExternalCleanup";
+import { IAccountDeletionExternalCleanup } from "@/application/users/services/interfaces/IAccountDeletionExternalCleanup";
 import GoogleOAuthProvider from "@/infrastructure/auth/providers/GoogleOAuthProvider";
 import AppleOAuthProvider from "@/infrastructure/auth/providers/AppleOAuthProvider";
 import JwtTokenService from "@/infrastructure/auth/services/JwtTokenService";
@@ -92,11 +94,16 @@ export const userDeletionUOW = new PrismaUserDeletionUnitOfWork();
 // providers
 export const idGenerator = new UuidIDGenerator();
 export const googleOAuthProvider = new GoogleOAuthProvider();
-export const appleOAuthProvider = new AppleOAuthProvider();
+export const appleOAuthProvider = new AppleOAuthProvider(
+  ENV.APPLE_TEAM_ID,
+  ENV.APPLE_KEY_ID,
+  ENV.APPLE_PRIVATE_KEY,
+  ENV.APPLE_CLIENT_ID,
+);
 export const placesProvider = new GooglePlacesService();
 export const routeOptimizationProvider = new GoogleRouteOptimizationProvider();
 export const emailService: IEmailService = new ResendEmailProvider(ENV.RESEND_API_KEY, ENV.MAIL_FROM);
-export const paymentProvider: IPaymentProvider = new RevenueCatProvider(ENV.REVENUECAT_WEBHOOK_AUTH);
+export const paymentProvider: IPaymentProvider = new RevenueCatProvider(ENV.REVENUECAT_WEBHOOK_AUTH, ENV.REVENUECAT_API_KEY);
 
 
 // services
@@ -146,10 +153,15 @@ export const testLoginService: ITestLoginService = new TestLoginService(userServ
 }, testAccountSeeder);
 export const usageService: IUsageService = new UsageService(ordersRepository, routesRepository, clientsRepository, productsRepository, companyMemberRepository);
 export const entitlementService: IEntitlementService = new EntitlementService(subscriptionRepository, usageService);
-export const subscriptionSyncService: ISubscriptionSyncService = new SubscriptionSyncService(subscriptionRepository);
+export const subscriptionSyncService: ISubscriptionSyncService = new SubscriptionSyncService(subscriptionRepository, companiesRepository);
 
 export const accountDeletionService: IAccountDeletionService = new AccountDeletionService(userDeletionUOW);
 export const accountDeletionEmailSender = new AccountDeletionEmailSender(emailService);
+export const accountDeletionExternalCleanup: IAccountDeletionExternalCleanup = new AccountDeletionExternalCleanup(
+  appleOAuthProvider,
+  paymentProvider,
+  accountDeletionEmailSender,
+);
 
 
 //  ==================== PRESENTATION ====================
@@ -158,7 +170,7 @@ export const accountDeletionEmailSender = new AccountDeletionEmailSender(emailSe
 export const myProfileController = new MyProfileController(
   userService,
   accountDeletionService,
-  accountDeletionEmailSender,
+  accountDeletionExternalCleanup,
 );
 export const companyController = new CompanyController(companiesService, idGenerator);
 export const companyMemberController = new CompanyMemberController(companyMemberService);
