@@ -36,6 +36,7 @@ import PrismaPaymentsRepository from "@/infrastructure/orders/repositories/Prism
 import PrismaProductsRepository from "@/infrastructure/products/repositories/PrismaProductsRepository";
 import { PrismaProductDeletionUnitOfWork } from "@/infrastructure/products/unitsOfWork/PrismaProductDeletionUnitOfWork";
 import { PrismaCompanyCreationUnitOfWork } from "@/infrastructure/companies/unitsOfWork/PrismaCompanyCreationUnitOfWork";
+import { PrismaUserDeletionUnitOfWork } from "@/infrastructure/users/unitsOfWork/PrismaUserDeletionUnitOfWork";
 import GoogleRouteOptimizationProvider from "@/infrastructure/routes/providers/GoogleRouteOptimizationProvider";
 import PrismaRoutesRepository from "@/infrastructure/routes/repositories/PrismaRoutesRepository";
 import PrismaUsersRepository from "@/infrastructure/users/repositories/PrismaUsersRepository";
@@ -83,6 +84,7 @@ export const subscriptionRepository = new PrismaSubscriptionRepository();
 // unit of work
 export const productDeletionUOW = new PrismaProductDeletionUnitOfWork();
 export const companyCreationUOW = new PrismaCompanyCreationUnitOfWork();
+export const userDeletionUOW = new PrismaUserDeletionUnitOfWork();
 
 // providers
 export const idGenerator = new UuidIDGenerator();

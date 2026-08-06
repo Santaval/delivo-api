@@ -1,21 +1,26 @@
 import { User } from "@/domain/users/entities/User";
 import { IUserRepository } from "@/domain/users/repositories/IUserRepository";
 import { prisma } from "@/infrastructure/prisma/client";
+import { Prisma } from "@/infrastructure/prisma/generated/prisma/client";
 import { PrismaUserMapper } from "../mappers/PrismaUserMapper";
 import DatabaseError from "@/infrastructure/core/errors/DatabaseError";
 import DatabaseInsertError from "@/infrastructure/core/errors/DatabaseInsertError";
 
 export default class PrismaUsersRepository implements IUserRepository {
 
-  constructor() { }
+  private readonly client: Prisma.TransactionClient;
+
+  constructor(client?: Prisma.TransactionClient) {
+    this.client = client || prisma;
+  }
 
   /**
    * Fetch all users from the database.
-   * @returns A promise that resolves to an array of User entities. 
+   * @returns A promise that resolves to an array of User entities.
    */
   async all(): Promise<User[]> {
     try {
-      const users = await prisma.user.findMany({
+      const users = await this.client.user.findMany({
         include: this.getIncludes(),
       });
       return users.map((user) => PrismaUserMapper.toDomain(user));
@@ -33,7 +38,7 @@ export default class PrismaUsersRepository implements IUserRepository {
    */
   async find(value: string, field?: string): Promise<User | null> {
     try {
-      const user = await prisma.user.findFirst({
+      const user = await this.client.user.findFirst({
         where: {
           [field || "id"]: value,
         },
@@ -53,7 +58,7 @@ export default class PrismaUsersRepository implements IUserRepository {
    */
   async create(user: User): Promise<void> {
     try {
-      await prisma.user.create(PrismaUserMapper.toPersistence(user));
+      await this.client.user.create(PrismaUserMapper.toPersistence(user));
     } catch (error) {
       console.error("Error creating user:", error);
       throw new DatabaseInsertError("Could not create user");
@@ -67,13 +72,29 @@ export default class PrismaUsersRepository implements IUserRepository {
    */
   async update(user: User): Promise<void> {
     try {
-      await prisma.user.update({
+      await this.client.user.update({
         where: { id: user.id },
         data: PrismaUserMapper.toPersistence(user),
       });
     } catch (error) {
       console.error("Error updating user:", error);
       throw new DatabaseInsertError("Could not update user");
+    }
+  }
+
+  /**
+   * Delete a user from the database.
+   * @param id The ID of the user to delete.
+   * @returns A promise that resolves when the user is deleted.
+   */
+  async delete(id: string): Promise<void> {
+    try {
+      await this.client.user.delete({
+        where: { id },
+      });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      throw new DatabaseInsertError("Could not delete user");
     }
   }
 

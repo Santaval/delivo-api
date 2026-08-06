@@ -1,17 +1,22 @@
 import { CompanyInvitation } from "@/domain/companies/entities/CompanyInvitation";
 import { ICompanyInvitationRepository } from "@/domain/companies/repositories/ICompanyInvitationRepository";
 import { prisma } from "@/infrastructure/prisma/client";
+import { Prisma } from "@/infrastructure/prisma/generated/prisma/client";
 import { PrismaCompanyInvitationMapper } from "../mappers/PrismaCompanyInvitationMapper";
 import DatabaseError from "@/infrastructure/core/errors/DatabaseError";
 import DatabaseInsertError from "@/infrastructure/core/errors/DatabaseInsertError";
 
 export default class PrismaCompanyInvitationRepository implements ICompanyInvitationRepository {
 
-  constructor() { }
+  private readonly client: Prisma.TransactionClient;
+
+  constructor(client?: Prisma.TransactionClient) {
+    this.client = client || prisma;
+  }
 
   async create(invitation: CompanyInvitation): Promise<void> {
     try {
-      await prisma.companyInvitation.create(PrismaCompanyInvitationMapper.toPersistence(invitation));
+      await this.client.companyInvitation.create(PrismaCompanyInvitationMapper.toPersistence(invitation));
     } catch (error) {
       console.error("Error creating invitation:", error);
       throw new DatabaseInsertError("Could not create invitation");
@@ -20,7 +25,7 @@ export default class PrismaCompanyInvitationRepository implements ICompanyInvita
 
   async findById(id: string): Promise<CompanyInvitation | null> {
     try {
-      const row = await prisma.companyInvitation.findUnique({
+      const row = await this.client.companyInvitation.findUnique({
         where: { id },
       });
       return row ? PrismaCompanyInvitationMapper.toDomain(row) : null;
@@ -32,7 +37,7 @@ export default class PrismaCompanyInvitationRepository implements ICompanyInvita
 
   async findByToken(token: string): Promise<CompanyInvitation | null> {
     try {
-      const row = await prisma.companyInvitation.findUnique({
+      const row = await this.client.companyInvitation.findUnique({
         where: { token },
       });
       return row ? PrismaCompanyInvitationMapper.toDomain(row) : null;
@@ -44,7 +49,7 @@ export default class PrismaCompanyInvitationRepository implements ICompanyInvita
 
   async findPendingByEmailAndCompany(email: string, companyId: string): Promise<CompanyInvitation | null> {
     try {
-      const row = await prisma.companyInvitation.findFirst({
+      const row = await this.client.companyInvitation.findFirst({
         where: { email, companyId, status: "PENDING" },
       });
       return row ? PrismaCompanyInvitationMapper.toDomain(row) : null;
@@ -56,7 +61,7 @@ export default class PrismaCompanyInvitationRepository implements ICompanyInvita
 
   async findByCompany(companyId: string): Promise<CompanyInvitation[]> {
     try {
-      const rows = await prisma.companyInvitation.findMany({
+      const rows = await this.client.companyInvitation.findMany({
         where: { companyId },
         orderBy: { createdAt: "desc" },
       });
@@ -69,7 +74,7 @@ export default class PrismaCompanyInvitationRepository implements ICompanyInvita
 
   async update(invitation: CompanyInvitation): Promise<void> {
     try {
-      await prisma.companyInvitation.update({
+      await this.client.companyInvitation.update({
         where: { id: invitation.id },
         data: PrismaCompanyInvitationMapper.toPersistence(invitation).data,
       });
