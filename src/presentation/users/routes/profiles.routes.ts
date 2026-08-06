@@ -15,7 +15,7 @@ profileRouter.get("/", asyncHandler(myProfileController.me.bind(myProfileControl
 // Destructive: tighter limiter than /auth/qa (5 per 15 min per IP). The optional
 // appleAuthorizationCode body field is accepted but consumed by the Apple account
 // closure follow-up (#43); it is unused here.
-profileRouter.delete(
+profileRouter.post(
   "/",
   rateLimit({ windowMs: 15 * 60 * 1000, max: 5 }),
   validateSchema(DeleteAccountSchema),
