@@ -16,7 +16,7 @@ export default class AccountDeletionEmailSender {
     name: string,
     deletedCompanyCount: number,
   ): Promise<void> {
-    const subject = `Tu cuenta en TributoCR ha sido eliminada`;
+    const subject = `Tu cuenta en Delivo ha sido eliminada`;
     const greeting = name ? `Hola, ${name}` : "Hola";
     const companiesLine = deletedCompanyCount > 0
       ? `Se eliminaron ${deletedCompanyCount} empresa${deletedCompanyCount === 1 ? "" : "s"} asociada${deletedCompanyCount === 1 ? "" : "s"} a tu cuenta, junto con todos sus datos.`
@@ -25,7 +25,7 @@ export default class AccountDeletionEmailSender {
     const text = [
       greeting + ":",
       "",
-      "Te confirmamos que tu cuenta en TributoCR y todos tus datos personales han sido eliminados.",
+      "Te confirmamos que tu cuenta en Delivo y todos tus datos personales han sido eliminados.",
       companiesLine,
       "",
       "Esta acción es irreversible y no se puede deshacer.",
@@ -33,13 +33,13 @@ export default class AccountDeletionEmailSender {
       "Si creaste esta cuenta por error o ya no la necesitas, no tienes que hacer nada más.",
       "",
       "Atentamente,",
-      "El equipo de TributoCR",
+      "El equipo de Delivo",
     ].join("\n");
 
     const html = `
       <div style="font-family: Arial, sans-serif; color: #1a1a1a;">
         <h2>${greeting}</h2>
-        <p>Tu cuenta en <strong>TributoCR</strong> y todos tus datos personales han sido eliminados.</p>
+        <p>Tu cuenta en <strong>Delivo</strong> y todos tus datos personales han sido eliminados.</p>
         <p>${companiesLine}</p>
         <p style="background-color:#fef2f2;border-left:4px solid #dc2626;padding:10px 14px;border-radius:4px;">
           Esta acción es <strong>irreversible</strong> y no se puede deshacer.
@@ -47,7 +47,7 @@ export default class AccountDeletionEmailSender {
         <p style="font-size:12px;color:#6b7280;">
           Si creaste esta cuenta por error o ya no la necesitas, no tienes que hacer nada más.
         </p>
-        <p style="font-size:12px;color:#6b7280;">Atentamente,<br/>El equipo de TributoCR</p>
+        <p style="font-size:12px;color:#6b7280;">Atentamente,<br/>El equipo de Delivo</p>
       </div>
     `;
 
