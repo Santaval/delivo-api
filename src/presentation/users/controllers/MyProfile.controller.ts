@@ -52,7 +52,7 @@ export default class MyProfileController {
   }
 
   async deleteAccount(req: Request, res: Response): Promise<void> {
-    const { appleAuthorizationCode } = req.body ?? {};
+    const { appleAuthCode } = req.body ?? {};
     // @ts-expect-error
     const { id } = req.user;
 
@@ -69,7 +69,7 @@ export default class MyProfileController {
     // here is a secondary guard so an unforeseen throw still never reaches the
     // client. The deletion has already committed and must not be reverted.
     try {
-      await this.accountDeletionExternalCleanup.run({ result, appleAuthorizationCode });
+      await this.accountDeletionExternalCleanup.run({ result, appleAuthorizationCode: appleAuthCode });
     } catch (error) {
       console.error("Account deletion external cleanup failed:", error);
     }
