@@ -7,4 +7,5 @@ export interface ICompanyRepository {
   addUser(companyId: string, userId: string): Promise<void>;
   update(company: Company): Promise<void>;
   delete(companyId: string): Promise<void>;
+  deleteWithAllData(companyId: string): Promise<void>;
 }

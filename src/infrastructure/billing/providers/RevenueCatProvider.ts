@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { IPaymentProvider, SubscriptionEvent, SubscriptionEventKind } from "@/domain/billing/providers/IPaymentProvider";
 import { PaymentProviderType } from "@/domain/billing/valueObjects/paymentProvider.valueObject";
 import { PlanTierType } from "@/domain/billing/valueObjects/planTier.valueObject";
+import InfrastructureError from "@/infrastructure/core/errors/InfrastructureError";
 
 /** RevenueCat event types that map to a neutral kind. Anything else is ignored (return null). */
 const EVENT_KIND_BY_TYPE: Record<string, SubscriptionEventKind> = {
@@ -39,8 +40,12 @@ export default class RevenueCatProvider implements IPaymentProvider {
   readonly name: PaymentProviderType = "REVENUECAT";
 
   private hasWarnedAboutMissingSecret = false;
+  private hasWarnedAboutMissingApiKey = false;
 
-  constructor(private readonly webhookAuth: string) {}
+  constructor(
+    private readonly webhookAuth: string,
+    private readonly apiKey: string,
+  ) {}
 
   /**
    * Compares the `Authorization` header against the configured `REVENUECAT_WEBHOOK_AUTH` secret.
@@ -114,5 +119,46 @@ export default class RevenueCatProvider implements IPaymentProvider {
 
   private msToDate(ms: number | undefined): Date | null {
     return typeof ms === "number" ? new Date(ms) : null;
+  }
+
+  /**
+   * Deletes the RevenueCat subscriber for a given companyId (app_user_id === companyId
+   * convention). Used during account deletion so a late webhook (RENEWAL, EXPIRATION)
+   * does not upsert a Subscription row for a company that no longer exists.
+   *
+   * Idempotent: 200/204 (gone) and 404 (already gone) are all treated as success.
+   * Silently skips when REVENUECAT_API_KEY is not configured, so a deployment without
+   * it still allows account deletion to succeed. Any other failure throws
+   * InfrastructureError; the caller logs and moves on, never reverting the DB deletion.
+   */
+  async deleteSubscriber(providerCustomerId: string): Promise<void> {
+    if (!this.apiKey) {
+      if (!this.hasWarnedAboutMissingApiKey) {
+        console.warn("RevenueCatProvider: deleteSubscriber skipped, REVENUECAT_API_KEY is not configured.");
+        this.hasWarnedAboutMissingApiKey = true;
+      }
+      return;
+    }
+
+    const url = `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(providerCustomerId)}`;
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "X-Platform": "ios",
+        },
+      });
+    } catch (error) {
+      throw new InfrastructureError("RevenueCat deleteSubscriber network error");
+    }
+
+    // 200/204: deleted. 404: already gone. Anything else is a real failure.
+    if (response.status !== 200 && response.status !== 204 && response.status !== 404) {
+      throw new InfrastructureError(
+        `RevenueCat deleteSubscriber failed (status ${response.status})`
+      );
+    }
   }
 }

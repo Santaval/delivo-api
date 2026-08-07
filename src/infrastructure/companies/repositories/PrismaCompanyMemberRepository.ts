@@ -2,17 +2,22 @@ import { CompanyMember } from "@/domain/companies/entities/CompanyMember";
 import { ICompanyMemberRepository } from "@/domain/companies/repositories/ICompanyMemberRepository";
 import { CompanyRoleType } from "@/domain/companies/valueObjects/companyRole.valueObject";
 import { prisma } from "@/infrastructure/prisma/client";
+import { Prisma } from "@/infrastructure/prisma/generated/prisma/client";
 import { PrismaCompanyMemberMapper } from "../mappers/PrismaCompanyMemberMapper";
 import DatabaseError from "@/infrastructure/core/errors/DatabaseError";
 import DatabaseInsertError from "@/infrastructure/core/errors/DatabaseInsertError";
 
 export default class PrismaCompanyMemberRepository implements ICompanyMemberRepository {
 
-  constructor() { }
+  private readonly client: Prisma.TransactionClient;
+
+  constructor(client?: Prisma.TransactionClient) {
+    this.client = client || prisma;
+  }
 
   async findByCompany(companyId: string): Promise<CompanyMember[]> {
     try {
-      const rows = await prisma.userCompany.findMany({
+      const rows = await this.client.userCompany.findMany({
         where: { companyId },
       });
       return rows.map((row) => PrismaCompanyMemberMapper.toDomain(row));
@@ -22,9 +27,21 @@ export default class PrismaCompanyMemberRepository implements ICompanyMemberRepo
     }
   }
 
+  async findByUser(userId: string): Promise<CompanyMember[]> {
+    try {
+      const rows = await this.client.userCompany.findMany({
+        where: { userId },
+      });
+      return rows.map((row) => PrismaCompanyMemberMapper.toDomain(row));
+    } catch (error) {
+      console.error("Error fetching memberships by user:", error);
+      throw new DatabaseError("Could not fetch memberships by user");
+    }
+  }
+
   async findMembership(userId: string, companyId: string): Promise<CompanyMember | null> {
     try {
-      const row = await prisma.userCompany.findUnique({
+      const row = await this.client.userCompany.findUnique({
         where: { userId_companyId: { userId, companyId } },
       });
       return row ? PrismaCompanyMemberMapper.toDomain(row) : null;
@@ -36,7 +53,7 @@ export default class PrismaCompanyMemberRepository implements ICompanyMemberRepo
 
   async add(member: CompanyMember): Promise<void> {
     try {
-      await prisma.userCompany.create(PrismaCompanyMemberMapper.toPersistence(member));
+      await this.client.userCompany.create(PrismaCompanyMemberMapper.toPersistence(member));
     } catch (error) {
       console.error("Error adding member:", error);
       throw new DatabaseInsertError("Could not add member to company");
@@ -45,7 +62,7 @@ export default class PrismaCompanyMemberRepository implements ICompanyMemberRepo
 
   async updateRole(member: CompanyMember): Promise<void> {
     try {
-      await prisma.userCompany.update({
+      await this.client.userCompany.update({
         where: { userId_companyId: { userId: member.userId, companyId: member.companyId } },
         data: { role: member.role },
       });
@@ -57,7 +74,7 @@ export default class PrismaCompanyMemberRepository implements ICompanyMemberRepo
 
   async remove(userId: string, companyId: string): Promise<void> {
     try {
-      await prisma.userCompany.delete({
+      await this.client.userCompany.delete({
         where: { userId_companyId: { userId, companyId } },
       });
     } catch (error) {
@@ -74,7 +91,7 @@ export default class PrismaCompanyMemberRepository implements ICompanyMemberRepo
    */
   async countByCompanyAndRole(companyId: string, role: CompanyRoleType): Promise<number> {
     try {
-      return await prisma.userCompany.count({
+      return await this.client.userCompany.count({
         where: { companyId, role },
       });
     } catch (error) {

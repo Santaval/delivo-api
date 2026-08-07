@@ -7,4 +7,6 @@ export interface ICompanyInvitationRepository {
   findPendingByEmailAndCompany(email: string, companyId: string): Promise<CompanyInvitation | null>;
   findByCompany(companyId: string): Promise<CompanyInvitation[]>;
   update(invitation: CompanyInvitation): Promise<void>;
+  deleteManyByInvitedBy(invitedById: string): Promise<void>;
+  deleteManyByEmail(email: string): Promise<void>;
 }

@@ -28,6 +28,14 @@ const ENV = {
   TEST_LOGIN_ENABLED: process.env.TEST_LOGIN_ENABLED === "true",
   TEST_LOGIN_EMAIL: process.env.TEST_LOGIN_EMAIL || "",
   TEST_LOGIN_PASSWORD: process.env.TEST_LOGIN_PASSWORD || "",
+  // Apple Sign In. Deliberately NOT required(): an existing deployment without these must
+  // still boot. Used both to verify Apple id tokens at login and to revoke tokens at
+  // DELETE /api/v1/me (App Review 5.1.1(v)). AppleOAuthProvider silently skips revocation
+  // when these are unset.
+  APPLE_CLIENT_ID: process.env.APPLE_CLIENT_ID || "",
+  APPLE_TEAM_ID: process.env.APPLE_TEAM_ID || "",
+  APPLE_KEY_ID: process.env.APPLE_KEY_ID || "",
+  APPLE_PRIVATE_KEY: process.env.APPLE_PRIVATE_KEY || "",
   // Minimum supported frontend/app version. Required and validated as semver at boot so
   // a typo doesn't silently ship a broken version gate to clients.
   MIN_FRONTEND_VERSION: required("MIN_FRONTEND_VERSION"),

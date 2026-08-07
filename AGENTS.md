@@ -98,6 +98,81 @@ Optional env vars: `REVENUECAT_WEBHOOK_AUTH` (must match the `Authorization` hea
 the RevenueCat dashboard; when unset the webhook fails closed and rejects everything),
 `REVENUECAT_API_KEY`.
 
+## Account deletion
+
+`DELETE /api/v1/me` is JWT-authenticated, rate-limited (5 / 15 min per IP), and accepts an
+optional body `{ appleAuthorizationCode?: string }` (sent only by the iOS client, see #43).
+The response is **204** with no body; no `try/catch` in the controller — service-level
+`UserNotFoundError` etc. propagate via `asyncHandler` to the central `errorHandler`.
+
+### Transactional core (issues #40, #41)
+
+The DB deletion runs in ONE transaction via `UserDeletionUnitOfWork`
+(`src/infrastructure/users/unitsOfWork/PrismaUserDeletionUnitOfWork.ts`):
+
+1. Load the user; throw `UserNotFoundError` (404) if missing.
+2. For each `UserCompany` membership, reuse `CompanyMember.isLastOwner(member, members)`:
+   - **Sole OWNER** → `CompanyRepository.deleteWithAllData(companyId)`, which cascades in
+     leaf→root topological order with raw `deleteMany` (bypassing the `Client`/`Product`
+     soft-delete filters, otherwise their `deletedAt: null` rows would survive and the final
+     `company.delete()` would hit `ON DELETE RESTRICT`).
+   - Otherwise → `CompanyMemberRepository.remove(userId, companyId)` (the company stays).
+3. Delete the `CompanyInvitation`s the user **sent** (`invitedById`, FK RESTRICT, would block
+   the user delete) and the ones **addressed to their email** (hygiene so a re-registration
+   with the same email does not inherit stale invitations).
+4. `userRepository.delete(userId)` last.
+
+`deletedCompanyIds` and `unlinkedCompanyIds` are returned in `AccountDeletionResult`, along
+with `email`/`name` captured **before** the user row is deleted (the confirmation email needs
+a recipient).
+
+### Best-effort side effects (issue #43) — after the commit
+
+`AccountDeletionExternalCleanup` runs three provider side effects AFTER the transaction
+commits. Each is isolated in its own `try/catch` so a provider outage never throws back to the
+client, never returns 5xx, and never reverts the deletion:
+
+1. **Apple Sign In token revocation** (App Review 5.1.1(v)) via
+   `AppleOAuthProvider.revokeToken(appleAuthorizationCode)` (direct `/auth/revoke`, no token
+   exchange). Requires `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`;
+   silently skips (one `console.warn`) when unset, so a Google user (no `appleAuthorizationCode`
+   in the body) or an unconfigured deployment is unaffected. `GoogleOAuthProvider.revokeToken`
+   is a logged no-op because the server never stores Google tokens.
+2. **RevenueCat subscriber deletion** for each `deletedCompanyIds` entry via
+   `IPaymentProvider.deleteSubscriber(companyId)` (the `app_user_id === companyId` convention).
+   The local `Subscription` row was already deleted inside the transaction by
+   `deleteWithAllData`, but the provider side still holds the subscriber and would otherwise
+   keep sending webhooks. Requires `REVENUECAT_API_KEY`; silently skips when unset. Idempotent
+   (200/204/404 all treated as success).
+3. **Confirmation email** via `AccountDeletionEmailSender` (HTML + plain text, es-CR) to the
+   pre-deletion email. A Resend outage is logged, not surfaced.
+
+### Webhook hardening
+
+`SubscriptionSyncService.applyEvent` now looks up the company first and **ignores** (log +
+HTTP 200) events whose `companyId` no longer exists. Without this guard, a late `RENEWAL` /
+`EXPIRATION` webhook for a deleted company would `upsertByProviderCustomerId` against a
+missing `company.id` → FK RESTRICT throw → 500 → RevenueCat retries the webhook forever
+(`Subscription.companyId` has a unique constraint, not a soft-fail column). The guard keeps
+the endpoint returning 200 and writes nothing.
+
+### Optional env vars
+
+`APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` — none use
+`required()`; a deployment without them still boots, and only Apple token revocation at
+`DELETE /me` is skipped. `REVENUECAT_API_KEY` is the same — it was already optional and is now
+consumed by `deleteSubscriber`.
+
+### App review checklist
+
+- Where the reviewer sees it in the app: **Settings → Cuenta → Eliminar cuenta**. The user
+  taps it, confirms, the iOS client requests a fresh Apple authorization code, sends
+  `DELETE /api/v1/me` with `{ appleAuthorizationCode }`, and signs the user out on 204.
+- How the reviewer reproduces it: log in via the test-login route (see the "Test login"
+  section above) — reviewers cannot exercise Google/Apple OAuth as themselves — then
+  Settings → Cuenta → Eliminar cuenta. A later `GET /api/v1/me` with the same token returns
+  404 "Usuario no encontrado".
+
 ## Key Quirks
 
 - Express **5.x** (not 4) — response methods may differ from 4.x patterns
