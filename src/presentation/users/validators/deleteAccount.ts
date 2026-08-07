@@ -1,6 +1,6 @@
 import z from "zod";
 
-const KNOWN_KEYS = ["appleAuthorizationCode"];
+const KNOWN_KEYS = ["appleAuthCode"];
 
 export const DeleteAccountSchema = z.object({
   appleAuthorizationCode: z.string().optional(),
