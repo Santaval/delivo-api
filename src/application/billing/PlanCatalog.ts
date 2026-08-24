@@ -43,7 +43,7 @@ export const LIMITED_RESOURCES: LimitedResource[] = ["documents", "routes", "cli
  */
 export const PLAN_CATALOG: Record<PlanTierType, PlanLimits> = {
   FREE: { documents: 10, routes: 1, clients: 25, products: 20, drivers: 1 },
-  BASIC: { documents: 100, routes: null, clients: null, products: null, drivers: 1 },
+  BASIC: { documents: 10000, routes: null, clients: null, products: null, drivers: 1 },
 };
 
 /**
