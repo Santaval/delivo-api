@@ -8,6 +8,8 @@ import IOrderPaymentsService from "@/application/orders/services/interfaces/IOrd
 import AddPaymentRequest from "../requests/AddPayment";
 import PaymentMapper from "../mappers/PaymentMapper";
 import IOrderItemsManager from "@/application/orders/services/interfaces/IOrderItemsManager";
+import billsQuerySchema from "../validators/billsQuery";
+import BillsPageResponse from "../responses/BillsPageResponse";
 
 export default class OrdersController {
   constructor(
@@ -24,8 +26,43 @@ export default class OrdersController {
 
   async billsByCompany(req: Request, res: Response): Promise<void> {
     const companyId = CompanyIdParser(req);
-    const orders = await this.ordersService.closedByCompany(companyId);
-    res.json(orders.map(OrderDtoMapper.toResponse));
+
+    // Legacy shape (bare array, no pagination) for app builds that predate pagination.
+    // Remove once those builds are no longer supported.
+    if (req.query.page === undefined) {
+      const orders = await this.ordersService.closedByCompany(companyId);
+      res.json(orders.map(OrderDtoMapper.toResponse));
+      return;
+    }
+
+    const parsed = billsQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.issues[0].message });
+      return;
+    }
+    const { page, pageSize, status, search } = parsed.data;
+
+    const result = await this.ordersService.paginatedBills(
+      { companyId, status, search: search || undefined },
+      { page, pageSize },
+    );
+
+    const totalPages = Math.ceil(result.total / result.pageSize);
+    const response: BillsPageResponse = {
+      data: result.items.map(OrderDtoMapper.toResponse),
+      pagination: {
+        page: result.page,
+        pageSize: result.pageSize,
+        total: result.total,
+        totalPages,
+        hasNextPage: result.page < totalPages,
+      },
+      counts: {
+        ALL: result.counts.PENDING + result.counts.PAID + result.counts.CANCELLED,
+        ...result.counts,
+      },
+    };
+    res.json(response);
   }
 
   async create(req: Request, res: Response): Promise<void> {
