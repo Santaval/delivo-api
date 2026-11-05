@@ -9,6 +9,8 @@ import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
 import DatabaseError from "@/infrastructure/core/errors/DatabaseError";
 import { OrderDeliveryStatusType } from "@/domain/orders/valueObjects/orderDeliveryStatus";
 import { Prisma } from "@/infrastructure/prisma/generated/prisma/client";
+import { PageRequest, PaginatedResult } from "@/domain/core/pagination/Pagination";
+import { BillsFilter, BillsQuery, BillStatusCounts } from "@/domain/orders/repositories/BillsQuery";
 
 export default class PrismaOrderRepository implements IOrderRepository {
 
@@ -218,6 +220,69 @@ export default class PrismaOrderRepository implements IOrderRepository {
       console.log(error);
       throw new DatabaseError("Error counting orders");
     }
+  }
+
+  async paginatedBills(query: BillsQuery, page: PageRequest): Promise<PaginatedResult<Order>> {
+    try {
+      const where: Prisma.ClientBillWhereInput = {
+        ...this.billsWhere(query),
+        ...(query.status ? { status: query.status } : {}),
+      };
+      const [rows, total] = await Promise.all([
+        this.client.clientBill.findMany({
+          where,
+          // `number` is unique, so it keeps page boundaries stable when createdAt ties.
+          orderBy: [{ createdAt: "desc" }, { number: "desc" }],
+          skip: (page.page - 1) * page.pageSize,
+          take: page.pageSize,
+          include: this.getIncludes(),
+        }),
+        this.client.clientBill.count({ where }),
+      ]);
+      return {
+        items: rows.map((order) => PrismaOrderMapper.toDomain(order)),
+        page: page.page,
+        pageSize: page.pageSize,
+        total,
+      };
+    } catch (error) {
+      console.log(error);
+      throw new DatabaseError("Error fetching bills");
+    }
+  }
+
+  async countBillsByStatus(filter: BillsFilter): Promise<BillStatusCounts> {
+    try {
+      const groups = await this.client.clientBill.groupBy({
+        by: ["status"],
+        where: this.billsWhere(filter),
+        _count: { _all: true },
+      });
+      const counts: BillStatusCounts = { PENDING: 0, PAID: 0, CANCELLED: 0 };
+      for (const group of groups) counts[group.status] = group._count._all;
+      return counts;
+    } catch (error) {
+      console.log(error);
+      throw new DatabaseError("Error counting bills");
+    }
+  }
+
+  private billsWhere(filter: BillsFilter): Prisma.ClientBillWhereInput {
+    const where: Prisma.ClientBillWhereInput = {
+      companyId: filter.companyId,
+      deliveryStatus: { in: filter.deliveryStatuses },
+    };
+    const search = filter.search?.trim();
+    if (search) {
+      // Users type "INV-123" or "123"; strip the prefix so both match the number.
+      const numeric = search.replace(/^inv-?/i, "");
+      const or: Prisma.ClientBillWhereInput[] = [{ client: { name: { contains: search } } }];
+      if (/^\d+$/.test(numeric) && Number.isSafeInteger(Number(numeric))) {
+        or.push({ number: Number(numeric) });
+      }
+      where.OR = or;
+    }
+    return where;
   }
 
   getIncludes() {

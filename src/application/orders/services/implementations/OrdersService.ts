@@ -1,5 +1,6 @@
 import IOrderRepository from "@/domain/orders/repositories/IOrderRepository";
-import { IOrdersService } from "../interfaces/IOrdersService";
+import { BillsPage, BillsPageParams, IOrdersService } from "../interfaces/IOrdersService";
+import { PageRequest } from "@/domain/core/pagination/Pagination";
 import { Order } from "@/domain/orders";
 import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
 import { OrderDeliveryStatusType } from "@/domain/orders/valueObjects/orderDeliveryStatus";
@@ -19,6 +20,19 @@ export default class OrdersService implements IOrdersService {
 
   closedByCompany(companyId: string): Promise<Order[]> {
     return this.ordersRepository.byCompanyAndManyDeliveryStatus(companyId, this.CLOSED_STATES);
+  }
+
+  async paginatedBills(params: BillsPageParams, page: PageRequest): Promise<BillsPage> {
+    const filter = {
+      companyId: params.companyId,
+      deliveryStatuses: this.CLOSED_STATES,
+      search: params.search,
+    };
+    const [result, counts] = await Promise.all([
+      this.ordersRepository.paginatedBills({ ...filter, status: params.status }, page),
+      this.ordersRepository.countBillsByStatus(filter),
+    ]);
+    return { ...result, counts };
   }
 
   openedByCompany(companyId: string): Promise<Order[]> {
