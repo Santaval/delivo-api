@@ -22,4 +22,11 @@ profileRouter.post(
   asyncHandler(myProfileController.deleteAccount.bind(myProfileController)),
 );
 
+// Regenerating invalidates the previous code; capped so codes cannot be churned/enumerated.
+profileRouter.post(
+  "/member-code/regenerate",
+  rateLimit({ windowMs: 60 * 60 * 1000, max: 5 }),
+  asyncHandler(myProfileController.regenerateMemberCode.bind(myProfileController)),
+);
+
 export default profileRouter;

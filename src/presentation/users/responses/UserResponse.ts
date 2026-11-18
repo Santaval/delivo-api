@@ -5,6 +5,8 @@ export interface UserResponse {
     email: string;
     name: string;
     surnames: string;
+    /** The user's own member code; never exposed on other members' payloads. */
+    memberCode: string | null;
     companies: CompanyResponse[]
 }
 

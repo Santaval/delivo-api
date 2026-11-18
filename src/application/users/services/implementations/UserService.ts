@@ -3,10 +3,12 @@ import { User } from "@/domain/users/entities/User";
 import { IUserRepository } from "@/domain/users/repositories/IUserRepository";
 import { IUserService } from "../interfaces/IUserService";
 import { UserCreationError } from "../../errors/UserCreationError";
+import { IMemberCodeService } from "../interfaces/IMemberCodeService";
 
 export class UserService implements IUserService {
     constructor(
         private readonly userRepository: IUserRepository,
+        private readonly memberCodeService: IMemberCodeService,
     ) {
     }
     
@@ -17,6 +19,7 @@ export class UserService implements IUserService {
      */
     async create(user: User): Promise<User> {
         await this.userRepository.create(user);
+        await this.memberCodeService.assignNewCode(user.id);
         const createdUser = await this.userRepository.find(user.id, "id");
         if (!createdUser) throw new UserCreationError();
 

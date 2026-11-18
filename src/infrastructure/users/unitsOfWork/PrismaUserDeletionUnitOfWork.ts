@@ -8,7 +8,6 @@ import { prisma } from "@/infrastructure/prisma/client";
 import PrismaUsersRepository from "@/infrastructure/users/repositories/PrismaUsersRepository";
 import PrismaCompaniesRepository from "@/infrastructure/companies/repositories/PrismaCompaniesRepository";
 import PrismaCompanyMemberRepository from "@/infrastructure/companies/repositories/PrismaCompanyMemberRepository";
-import PrismaCompanyInvitationRepository from "@/infrastructure/companies/repositories/PrismaCompanyInvitationRepository";
 
 export class PrismaUserDeletionUnitOfWork implements IUserDeletionUnitOfWork {
   private readonly prisma = prisma;
@@ -20,7 +19,6 @@ export class PrismaUserDeletionUnitOfWork implements IUserDeletionUnitOfWork {
         getUserRepository: () => new PrismaUsersRepository(tx),
         getCompanyRepository: () => new PrismaCompaniesRepository(tx),
         getCompanyMemberRepository: () => new PrismaCompanyMemberRepository(tx),
-        getCompanyInvitationRepository: () => new PrismaCompanyInvitationRepository(tx),
       };
 
       return await work(context);

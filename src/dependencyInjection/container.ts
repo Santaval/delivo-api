@@ -7,7 +7,7 @@ import { ITestAccountSeeder } from "@/application/auth/services/interfaces/ITest
 import { ClientService } from "@/application/clients/services/implementations/ClientService";
 import { CompanyService } from "@/application/companies/services/implementations/CompanyService";
 import { CompanyMemberService } from "@/application/companies/services/implementations/CompanyMemberService";
-import InvitationEmailSender from "@/application/companies/services/invitations/InvitationEmailSender";
+import MemberAddedEmailSender from "@/application/companies/services/members/MemberAddedEmailSender";
 import LocationService from "@/application/geolocation/services/implementations/LocationService";
 import OrderDeliveryStatusManager from "@/application/orders/services/implementations/OrderDeliveryStatusManger";
 import OrderItemsManager from "@/application/orders/services/implementations/OrderItemsManager";
@@ -19,6 +19,9 @@ import { ProductService } from "@/application/products/services/implementations/
 import RouteOptimizationService from "@/application/routes/services/implementations/RouteOptimizationService";
 import RouteService from "@/application/routes/services/implementations/RouteService";
 import FinancialSummaryCalculator from "@/application/stats/services/implementations/FinancialSummaryCalculator";
+import { MemberCodeService } from "@/application/users/services/implementations/MemberCodeService";
+import { IMemberCodeService } from "@/application/users/services/interfaces/IMemberCodeService";
+import { CryptoMemberCodeGenerator } from "@/infrastructure/users/services/CryptoMemberCodeGenerator";
 import { UserService } from "@/application/users/services/implementations/UserService";
 import { AccountDeletionService } from "@/application/users/services/implementations/AccountDeletionService";
 import { IAccountDeletionService } from "@/application/users/services/interfaces/IAccountDeletionService";
@@ -32,7 +35,6 @@ import PrismaClientsRepository from "@/infrastructure/clients/repositories/Prism
 import PrismaSubscriptionRepository from "@/infrastructure/billing/repositories/PrismaSubscriptionRepository";
 import PrismaCompaniesRepository from "@/infrastructure/companies/repositories/PrismaCompaniesRepository";
 import PrismaCompanyMemberRepository from "@/infrastructure/companies/repositories/PrismaCompanyMemberRepository";
-import PrismaCompanyInvitationRepository from "@/infrastructure/companies/repositories/PrismaCompanyInvitationRepository";
 import UuidIDGenerator from "@/infrastructure/core/services/UuidIDGenerator";
 import { GooglePlacesService } from "@/infrastructure/geolocation/services/GooglePlacesService";
 import PrismaOrdersRepository from "@/infrastructure/orders/repositories/PrismaOrdersRepository";
@@ -77,7 +79,6 @@ import SystemController from "@/presentation/system/controllers/SystemController
 export const userRepository = new PrismaUsersRepository();
 export const companiesRepository = new PrismaCompaniesRepository();
 export const companyMemberRepository = new PrismaCompanyMemberRepository();
-export const companyInvitationRepository = new PrismaCompanyInvitationRepository();
 export const clientsRepository = new PrismaClientsRepository();
 export const productsRepository = new PrismaProductsRepository();
 export const ordersRepository = new PrismaOrdersRepository();
@@ -93,6 +94,7 @@ export const userDeletionUOW = new PrismaUserDeletionUnitOfWork();
 
 // providers
 export const idGenerator = new UuidIDGenerator();
+export const memberCodeGenerator = new CryptoMemberCodeGenerator();
 export const googleOAuthProvider = new GoogleOAuthProvider();
 export const appleOAuthProvider = new AppleOAuthProvider(
   ENV.APPLE_TEAM_ID,
@@ -113,17 +115,16 @@ export const jwtService = new JwtTokenService();
 // ==================== APPLICATION ====================
 
 // services
-export const userService = new UserService(userRepository);
+export const memberCodeService: IMemberCodeService = new MemberCodeService(userRepository, memberCodeGenerator);
+export const userService = new UserService(userRepository, memberCodeService);
 export const oAuthService = new OAuthService(userService, googleOAuthProvider, appleOAuthProvider, idGenerator);
 export const companiesService = new CompanyService(companiesRepository, companyCreationUOW, idGenerator);
-export const invitationEmailSender = new InvitationEmailSender(emailService, ENV.APP_INVITE_URL);
+export const memberAddedEmailSender = new MemberAddedEmailSender(emailService);
 export const companyMemberService: ICompanyMemberService = new CompanyMemberService(
   companyMemberRepository,
-  companyInvitationRepository,
   companiesRepository,
   userRepository,
-  idGenerator,
-  invitationEmailSender,
+  memberAddedEmailSender,
 );
 export const clientsService = new ClientService(clientsRepository);
 export const productsService = new ProductService(productsRepository, productDeletionUOW);
@@ -169,12 +170,13 @@ export const accountDeletionExternalCleanup: IAccountDeletionExternalCleanup = n
 // controllers
 export const myProfileController = new MyProfileController(
   userService,
+  memberCodeService,
   accountDeletionService,
   accountDeletionExternalCleanup,
 );
 export const companyController = new CompanyController(companiesService, idGenerator);
 export const companyMemberController = new CompanyMemberController(companyMemberService);
-export const authController = new AuthController(oAuthService, jwtService, userService, testLoginService);
+export const authController = new AuthController(oAuthService, jwtService, userService, testLoginService, memberCodeService);
 export const clientsController = new ClientController(clientsService);
 export const productsController = new ProductController(productsService);
 export const ordersController = new OrdersController(ordersService, orderPaymentsService, orderItemsManager);
