@@ -9,6 +9,7 @@ import ApplicationError from "@/application/core/errors/ApplicationError";
 import { ICompanyMemberRepository } from "@/domain/companies/repositories/ICompanyMemberRepository";
 import { RouteNotFoundError } from "../../errors/RouteNotFoundError";
 import { InvalidRouteDriverError } from "../../errors/InvalidRouteDriverError";
+import { ILocationBroadcaster } from "@/domain/routes/providers/ILocationBroadcaster";
 import { RouteAlreadyCompletedError } from "../../errors/RouteAlreadyCompletedError";
 
 const DRIVER_ROLES = ["DEALER", "ADMIN", "OWNER"];
@@ -18,7 +19,8 @@ export default class RouteService implements IRouteService {
     private readonly routeRepository: IRouteRepository,
     private readonly routeOptimizationService: IRouteOptimizationService,
     private readonly orderDeliveryStatusManager: IOrderDeliveryStatusManager,
-    private readonly companyMemberRepository: ICompanyMemberRepository
+    private readonly companyMemberRepository: ICompanyMemberRepository,
+    private readonly locationBroadcaster: ILocationBroadcaster
   ) {}
 
   findAllByCompany(companyId: CompanyId, filters?: RouteFilters): Promise<Route[]> {
@@ -49,8 +51,14 @@ export default class RouteService implements IRouteService {
     if (route.status === "COMPLETED") throw new RouteAlreadyCompletedError();
     if (driverId) await this.validateDriver(driverId, companyId);
 
+    const driverChanged = route.driverId !== driverId;
     route.assignDriver(driverId);
     await this.routeRepository.update(route);
+    if (driverChanged) {
+      // privacy: the previous driver's position must not outlive the assignment
+      await this.routeRepository.deleteDriverLocation(route.id);
+      this.locationBroadcaster.publish(route.id, { type: "cleared" });
+    }
     return (await this.routeRepository.findById(routeId)) ?? route;
   }
 
@@ -98,7 +106,12 @@ export default class RouteService implements IRouteService {
     const skippedPoints = route.points.filter(point => point.status === "SKIPPED");
     const promises = skippedPoints.map(point => this.orderDeliveryStatusManager.change(point.order.id, "PENDING"));
     await Promise.all(promises);
-    return this.routeRepository.update(route);
+    const updated = await this.routeRepository.update(route);
+
+    // privacy: drop the live location and tell the SSE clients to close
+    await this.routeRepository.deleteDriverLocation(route.id);
+    this.locationBroadcaster.publish(route.id, { type: "finished" });
+    return updated;
   }
 
   async completeDelivery(routePointId: RoutePointId): Promise<RoutePoint> {

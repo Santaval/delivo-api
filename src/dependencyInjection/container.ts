@@ -17,6 +17,8 @@ import OrdersService from "@/application/orders/services/implementations/OrdersS
 import PaymentMethodsService from "@/application/orders/services/implementations/PaymentmethodsService";
 import { ProductService } from "@/application/products/services/implementations/ProductService";
 import RouteOptimizationService from "@/application/routes/services/implementations/RouteOptimizationService";
+import RouteLocationService from "@/application/routes/services/implementations/RouteLocationService";
+import IRouteLocationService from "@/application/routes/services/interfaces/IRouteLocationService";
 import RouteService from "@/application/routes/services/implementations/RouteService";
 import FinancialSummaryCalculator from "@/application/stats/services/implementations/FinancialSummaryCalculator";
 import { MemberCodeService } from "@/application/users/services/implementations/MemberCodeService";
@@ -45,6 +47,8 @@ import { PrismaProductDeletionUnitOfWork } from "@/infrastructure/products/units
 import { PrismaCompanyCreationUnitOfWork } from "@/infrastructure/companies/unitsOfWork/PrismaCompanyCreationUnitOfWork";
 import { PrismaUserDeletionUnitOfWork } from "@/infrastructure/users/unitsOfWork/PrismaUserDeletionUnitOfWork";
 import GoogleRouteOptimizationProvider from "@/infrastructure/routes/providers/GoogleRouteOptimizationProvider";
+import InMemoryLocationBroadcaster from "@/infrastructure/routes/providers/InMemoryLocationBroadcaster";
+import { ILocationBroadcaster } from "@/domain/routes/providers/ILocationBroadcaster";
 import PrismaRoutesRepository from "@/infrastructure/routes/repositories/PrismaRoutesRepository";
 import PrismaUsersRepository from "@/infrastructure/users/repositories/PrismaUsersRepository";
 import ResendEmailProvider from "@/infrastructure/email/providers/ResendEmailProvider";
@@ -104,6 +108,8 @@ export const appleOAuthProvider = new AppleOAuthProvider(
 );
 export const placesProvider = new GooglePlacesService();
 export const routeOptimizationProvider = new GoogleRouteOptimizationProvider();
+// in-memory pub/sub: single API instance only. Swap for a Redis implementation to scale out.
+export const locationBroadcaster: ILocationBroadcaster = new InMemoryLocationBroadcaster();
 export const emailService: IEmailService = new ResendEmailProvider(ENV.RESEND_API_KEY, ENV.MAIL_FROM);
 export const paymentProvider: IPaymentProvider = new RevenueCatProvider(ENV.REVENUECAT_WEBHOOK_AUTH, ENV.REVENUECAT_API_KEY);
 
@@ -133,7 +139,8 @@ export const ordersPricingCalculator = new OrderPricingCalculator(ordersReposito
 export const ordersService = new OrdersService(ordersRepository);
 export const orderDeliveryStatusManager = new OrderDeliveryStatusManager(ordersRepository);
 export const routeOptimizationService = new RouteOptimizationService(routesRepository, routeOptimizationProvider);
-export const routesService = new RouteService(routesRepository, routeOptimizationService, orderDeliveryStatusManager, companyMemberRepository);
+export const routesService = new RouteService(routesRepository, routeOptimizationService, orderDeliveryStatusManager, companyMemberRepository, locationBroadcaster);
+export const routeLocationService: IRouteLocationService = new RouteLocationService(routesRepository, companyMemberRepository, locationBroadcaster);
 export const financialSummaryCalculator = new FinancialSummaryCalculator(ordersRepository)
 export const locationService = new LocationService(placesProvider);
 export const paymentMethodsService = new PaymentMethodsService(paymentMethodsRepository);
@@ -181,7 +188,7 @@ export const authController = new AuthController(oAuthService, jwtService, userS
 export const clientsController = new ClientController(clientsService);
 export const productsController = new ProductController(productsService);
 export const ordersController = new OrdersController(ordersService, orderPaymentsService, orderItemsManager);
-export const routesController = new RoutesContoller(routesService);
+export const routesController = new RoutesContoller(routesService, routeLocationService);
 export const statsController = new StatsController(financialSummaryCalculator);
 export const locationController = new LocationController(locationService);
 export const paymentMethodsController = new PaymentMethodsController(paymentMethodsService)
