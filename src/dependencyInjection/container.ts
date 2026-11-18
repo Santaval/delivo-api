@@ -8,7 +8,6 @@ import { ClientService } from "@/application/clients/services/implementations/Cl
 import { CompanyService } from "@/application/companies/services/implementations/CompanyService";
 import { CompanyMemberService } from "@/application/companies/services/implementations/CompanyMemberService";
 import MemberAddedEmailSender from "@/application/companies/services/members/MemberAddedEmailSender";
-import InvitationEmailSender from "@/application/companies/services/invitations/InvitationEmailSender";
 import LocationService from "@/application/geolocation/services/implementations/LocationService";
 import OrderDeliveryStatusManager from "@/application/orders/services/implementations/OrderDeliveryStatusManger";
 import OrderItemsManager from "@/application/orders/services/implementations/OrderItemsManager";
@@ -36,7 +35,6 @@ import PrismaClientsRepository from "@/infrastructure/clients/repositories/Prism
 import PrismaSubscriptionRepository from "@/infrastructure/billing/repositories/PrismaSubscriptionRepository";
 import PrismaCompaniesRepository from "@/infrastructure/companies/repositories/PrismaCompaniesRepository";
 import PrismaCompanyMemberRepository from "@/infrastructure/companies/repositories/PrismaCompanyMemberRepository";
-import PrismaCompanyInvitationRepository from "@/infrastructure/companies/repositories/PrismaCompanyInvitationRepository";
 import UuidIDGenerator from "@/infrastructure/core/services/UuidIDGenerator";
 import { GooglePlacesService } from "@/infrastructure/geolocation/services/GooglePlacesService";
 import PrismaOrdersRepository from "@/infrastructure/orders/repositories/PrismaOrdersRepository";
@@ -81,7 +79,6 @@ import SystemController from "@/presentation/system/controllers/SystemController
 export const userRepository = new PrismaUsersRepository();
 export const companiesRepository = new PrismaCompaniesRepository();
 export const companyMemberRepository = new PrismaCompanyMemberRepository();
-export const companyInvitationRepository = new PrismaCompanyInvitationRepository();
 export const clientsRepository = new PrismaClientsRepository();
 export const productsRepository = new PrismaProductsRepository();
 export const ordersRepository = new PrismaOrdersRepository();
@@ -122,15 +119,11 @@ export const memberCodeService: IMemberCodeService = new MemberCodeService(userR
 export const userService = new UserService(userRepository, memberCodeService);
 export const oAuthService = new OAuthService(userService, googleOAuthProvider, appleOAuthProvider, idGenerator);
 export const companiesService = new CompanyService(companiesRepository, companyCreationUOW, idGenerator);
-export const invitationEmailSender = new InvitationEmailSender(emailService, ENV.APP_INVITE_URL);
 export const memberAddedEmailSender = new MemberAddedEmailSender(emailService);
 export const companyMemberService: ICompanyMemberService = new CompanyMemberService(
   companyMemberRepository,
-  companyInvitationRepository,
   companiesRepository,
   userRepository,
-  idGenerator,
-  invitationEmailSender,
   memberAddedEmailSender,
 );
 export const clientsService = new ClientService(clientsRepository);

@@ -13,7 +13,6 @@ export class AccountDeletionService implements IAccountDeletionService {
       const userRepo       = ctx.getUserRepository();
       const companyRepo    = ctx.getCompanyRepository();
       const memberRepo     = ctx.getCompanyMemberRepository();
-      const invitationRepo = ctx.getCompanyInvitationRepository();
 
       const user = await userRepo.find(userId, "id");
       if (!user) throw new UserNotFoundError();
@@ -35,9 +34,6 @@ export class AccountDeletionService implements IAccountDeletionService {
           unlinkedCompanyIds.push(membership.companyId);
         }
       }
-
-      await invitationRepo.deleteManyByInvitedBy(userId);
-      await invitationRepo.deleteManyByEmail(email);
 
       await userRepo.delete(userId);
 

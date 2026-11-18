@@ -18,7 +18,6 @@ const ENV = {
   JWT_SECRET: process.env.JWT_SECRET || "your_jwt_secret",
   RESEND_API_KEY: required("RESEND_API_KEY"),
   MAIL_FROM: required("MAIL_FROM"),
-  APP_INVITE_URL: required("APP_INVITE_URL"),
   // Deliberately NOT required(): an existing deployment without these must still boot.
   // RevenueCatProvider fails closed (rejects all webhooks) when REVENUECAT_WEBHOOK_AUTH is empty.
   REVENUECAT_WEBHOOK_AUTH: process.env.REVENUECAT_WEBHOOK_AUTH || "",

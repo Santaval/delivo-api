@@ -28,7 +28,7 @@ npx prisma generate
 
 MariaDB (not MySQL, not MongoDB). Uses `@prisma/adapter-mariadb`. Connection config in `src/infrastructure/core/config/keys/mysql.ts`.
 
-Required env vars (see `.env.example`): `DATABASE_URL`, `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT`, `JWT_SECRET`, `RESEND_API_KEY`, `MAIL_FROM`, `APP_INVITE_URL`.
+Required env vars (see `.env.example`): `DATABASE_URL`, `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT`, `JWT_SECRET`, `RESEND_API_KEY`, `MAIL_FROM`.
 
 ## Commands
 
@@ -117,10 +117,7 @@ The DB deletion runs in ONE transaction via `UserDeletionUnitOfWork`
      soft-delete filters, otherwise their `deletedAt: null` rows would survive and the final
      `company.delete()` would hit `ON DELETE RESTRICT`).
    - Otherwise → `CompanyMemberRepository.remove(userId, companyId)` (the company stays).
-3. Delete the `CompanyInvitation`s the user **sent** (`invitedById`, FK RESTRICT, would block
-   the user delete) and the ones **addressed to their email** (hygiene so a re-registration
-   with the same email does not inherit stale invitations).
-4. `userRepository.delete(userId)` last.
+3. `userRepository.delete(userId)` last.
 
 `deletedCompanyIds` and `unlinkedCompanyIds` are returned in `AccountDeletionResult`, along
 with `email`/`name` captured **before** the user row is deleted (the confirmation email needs
@@ -177,7 +174,7 @@ consumed by `deleteSubscriber`.
 
 Every user has a unique 6-digit numeric **member code** (`User.memberCode`, `CHAR(6)`, nullable +
 `@unique`; leading zeros allowed). It is the handle a company owner/admin will use to add that user
-as a member (follow-up issues), replacing email invitations.
+as a member. It replaced the former email invitation flow.
 
 - Generated with `crypto.randomInt` (`CryptoMemberCodeGenerator`) — never `Math.random`. Collisions
   are resolved by the DB unique index: `PrismaUsersRepository.setMemberCode` maps `P2002` to
