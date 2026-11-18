@@ -82,7 +82,7 @@ The deletion flow is explained in [account-deletion.md](account-deletion.md).
 
 | Method | Path | Guards | Body | Success |
 |---|---|---|---|---|
-| `POST` | `/companies` | JWT | `{ name }` | `200 CompanyResponse`. The caller becomes `OWNER` and a FREE subscription is created in the same transaction |
+| `POST` | `/companies` | JWT | `{ name }` | `200 CompanyResponse`. The caller becomes `OWNER` and 50 welcome credits are granted in the same transaction |
 | `GET` | `/companies` | JWT | none | `200 CompanyResponse[]` |
 | `GET` | `/companies/:id` | JWT | none | `200 CompanyResponse` / `404` |
 | `PUT` | `/companies/:id` | JWT | `{ name? }` | `200 CompanyResponse` |
@@ -260,24 +260,7 @@ Starting a route does **not** count against the daily `routes` quota again, beca
 
 | Method | Path | Guards | Body | Success |
 |---|---|---|---|---|
-| `GET` | `/billing/subscription` | JWT, Tenant | none | `200 SubscriptionStatusResponse` |
-| `POST` | `/billing/webhooks/revenuecat` | Shared secret in `Authorization` (server-to-server) | RevenueCat webhook payload | `200` processed · `202` ignored event type · `401` bad secret |
-
-```jsonc
-// SubscriptionStatusResponse
-{
-  "tier": "FREE",
-  "status": "ACTIVE",
-  "currentPeriodEnd": null,
-  "limits": [
-    { "resource": "documents", "limit": 10, "used": 8, "remaining": 2, "percentUsed": 80 },
-    { "resource": "routes",    "limit": 1,  "used": 0, "remaining": 1, "percentUsed": 0 },
-    { "resource": "clients",   "limit": 25, "used": 25, "remaining": 0, "percentUsed": 100 },
-    { "resource": "products",  "limit": 20, "used": 4, "remaining": 16, "percentUsed": 20 },
-    { "resource": "drivers",   "limit": 1,  "used": 1, "remaining": 0, "percentUsed": 100 }
-  ]
-}
-```
+| `POST` | `/billing/webhooks/revenuecat` | Shared secret in `Authorization` (server-to-server) | RevenueCat webhook payload | `202` acknowledged (events are not applied until #68) · `401` bad secret |
 
 See [billing.md](billing.md).
 

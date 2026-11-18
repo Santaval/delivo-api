@@ -33,8 +33,7 @@ interface RevenueCatWebhookPayload {
 
 /**
  * Infrastructure adapter for RevenueCat, implementing the provider-agnostic `IPaymentProvider`
- * port. Only handles webhook verification and payload parsing; persistence lives in
- * `SubscriptionSyncService`.
+ * port. Only handles webhook verification and payload parsing.
  */
 export default class RevenueCatProvider implements IPaymentProvider {
   readonly name: PaymentProviderType = "REVENUECAT";

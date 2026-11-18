@@ -10,7 +10,7 @@ export interface EntitlementCheck {
 }
 
 export interface IEntitlementService {
-  /** Effective tier in force for the company (no subscription or a lapsed one => FREE). */
+  /** Effective tier in force for the company (always FREE until plan limits are removed in #70). */
   effectiveTier(companyId: string): Promise<PlanTierType>;
   check(companyId: string, resource: LimitedResource): Promise<EntitlementCheck>;
   /** Throws LimitExceededError when the resource is exhausted. */

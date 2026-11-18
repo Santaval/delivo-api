@@ -1,14 +1,14 @@
 import DataException from "@/domain/core/errors/DataError";
 
-export class SubscriptionId {
+export class CreditLedgerEntryId {
   private readonly _value: string
   private constructor(value: string) {
     this._value = value
   }
 
   static create(value: string) {
-    if (!value) throw new DataException("SubscriptionId cannot be empty");
-    return new SubscriptionId(value.trim());
+    if (!value) throw new DataException("CreditLedgerEntryId cannot be empty");
+    return new CreditLedgerEntryId(value.trim());
   }
 
   get value() {

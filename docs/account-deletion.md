@@ -51,7 +51,7 @@ Foreign keys are `ON DELETE RESTRICT`, and `Client` and `Product` normally use *
 RoutePoint → ClientPayment → ClientBillItem → ClientBill → Route
 SupplierBillItem → SupplierBill → Supplier
 PaymentMethod → Product → Client
-TaxPeriod → Subscription
+TaxPeriod → CreditLedgerEntry → CreditBalance
 CompanyInvitation → UserCompany
 Company
 ```

@@ -2,7 +2,6 @@ import { LIMITED_RESOURCES, LimitedResource, limitFor, upgradeTargetFor } from "
 import { LimitExceededError } from "@/application/billing/errors/LimitExceededError";
 import { EntitlementCheck, IEntitlementService } from "@/application/billing/services/interfaces/IEntitlementService";
 import { IUsageService } from "@/application/billing/services/interfaces/IUsageService";
-import { ISubscriptionRepository } from "@/domain/billing/repositories/ISubscriptionRepository";
 import { PlanTierType } from "@/domain/billing/valueObjects/planTier.valueObject";
 
 /**
@@ -12,19 +11,16 @@ import { PlanTierType } from "@/domain/billing/valueObjects/planTier.valueObject
  */
 export class EntitlementService implements IEntitlementService {
   constructor(
-    private readonly subscriptionRepository: ISubscriptionRepository,
     private readonly usageService: IUsageService,
   ) { }
 
-  /** Effective tier in force for the company (no subscription or a lapsed one => FREE). */
-  async effectiveTier(companyId: string): Promise<PlanTierType> {
-    const subscription = await this.subscriptionRepository.findByCompanyId(companyId);
-    // Defensive fallback: #19 owns creation/backfill of the default FREE subscription
-    // row, so a missing row here should not happen in steady state, but is still FREE.
-    if (!subscription) return "FREE";
-
-    // The entity itself downgrades a lapsed/expired subscription to FREE.
-    return subscription.effectiveTier();
+  /**
+   * Effective tier in force for the company. Subscriptions no longer exist (pay-per-bill
+   * credits replaced them), so every company resolves to FREE. Temporary stopgap: plan
+   * limits are removed entirely in #70 (document limits are replaced by credits in #67).
+   */
+  async effectiveTier(_companyId: string): Promise<PlanTierType> {
+    return "FREE";
   }
 
   async check(companyId: string, resource: LimitedResource): Promise<EntitlementCheck> {
