@@ -22,6 +22,9 @@ const ENV = {
   // RevenueCatProvider fails closed (rejects all webhooks) when REVENUECAT_WEBHOOK_AUTH is empty.
   REVENUECAT_WEBHOOK_AUTH: process.env.REVENUECAT_WEBHOOK_AUTH || "",
   REVENUECAT_API_KEY: process.env.REVENUECAT_API_KEY || "",
+  // Whether sandbox store purchases are credited. Only the exact string "true" enables it;
+  // unset or anything else means false, so production ignores sandbox events by default.
+  BILLING_ACCEPT_SANDBOX: process.env.BILLING_ACCEPT_SANDBOX === "true",
   // Test login for App Store / Google Play review. Deliberately NOT required(): a deployment
   // without these must still boot. The route is only mounted when TEST_LOGIN_ENABLED === "true".
   TEST_LOGIN_ENABLED: process.env.TEST_LOGIN_ENABLED === "true",

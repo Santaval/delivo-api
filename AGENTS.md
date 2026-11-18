@@ -110,7 +110,7 @@ key never logged; `env.ts` requires at least 32 characters when set).
 
 Optional env vars: `ADMIN_API_KEY`, `REVENUECAT_WEBHOOK_AUTH` (must match the `Authorization` header configured in
 the RevenueCat dashboard; when unset the webhook fails closed and rejects everything),
-`REVENUECAT_API_KEY`.
+`REVENUECAT_API_KEY`, `BILLING_ACCEPT_SANDBOX` (`true` on dev/staging so sandbox purchases grant credits; false/unset in production ignores them).
 
 ## Account deletion
 

@@ -140,9 +140,27 @@ sequenceDiagram
 | **Refund prefix** | A refund refers to the same store transaction as the purchase, so its key is `refund:<transaction_id>`. That keeps both rows unique while still making refund replays idempotent |
 | **Unknown product** | A product id that is not in `CREDIT_PACKS` is logged and answered `202`, so a new store product cannot cause retries before the code knows it |
 | **Orphan protection** | Events for companies that no longer exist are acknowledged and ignored instead of failing on a foreign key and triggering endless retries |
-| **Sandbox** | Sandbox purchases are granted too (testers and App Store review need working credits). The row stores `environment` (`SANDBOX` or `PRODUCTION`) so they can be told apart or excluded in reporting |
+| **Sandbox** | See [Sandbox events](#sandbox-events). Gated by `BILLING_ACCEPT_SANDBOX` |
+| **Refund attribution** | See [Refund attribution](#refund-attribution) |
 
-Responses: `200` processed or duplicate, `202` ignored or unknown product, `401` bad secret.
+Responses: `200` processed or duplicate, `202` ignored, unknown product or sandbox event ignored, `401` bad secret.
+
+### Sandbox events
+
+Events carry an `environment` (`SANDBOX` or `PRODUCTION`). The `BILLING_ACCEPT_SANDBOX` setting (`true` enables, anything else or unset disables) decides what happens to sandbox ones:
+
+| Deployment | `BILLING_ACCEPT_SANDBOX` | Sandbox event |
+|---|---|---|
+| Production | `false` (default) | Logged, answered `202`, ledger untouched (outcome `SANDBOX_IGNORED`) |
+| Dev / staging | `true` | Granted like a real one; the row stores `environment = SANDBOX` |
+
+Events without an environment are treated as production. The check runs first in `applyEvent`, before the product and company lookups, so an ignored sandbox event costs no database access. Configure RevenueCat with one webhook per environment: the production API's webhook should receive production events only, and a sandbox-only webhook should point at the dev API, so the gate is a second line of defence rather than the only one.
+
+### Refund attribution
+
+A refund is booked on the company that received the original purchase, not on the company named in the refund event. The service looks up the ledger row stored under the purchase's `transaction_id` and uses its `companyId`; when that row does not exist it falls back to the event's `app_user_id`. A log line is written when the two differ. The idempotency key stays `refund:<transaction_id>`.
+
+This matters because RevenueCat can move a purchase to another app user (a restore, or the "Transfer to new App User ID" behaviour in the project's restore settings), so the refund event may name a different company than the one that was credited. Without this lookup the wrong tenant would be debited.
 
 ## Credits and admin endpoints
 
