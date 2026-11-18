@@ -18,7 +18,7 @@ Delivo API follows **Clean Architecture** with **Domain-Driven Design** building
 ```mermaid
 flowchart TB
     PRES["<b>presentation</b><br/>Express routers · middlewares · controllers<br/>Zod validators · request/response DTOs · DTO mappers"]
-    APP["<b>application</b><br/>use-case services (interface + implementation)<br/>PlanCatalog · application errors"]
+    APP["<b>application</b><br/>use-case services (interface + implementation)<br/>CreditPolicy · application errors"]
     DOM["<b>domain</b><br/>entities · value objects<br/>repository / provider / unit-of-work <i>interfaces</i>"]
     INFRA["<b>infrastructure</b><br/>Prisma repositories + mappers · Units of Work<br/>Google · Apple · RevenueCat · Resend adapters"]
     DI["<b>dependencyInjection/container.ts</b><br/>composition root"]
@@ -58,7 +58,6 @@ sequenceDiagram
 
     C->>R: POST /clients  (x-company-id, JSON body)
     R->>MW: requireCompanyId
-    MW->>MW: enforceLimit("clients")  → EntitlementService.assert()
     MW->>MW: validateSchema(CreateClientSchema)
     MW->>CT: create(req, res)
     CT->>CT: ClientDtoMapper → Client entity (value objects validate)
@@ -69,8 +68,8 @@ sequenceDiagram
     RP-->>S: Client (via PrismaClientMapper)
     S-->>CT: Client
     CT-->>C: 201 ClientResponse
-    Note over MW,EH: Any thrown DomainError / ApplicationError / InfrastructureError<br/>or LimitExceededError is forwarded to errorHandler
-    EH-->>C: 4xx/5xx { message }  or  402 { code: "PLAN_LIMIT_EXCEEDED", ... }
+    Note over MW,EH: Any thrown DomainError / ApplicationError / InfrastructureError<br/>or InsufficientCreditsError is forwarded to errorHandler
+    EH-->>C: 4xx/5xx { message }  or  402 { code: "INSUFFICIENT_CREDITS", ... }
 ```
 
 ## Domain building blocks
@@ -119,7 +118,7 @@ static isLastOwner(member: CompanyMember, members: CompanyMember[]): boolean {
 
 The same `isLastOwner` rule is used both by member removal and by [account deletion](account-deletion.md), so the invariant exists in exactly one place.
 
-Another example is `Subscription.effectiveTier()`. It returns `FREE` for an expired or lapsed paid subscription, so the downgrade happens when the subscription is read and the stored history is never rewritten.
+Another example is the credit policy. `CreditPolicy` keeps the welcome grant, the overdraft floor and the credit packs in one place, and the SQL that enforces the floor is a single conditional `UPDATE` in `PrismaCreditRepository.tryConsume`.
 
 ### Ports
 
@@ -142,10 +141,9 @@ The domain declares what it needs, and infrastructure provides it:
 `src/dependencyInjection/container.ts` builds the entire object graph by hand, in dependency order: infrastructure, then application, then presentation. There is no DI framework and no decorators, so it is always obvious what a class receives.
 
 ```ts
-export const usageService: IUsageService =
-  new UsageService(ordersRepository, routesRepository, clientsRepository, productsRepository, companyMemberRepository);
-export const entitlementService: IEntitlementService =
-  new EntitlementService(subscriptionRepository, usageService);
+export const billIssuingUOW = new PrismaBillIssuingUnitOfWork();
+export const creditPurchaseService: ICreditPurchaseService =
+  new CreditPurchaseService(creditRepository, companiesRepository);
 ```
 
 Application services never read `process.env`. Configuration such as the test-login credentials or the invite URL is injected from the validated `ENV` object at this single point.
@@ -155,12 +153,12 @@ Application services never read `process.env`. Configuration such as the test-lo
 When a use case has to change several aggregates atomically, the domain defines a Unit of Work interface that hands out repositories bound to a single transaction:
 
 ```ts
-// infrastructure/companies/unitsOfWork/PrismaCompanyCreationUnitOfWork.ts
-async runInTransaction<T>(work: (ctx: ICompanyCreationContext) => Promise<T>): Promise<T> {
+// infrastructure/orders/unitsOfWork/PrismaBillIssuingUnitOfWork.ts
+async runInTransaction<T>(work: (ctx: IBillIssuingContext) => Promise<T>): Promise<T> {
   return this.prisma.$transaction(async (tx) => {
     const context = {
-      getCompanyRepository:      () => new PrismaCompaniesRepository(tx),
-      getSubscriptionRepository: () => new PrismaSubscriptionRepository(tx),
+      getOrderRepository:  () => new PrismaOrdersRepository(tx),
+      getCreditRepository: () => new PrismaCreditRepository(tx),
     };
     return work(context);
   });
@@ -169,7 +167,8 @@ async runInTransaction<T>(work: (ctx: ICompanyCreationContext) => Promise<T>): P
 
 | Unit of Work | Guarantees |
 |---|---|
-| `CompanyCreationUnitOfWork` | A company, its OWNER membership and its FREE subscription are created together, or none of them are |
+| `CompanyCreationUnitOfWork` | A company, its OWNER membership and its welcome credit grant are created together, or none of them are
+| `BillIssuingUnitOfWork` | The credit debit, the `ClientBill` insert and the `BILL_ISSUED` ledger row commit together, so an insufficient balance never creates a bill (see [billing.md](billing.md#consuming-a-credit)) | |
 | `UserDeletionUnitOfWork` | Owned companies are cascaded, memberships unlinked, invitations removed and the user deleted in one transaction |
 | `ProductDeletionUnitOfWork` | The product existence check and its soft delete run in one transaction, with product and order repositories bound to it |
 
@@ -184,14 +183,14 @@ classDiagram
     Error <|-- DomainError
     Error <|-- ApplicationError
     Error <|-- InfrastructureError
-    ApplicationError <|-- LimitExceededError
+    ApplicationError <|-- InsufficientCreditsError
     ApplicationError <|-- UserNotFoundError
     ApplicationError <|-- InvitationExpiredError
     ApplicationError <|-- CannotRemoveLastOwnerError
     InfrastructureError <|-- DatabaseError
     InfrastructureError <|-- EmailError
-    class LimitExceededError {
-      code = "PLAN_LIMIT_EXCEEDED"
+    class InsufficientCreditsError {
+      code = "INSUFFICIENT_CREDITS"
       statusCode = 402
       toPayload()
     }
@@ -201,7 +200,7 @@ Controllers are wrapped in `asyncHandler`, so a rejected promise is forwarded to
 
 | Error | Response |
 |---|---|
-| `LimitExceededError` | `402` + `{ code, resource, limit, used, tier, upgradeTo }` |
+| `InsufficientCreditsError` | `402` + `{ code, balance, overdraftFloor, required }` |
 | `DomainError` / `ApplicationError` / `InfrastructureError` | `err.statusCode` + `{ message }` |
 | anything else | `500 { message: "Internal Server Error" }`, with no leaked internals |
 
@@ -209,7 +208,7 @@ Application errors use precise status codes: `404` (not found), `403` (not allow
 
 ## Provider ports and adapters
 
-Adapters convert vendor payloads into neutral domain types at the boundary. For example, `RevenueCatProvider.parseWebhookEvent` maps `INITIAL_PURCHASE | RENEWAL | PRODUCT_CHANGE | UNCANCELLATION` to a neutral `ACTIVATED` event, and `SubscriptionSyncService` only ever deals with that neutral `SubscriptionEvent`. A second provider (the enum already reserves a slot for Tilopay) would need a new adapter plus one line in the container.
+Adapters convert vendor payloads into neutral domain types at the boundary. For example, `RevenueCatProvider.parseWebhookEvent` maps `NON_RENEWING_PURCHASE` to a neutral `PURCHASE` event and a store-refund `CANCELLATION` to `REFUND`, and `CreditPurchaseService` only ever deals with that neutral `CreditEvent`. A second provider (for example Tilopay) would need a new adapter plus one line in the container.
 
 ## Cross-cutting middleware
 
@@ -218,7 +217,6 @@ Adapters convert vendor payloads into neutral domain types at the boundary. For 
 | `jwtAuth` | Verifies `Authorization: Bearer <jwt>` and sets `req.user = { id, email }` |
 | `requireCompanyId` | Rejects the request with `400` unless an `x-company-id` header is present |
 | `requireCompanyRole` | Loads the caller's membership in `:companyId` and requires `OWNER` or `ADMIN` |
-| `enforceLimit(resource, opts?)` | Checks plan quotas before a create. Accepts a custom company resolver and a `when` predicate |
 | `validateSchema(zodSchema)` | Validates the body and returns `400 { message }` with the first issue |
 | `rateLimit({ windowMs, max })` | In-memory fixed-window limiter per IP, used on sensitive endpoints |
 | `asyncHandler` | Forwards async controller errors to `errorHandler` |

@@ -2,7 +2,7 @@
 
 # Delivo API
 
-**The backend for a mobile app that helps small distributors in Costa Rica run their sales and deliveries: orders, optimized delivery routes, collections, and subscription plans for multiple companies.**
+**The backend for a mobile app that helps small distributors in Costa Rica run their sales and deliveries: orders, optimized delivery routes, collections, and pay-per-bill credits for multiple companies.**
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-22-5FA04E?logo=nodedotjs&logoColor=white)
@@ -30,20 +30,19 @@ The API manages the whole cycle:
 4. **Collect:** record partial payments with any payment method. An order is marked `PAID` once its balance reaches zero.
 5. **Measure:** a financial summary groups income by day, week, month, quarter and year, and compares it with the previous period.
 
-All of this runs in a **multi-tenant** model. A user can belong to several companies as `OWNER`, `ADMIN` or `DEALER` (driver), and each company has its own **subscription plan** with usage limits enforced by the API.
+All of this runs in a **multi-tenant** model. A user can belong to several companies as `OWNER`, `ADMIN` or `DEALER` (driver), and each company has its own **credit balance**: every issued bill costs one credit, and the API enforces it atomically.
 
 ## Engineering highlights
 
 | | |
 |---|---|
 | **Clean Architecture / DDD** | Four strict layers (domain → application → infrastructure → presentation). Entities are built from self-validating value objects, and the domain depends only on interfaces. Wiring is manual constructor injection, with no DI framework. |
-| **Transactional Units of Work** | Company creation (company + owner + FREE subscription) and account deletion (a cascade through every tenant table) each run in a single Prisma transaction through a domain-level `UnitOfWork` port. |
+| **Transactional Units of Work** | Company creation (company + owner + 50 welcome credits) and account deletion (a cascade through every tenant table) each run in a single Prisma transaction through a domain-level `UnitOfWork` port. |
 | **Pluggable providers** | Payments (`IPaymentProvider` → RevenueCat), OAuth (`IOAuthProvider` → Google / Apple), route optimization, places and email all sit behind ports, so a vendor can be swapped without touching application code. |
-| **Plan enforcement as middleware** | `enforceLimit("clients")` checks usage against the plan catalog before the handler runs, and returns **HTTP 402** with a machine-readable `PLAN_LIMIT_EXCEEDED` payload so the client can show its upgrade screen. |
-| **Idempotent, verified webhooks** | RevenueCat webhooks are checked with a constant-time shared-secret comparison and applied as one idempotent upsert, so replaying an event is harmless. Events for deleted companies are acknowledged and ignored, so the provider does not keep retrying them. |
+| **Atomic pay-per-bill credits** | Issuing a bill debits one credit with a conditional `UPDATE`, creates the bill and writes an append-only ledger row in a single transaction, so concurrent requests cannot overspend. An empty balance returns **HTTP 402** with a machine-readable `INSUFFICIENT_CREDITS` payload. |
+| **Idempotent, verified webhooks** | RevenueCat webhooks are checked with a constant-time shared-secret comparison and applied as an idempotent ledger grant keyed by the unique store transaction id, so replaying an event is harmless. Events for deleted companies are acknowledged and ignored, so the provider does not keep retrying them. |
 | **App-Store-grade account deletion** | Hard deletion runs in one transaction. Afterwards, best-effort side effects (Apple token revocation, RevenueCat subscriber deletion, confirmation email) run in isolation, so an outage at a provider can never roll back the deletion or surface an error to the client. |
 | **Fail-fast configuration** | The server refuses to boot if required secrets are missing, the minimum frontend version is not valid semver, or the review-only login is enabled with a weak password. |
-| **Timezone-correct billing windows** | Monthly and daily quotas roll over at midnight in `America/Costa_Rica`, whatever timezone the server runs in. |
 | **Security details** | JWT auth, role-based member management (last-owner protection, ADMIN cannot remove OWNER), per-IP rate limiting on sensitive routes, `crypto.timingSafeEqual` for every secret comparison, and no user enumeration. |
 
 ## Architecture at a glance
@@ -57,7 +56,7 @@ flowchart LR
     subgraph API["Delivo API (Express 5)"]
       direction TB
       P["Presentation<br/>routes · middlewares · controllers · Zod validators · DTO mappers"]
-      A["Application<br/>use-case services · plan catalog · errors"]
+      A["Application<br/>use-case services · credit policy · errors"]
       D["Domain<br/>entities · value objects · repository & provider ports"]
       I["Infrastructure<br/>Prisma repositories · Units of Work · provider adapters"]
       P --> A --> D
@@ -91,7 +90,7 @@ For more detail, see [docs/architecture.md](docs/architecture.md).
 | ORM / database | Prisma 7 with the `@prisma/adapter-mariadb` driver adapter on MariaDB 11 |
 | Auth | JWT (`jsonwebtoken`), Google Sign-In (`google-auth-library`), Sign in with Apple (`apple-signin-auth`) |
 | Maps | Google Route Optimization API, Google Places API |
-| Payments | RevenueCat (in-app subscriptions) |
+| Payments | RevenueCat (consumable credit packs) |
 | Email | Resend |
 | Packaging | Multi-stage Dockerfile, `docker compose` with MariaDB |
 
@@ -106,7 +105,7 @@ For more detail, see [docs/architecture.md](docs/architecture.md).
 - **Routes:** create a route, add orders as stops, optimize the order of the stops (with polylines for the map), and complete stops one by one. The route closes itself when every stop is done.
 - **Geolocation:** Google Places autocomplete limited to Costa Rica, plus place details.
 - **Stats:** a financial summary for any date range, with period-over-period change.
-- **Billing:** FREE / BASIC plans, per-resource quotas, a subscription status endpoint (with `percentUsed` for 80%/100% warnings), and RevenueCat sync.
+- **Billing:** pay-per-bill credits (50 welcome credits, 1 credit per bill), a balance and ledger API, credit packs bought through RevenueCat, and support-only admin adjustments.
 - **System:** `GET /system/min-frontend-version` lets old app builds force an update before login.
 
 ## API overview
@@ -119,14 +118,15 @@ All endpoints live under `/api/v1`. Tenant-scoped endpoints read the active comp
 | Profile | `/me` | get/update profile, delete account |
 | Companies | `/companies` | CRUD, `/:companyId/members`, `/:companyId/invitations` |
 | Invitations | `/invitations` | `POST /accept` |
-| Clients | `/clients` | CRUD (plan-limited) |
-| Products | `/products` | CRUD (plan-limited) |
-| Orders | `/orders` | create (plan-limited), items, delivery, payments, per-client views |
+| Clients | `/clients` | CRUD |
+| Products | `/products` | CRUD |
+| Orders | `/orders` | create (costs 1 credit), items, delivery, payments, per-client views |
 | Payment methods | `/payments/methods` | list / create |
-| Routes | `/routes` | create (plan-limited), stops, `POST /:id/start` (optimize), complete stop |
+| Routes | `/routes` | create, stops, `POST /:id/start` (optimize), complete stop |
 | Stats | `/stats` | `GET /financial-summary?start=&end=` |
 | Locations | `/locations` | `GET /autocomplete?q=`, `GET /place/:id` |
-| Billing | `/billing` | `GET /subscription`, `POST /webhooks/revenuecat` |
+| Billing | `/billing` | `GET /credits`, `GET /credits/ledger`, `POST /webhooks/revenuecat` |
+| Admin | `/admin` | `GET|POST /companies/:companyId/credits` (support, `x-admin-key`) |
 | System | `/system` | `GET /min-frontend-version` |
 
 Every endpoint, with its request body and responses, is documented in [docs/api.md](docs/api.md).
@@ -138,7 +138,7 @@ src/
 ├── domain/                 # Pure business model: no framework, no Prisma
 │   └── {module}/           #   entities/ valueObjects/ repositories/ providers/ unitsOfWork/
 ├── application/            # Use cases: services (interface + implementation), errors
-│   └── billing/PlanCatalog.ts
+│   └── credits/CreditPolicy.ts
 ├── infrastructure/         # Adapters: Prisma repositories and mappers, external providers
 │   └── prisma/             #   schema.prisma, migrations/, client.ts
 ├── presentation/           # Express: routes, middlewares, controllers, validators, DTOs
@@ -206,7 +206,7 @@ curl http://localhost:3000/api/v1/system/min-frontend-version
 | [Domain model](docs/domain-model.md) | ER diagram, aggregates, state machines |
 | [API reference](docs/api.md) | Every endpoint, with bodies, guards and responses |
 | [Authentication and teams](docs/authentication.md) | OAuth → JWT, multi-tenancy, roles, invitations |
-| [Billing and plans](docs/billing.md) | Plan catalog, quota enforcement, RevenueCat sync |
+| [Billing and credits](docs/billing.md) | Credit ledger, atomic consumption, RevenueCat webhook |
 | [Route optimization](docs/route-optimization.md) | From orders to an optimized delivery route |
 | [Account deletion](docs/account-deletion.md) | Transactional cascade and best-effort external cleanup |
 | [Configuration](docs/configuration.md) | Environment variables and boot-time validation |

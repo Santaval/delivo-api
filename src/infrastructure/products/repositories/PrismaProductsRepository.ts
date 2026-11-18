@@ -167,19 +167,4 @@ export default class PrismaProductsRepository implements IProductRepository {
     }
   }
 
-  /**
-   * Count active (non soft-deleted) products belonging to a company.
-   * @param companyId The ID of the company.
-   * @returns A promise that resolves to the number of matching products.
-   */
-  async countByCompanyId(companyId: string): Promise<number> {
-    try {
-      return await this.client.product.count({
-        where: { companyId, deletedAt: null },
-      });
-    } catch (error) {
-      console.error("Error counting products by company:", error);
-      throw new DatabaseError("Could not count products by company");
-    }
-  }
 }

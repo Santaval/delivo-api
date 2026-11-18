@@ -108,7 +108,7 @@ export default class PrismaCompaniesRepository implements ICompanyRepository {
    * Order (per issue #40):
    *   RoutePoint -> ClientPayment -> ClientBillItem -> ClientBill -> Route ->
    *   SupplierBillItem -> SupplierBill -> Supplier -> PaymentMethod -> Product ->
-   *   Client -> TaxPeriod -> Subscription -> UserCompany ->
+   *   Client -> TaxPeriod -> CreditLedgerEntry -> CreditBalance -> UserCompany ->
    *   Company
    *
    * Note on `ClientBillItem_productId_fkey`: it is ON DELETE SET NULL on a
@@ -134,7 +134,8 @@ export default class PrismaCompaniesRepository implements ICompanyRepository {
       await this.client.client.deleteMany({ where: { companyId } });
 
       await this.client.taxPeriod.deleteMany({ where: { companyId } });
-      await this.client.subscription.deleteMany({ where: { companyId } });
+      await this.client.creditLedgerEntry.deleteMany({ where: { companyId } });
+      await this.client.creditBalance.deleteMany({ where: { companyId } });
 
       await this.client.userCompany.deleteMany({ where: { companyId } });
 

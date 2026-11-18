@@ -34,7 +34,7 @@ import GoogleOAuthProvider from "@/infrastructure/auth/providers/GoogleOAuthProv
 import AppleOAuthProvider from "@/infrastructure/auth/providers/AppleOAuthProvider";
 import JwtTokenService from "@/infrastructure/auth/services/JwtTokenService";
 import PrismaClientsRepository from "@/infrastructure/clients/repositories/PrismaClientsRepository";
-import PrismaSubscriptionRepository from "@/infrastructure/billing/repositories/PrismaSubscriptionRepository";
+import PrismaCreditRepository from "@/infrastructure/credits/repositories/PrismaCreditRepository";
 import PrismaCompaniesRepository from "@/infrastructure/companies/repositories/PrismaCompaniesRepository";
 import PrismaCompanyMemberRepository from "@/infrastructure/companies/repositories/PrismaCompanyMemberRepository";
 import UuidIDGenerator from "@/infrastructure/core/services/UuidIDGenerator";
@@ -45,6 +45,7 @@ import PrismaPaymentsRepository from "@/infrastructure/orders/repositories/Prism
 import PrismaProductsRepository from "@/infrastructure/products/repositories/PrismaProductsRepository";
 import { PrismaProductDeletionUnitOfWork } from "@/infrastructure/products/unitsOfWork/PrismaProductDeletionUnitOfWork";
 import { PrismaCompanyCreationUnitOfWork } from "@/infrastructure/companies/unitsOfWork/PrismaCompanyCreationUnitOfWork";
+import { PrismaBillIssuingUnitOfWork } from "@/infrastructure/orders/unitsOfWork/PrismaBillIssuingUnitOfWork";
 import { PrismaUserDeletionUnitOfWork } from "@/infrastructure/users/unitsOfWork/PrismaUserDeletionUnitOfWork";
 import GoogleRouteOptimizationProvider from "@/infrastructure/routes/providers/GoogleRouteOptimizationProvider";
 import InMemoryLocationBroadcaster from "@/infrastructure/routes/providers/InMemoryLocationBroadcaster";
@@ -65,16 +66,15 @@ import StatsController from "@/presentation/stats/controllers/Stats.controller";
 import MyProfileController from "@/presentation/users/controllers/MyProfile.controller";
 import { IEmailService } from "@/domain/core/services/IEmailService";
 import { ICompanyMemberService } from "@/application/companies/services/interfaces/ICompanyMemberService";
-import { UsageService } from "@/application/billing/services/implementations/UsageService";
-import { IUsageService } from "@/application/billing/services/interfaces/IUsageService";
-import { EntitlementService } from "@/application/billing/services/implementations/EntitlementService";
-import { IEntitlementService } from "@/application/billing/services/interfaces/IEntitlementService";
-import { SubscriptionSyncService } from "@/application/billing/services/implementations/SubscriptionSyncService";
-import { ISubscriptionSyncService } from "@/application/billing/services/interfaces/ISubscriptionSyncService";
+import { CreditPurchaseService } from "@/application/credits/services/implementations/CreditPurchaseService";
+import { ICreditPurchaseService } from "@/application/credits/services/interfaces/ICreditPurchaseService";
 import { IPaymentProvider } from "@/domain/billing/providers/IPaymentProvider";
 import RevenueCatProvider from "@/infrastructure/billing/providers/RevenueCatProvider";
+import CreditsController from "@/presentation/billing/controllers/Credits.controller";
+import AdminCreditsController from "@/presentation/admin/controllers/AdminCredits.controller";
+import { CreditsService } from "@/application/credits/services/implementations/CreditsService";
+import { ICreditsService } from "@/application/credits/services/interfaces/ICreditsService";
 import BillingWebhookController from "@/presentation/billing/controllers/BillingWebhook.controller";
-import BillingController from "@/presentation/billing/controllers/Billing.controller";
 import SystemController from "@/presentation/system/controllers/SystemController";
 
 // ==================== INFRASTRUCTURE ====================
@@ -89,12 +89,13 @@ export const ordersRepository = new PrismaOrdersRepository();
 export const routesRepository = new PrismaRoutesRepository();
 export const paymentMethodsRepository = new PrismaPaymentMethodsRepository();
 export const paymentsRepository = new PrismaPaymentsRepository();
-export const subscriptionRepository = new PrismaSubscriptionRepository();
+export const creditRepository = new PrismaCreditRepository();
 
 // unit of work
 export const productDeletionUOW = new PrismaProductDeletionUnitOfWork();
 export const companyCreationUOW = new PrismaCompanyCreationUnitOfWork();
 export const userDeletionUOW = new PrismaUserDeletionUnitOfWork();
+export const billIssuingUOW = new PrismaBillIssuingUnitOfWork();
 
 // providers
 export const idGenerator = new UuidIDGenerator();
@@ -112,6 +113,8 @@ export const routeOptimizationProvider = new GoogleRouteOptimizationProvider();
 export const locationBroadcaster: ILocationBroadcaster = new InMemoryLocationBroadcaster();
 export const emailService: IEmailService = new ResendEmailProvider(ENV.RESEND_API_KEY, ENV.MAIL_FROM);
 export const paymentProvider: IPaymentProvider = new RevenueCatProvider(ENV.REVENUECAT_WEBHOOK_AUTH, ENV.REVENUECAT_API_KEY);
+export const creditPurchaseService: ICreditPurchaseService = new CreditPurchaseService(creditRepository, companiesRepository);
+export const creditsService: ICreditsService = new CreditsService(creditRepository, companiesRepository);
 
 
 // services
@@ -124,7 +127,7 @@ export const jwtService = new JwtTokenService();
 export const memberCodeService: IMemberCodeService = new MemberCodeService(userRepository, memberCodeGenerator);
 export const userService = new UserService(userRepository, memberCodeService);
 export const oAuthService = new OAuthService(userService, googleOAuthProvider, appleOAuthProvider, idGenerator);
-export const companiesService = new CompanyService(companiesRepository, companyCreationUOW, idGenerator);
+export const companiesService = new CompanyService(companiesRepository, companyCreationUOW);
 export const memberAddedEmailSender = new MemberAddedEmailSender(emailService);
 export const companyMemberService: ICompanyMemberService = new CompanyMemberService(
   companyMemberRepository,
@@ -136,7 +139,7 @@ export const companyMemberService: ICompanyMemberService = new CompanyMemberServ
 export const clientsService = new ClientService(clientsRepository);
 export const productsService = new ProductService(productsRepository, productDeletionUOW);
 export const ordersPricingCalculator = new OrderPricingCalculator(ordersRepository, productsRepository);
-export const ordersService = new OrdersService(ordersRepository);
+export const ordersService = new OrdersService(ordersRepository, billIssuingUOW);
 export const orderDeliveryStatusManager = new OrderDeliveryStatusManager(ordersRepository);
 export const routeOptimizationService = new RouteOptimizationService(routesRepository, routeOptimizationProvider);
 export const routesService = new RouteService(routesRepository, routeOptimizationService, orderDeliveryStatusManager, companyMemberRepository, locationBroadcaster);
@@ -160,9 +163,6 @@ export const testLoginService: ITestLoginService = new TestLoginService(userServ
   email: ENV.TEST_LOGIN_EMAIL,
   password: ENV.TEST_LOGIN_PASSWORD,
 }, testAccountSeeder);
-export const usageService: IUsageService = new UsageService(ordersRepository, routesRepository, clientsRepository, productsRepository, companyMemberRepository);
-export const entitlementService: IEntitlementService = new EntitlementService(subscriptionRepository, usageService);
-export const subscriptionSyncService: ISubscriptionSyncService = new SubscriptionSyncService(subscriptionRepository, companiesRepository);
 
 export const accountDeletionService: IAccountDeletionService = new AccountDeletionService(userDeletionUOW);
 export const accountDeletionEmailSender = new AccountDeletionEmailSender(emailService);
@@ -192,7 +192,8 @@ export const routesController = new RoutesContoller(routesService, routeLocation
 export const statsController = new StatsController(financialSummaryCalculator);
 export const locationController = new LocationController(locationService);
 export const paymentMethodsController = new PaymentMethodsController(paymentMethodsService)
-export const billingWebhookController = new BillingWebhookController(paymentProvider, subscriptionSyncService);
-export const billingController = new BillingController(entitlementService, subscriptionRepository);
+export const billingWebhookController = new BillingWebhookController(paymentProvider, creditPurchaseService);
+export const creditsController = new CreditsController(creditsService);
+export const adminCreditsController = new AdminCreditsController(creditsService);
 export const systemController = new SystemController(ENV.MIN_FRONTEND_VERSION);
 

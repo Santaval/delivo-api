@@ -34,12 +34,4 @@ export default interface IRouteRepository {
   findDriverLocation(routeId: string): Promise<DriverLocation | null>;
   /** Delete the stored location of a route. Does nothing if there is none. */
   deleteDriverLocation(routeId: string): Promise<void>;
-  /**
-   * Count routes created by a company within a half-open date range `[start, end)`.
-   * @param companyId The ID of the company.
-   * @param start Inclusive lower bound of `createdAt`.
-   * @param end Exclusive upper bound of `createdAt`.
-   * @returns A promise that resolves to the number of matching routes.
-   */
-  countByCompanyAndCreatedAtRange(companyId: string, start: Date, end: Date): Promise<number>;
 }

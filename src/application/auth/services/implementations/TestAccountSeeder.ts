@@ -16,8 +16,9 @@ import IOrderItemsManager from "@/application/orders/services/interfaces/IOrderI
  * Play reviewers land on a populated app instead of an empty one. Runs once, on the first
  * test-login of a brand new user (see TestLoginService) — never on subsequent logins.
  *
- * Stays well under the FREE plan limits (`PlanCatalog.ts`): 4 clients, 4 products and 3 orders
- * are nowhere near the 25 clients / 20 products / 10 documents-per-month ceiling.
+ * The demo company gets the normal welcome credit grant (`CreditPolicy.ts`); the 3 demo
+ * orders go through `OrdersService.create`, so they consume 3 of the 50 welcome credits like
+ * any other bill.
  */
 export class TestAccountSeeder implements ITestAccountSeeder {
   constructor(
@@ -41,8 +42,8 @@ export class TestAccountSeeder implements ITestAccountSeeder {
 
       const now = new Date().toISOString();
 
-      // The company creation also adds the user as owner and creates the default FREE
-      // subscription, in one transaction (CompanyService.create) — no privileged path needed.
+      // The company creation also adds the user as owner and grants the welcome
+      // credits, in one transaction (CompanyService.create) — no privileged path needed.
       const company = await this.companiesService.create(
         new Company({ id: this.idGenerator.generate(), name: "Distribuidora Demo", createdAt: now, updatedAt: now }),
         userId,

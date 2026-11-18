@@ -5,7 +5,6 @@ import { Router } from "express";
 import createRouteSchema from "../validators/createRoute";
 import addRoutePointSchema from "../validators/addRoutePoint";
 import startRouteSchema from "../validators/startRoute";
-import enforceLimit from "@/presentation/billing/middlewares/enforceLimit";
 
 import assignDriverSchema from "../validators/assignDriver";
 import reportLocationSchema from "../validators/reportLocation";
@@ -17,9 +16,7 @@ const routesRouter = Router();
 // Required so handlers can identify the caller (e.g. GET /?driverId=me).
 routesRouter.use(jwtAuth);
 
-// This router does not mount requireCompanyId; RoutesController reads x-company-id via
-// CompanyIdParser, so enforceLimit's default resolver (also CompanyIdParser) is correct here.
-routesRouter.post("/", enforceLimit("routes"), validateSchema(createRouteSchema), asyncHandler(routesController.create.bind(routesController)));
+routesRouter.post("/", validateSchema(createRouteSchema), asyncHandler(routesController.create.bind(routesController)));
 routesRouter.get("/", asyncHandler(routesController.findAll.bind(routesController)));
 routesRouter.patch("/:id/driver", validateSchema(assignDriverSchema), asyncHandler(routesController.assignDriver.bind(routesController)));
 // Live driver location (see docs/live-tracking.md). Bearer auth only (jwtAuth above).
@@ -40,8 +37,6 @@ routesRouter.get("/:id/location/stream", asyncHandler(routesController.streamLoc
 routesRouter.get("/:id", asyncHandler(routesController.findById.bind(routesController)));
 routesRouter.post("/:id/points", validateSchema(addRoutePointSchema), asyncHandler(routesController.addPoint.bind(routesController)));
 routesRouter.delete("/:id/points/:pointId", asyncHandler(routesController.removePoint.bind(routesController)));
-// No enforceLimit here: starting/optimizing a route that was already counted at creation must
-// not consume a second "routes" unit.
 routesRouter.post("/:id/start", validateSchema(startRouteSchema), asyncHandler(routesController.startOptimization.bind(routesController)));
 routesRouter.patch("/points/:pointId/complete", asyncHandler(routesController.completeDelivery.bind(routesController)));
 export default routesRouter;

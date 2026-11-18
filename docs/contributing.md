@@ -21,7 +21,7 @@ Checklist:
 4. **Infrastructure:** repositories should take an optional Prisma transaction client in the constructor (like `PrismaCompaniesRepository`), so Units of Work can reuse them. Mappers convert Prisma rows to entities and back.
 5. **Presentation:** a Zod schema for each write endpoint, `asyncHandler` around each controller method, and DTO mappers that keep entities out of responses.
 6. **Wiring:** register everything in `src/dependencyInjection/container.ts` (infrastructure → application → presentation) and mount the router in `src/presentation/core/routes/router.ts`.
-7. **Plan limits:** if the resource is billable, add it to `LimitedResource` / `PLAN_CATALOG` / `RESOURCE_WINDOWS`, measure it in `UsageService`, and add `enforceLimit("<resource>")` to the create route.
+7. **Credits:** if the action must cost credits, do not add a pre-check middleware (it races under concurrency). Debit inside the same transaction as the write, through a Unit of Work that hands out `ICreditRepository.tryConsume` and `recordBillIssued`, as `OrdersService.create` does. See [billing.md](billing.md#consuming-a-credit).
 
 ## Conventions
 

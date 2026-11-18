@@ -5,6 +5,9 @@ import { Order } from "@/domain/orders";
 import { ClientId } from "@/domain/clients/valueObjects/clientId.valueObject";
 import { OrderDeliveryStatusType } from "@/domain/orders/valueObjects/orderDeliveryStatus";
 import ApplicationError from "@/application/core/errors/ApplicationError";
+import { IBillIssuingUnitOfWork } from "@/domain/orders/unitsOfWork/BillIssuingUnitOfWork";
+import { CREDITS_PER_BILL, OVERDRAFT_FLOOR } from "@/application/credits/CreditPolicy";
+import { InsufficientCreditsError } from "@/application/credits/errors/InsufficientCreditsError";
 
 export default class OrdersService implements IOrdersService {
 
@@ -13,6 +16,7 @@ export default class OrdersService implements IOrdersService {
 
   constructor(
     private readonly ordersRepository: IOrderRepository,
+    private readonly billIssuingUOW: IBillIssuingUnitOfWork,
   ) {}
   findByCompany(companyId: string): Promise<Order[]> {
     return this.ordersRepository.findByCompany(companyId);
@@ -39,8 +43,32 @@ export default class OrdersService implements IOrdersService {
     return this.ordersRepository.byCompanyAndManyDeliveryStatus(companyId, this.OPENED_STATES);
   }
 
+  /**
+   * Issues a bill: debits one credit, creates the bill and records the ledger row in a single
+   * transaction. Debit goes first so an insufficient balance never creates a bill (and never
+   * burns a ClientBill.number); if the bill insert fails, the debit rolls back.
+   * @throws InsufficientCreditsError when the balance would drop below the overdraft floor.
+   */
   create(order: Order): Promise<Order> {
-    return this.ordersRepository.create(order);
+    return this.billIssuingUOW.runInTransaction(async (ctx) => {
+      const credits = ctx.getCreditRepository();
+
+      // 1. Conditional debit (takes the CreditBalance row lock, serializing bills per company).
+      const balanceAfter = await credits.tryConsume(order.companyId, CREDITS_PER_BILL, OVERDRAFT_FLOOR);
+      if (balanceAfter === null) {
+        const balance = await credits.getBalance(order.companyId);
+        if (balance === null) console.error(`OrdersService: company ${order.companyId} has no CreditBalance row`);
+        throw new InsufficientCreditsError({ balance: balance ?? 0, overdraftFloor: OVERDRAFT_FLOOR, required: CREDITS_PER_BILL });
+      }
+
+      // 2. The bill itself.
+      const created = await ctx.getOrderRepository().create(order);
+
+      // 3. Ledger entry linked to the bill.
+      await credits.recordBillIssued({ companyId: order.companyId, billId: created.id, amount: CREDITS_PER_BILL, balanceAfter });
+
+      return created;
+    });
   }
 
   findById(id: string): Promise<Order | null> {

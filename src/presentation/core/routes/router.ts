@@ -1,3 +1,4 @@
+import adminRouter from "@/presentation/admin/routes/admin.routes";
 import authRouter from "@/presentation/auth/routes/auth.route";
 import billingRouter from "@/presentation/billing/routes/billing.routes";
 import clientsRouter from "@/presentation/clients/routes/clients.routes";
@@ -28,6 +29,7 @@ router.use('/locations', locationRouter);
 router.use('/payments/methods', paymentMethodsRouter);
 router.use("/billing", billingRouter);
 router.use("/system", systemRouter);
+router.use("/admin", adminRouter);
 
 
 export default router;

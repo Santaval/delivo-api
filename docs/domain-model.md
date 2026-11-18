@@ -18,7 +18,8 @@ erDiagram
     Company ||--o{ UserCompany : "has members"
     User ||--o{ CompanyInvitation : "sends"
     Company ||--o{ CompanyInvitation : "has"
-    Company ||--o| Subscription : "has plan"
+    Company ||--o| CreditBalance : "has"
+    Company ||--o{ CreditLedgerEntry : "has"
 
     Company ||--o{ Client : owns
     Company ||--o{ Product : owns
@@ -66,14 +67,18 @@ erDiagram
       string token UK
       datetime expiresAt
     }
-    Subscription {
+    CreditBalance {
+      uuid companyId PK
+      int balance "cached ledger sum, floor -5"
+    }
+    CreditLedgerEntry {
       uuid id PK
-      enum tier "FREE | BASIC"
-      enum status "ACTIVE | IN_GRACE_PERIOD | EXPIRED | CANCELLED"
-      enum provider "REVENUECAT"
-      string providerCustomerId
-      datetime currentPeriodEnd
-      uuid companyId UK
+      uuid companyId FK
+      int delta
+      enum reason "WELCOME_GRANT | PURCHASE | BILL_ISSUED | REFUND | ADMIN_ADJUSTMENT"
+      int balanceAfter
+      string billId UK
+      string providerTransactionId UK
     }
     Client {
       uuid id PK
@@ -149,7 +154,7 @@ erDiagram
 |---|---|---|
 | **Identity** | `User` | Created on the first Google/Apple sign-in. Has no password column: authentication is delegated to the identity providers. |
 | **Company** | `Company` | The tenant. Memberships (`UserCompany`) carry a role, and invitations carry a single-use token and a 7-day expiry. |
-| **Subscription** | `Subscription` | One per company (`companyId` is unique). Created as FREE in the same transaction as the company. |
+| **Credits** | `CreditBalance`, `CreditLedgerEntry` | One `CreditBalance` per company: a cached sum of its ledger, updated in the same transaction as every ledger insert. `CreditLedgerEntry` is append-only (the audit trail); `billId` and `providerTransactionId` are unique, so a bill is charged once and a provider transaction is applied once. A new company gets 50 `WELCOME_GRANT` credits in the same transaction as the company. |
 | **Client** | `Client` | Optional geolocation used as the delivery destination. Name, phone and email are each unique per company. |
 | **Product** | `Product` | Stores the gross price and the IVA rate. Order lines snapshot both at the time of sale. |
 | **Order** | `ClientBill` | Order lines, running totals (`subtotal`, `ivaTotal`, `total`, `paid`), payment and delivery status, and a sequential human-readable `number`. |
@@ -205,17 +210,17 @@ stateDiagram-v2
     }
 ```
 
-### Invitation and subscription
+### Invitation and credits
 
 | Machine | States | Transitions |
 |---|---|---|
 | `CompanyInvitation.status` | `PENDING → ACCEPTED \| REVOKED \| EXPIRED` | Only a `PENDING`, unexpired invitation sent to the caller's own email can be accepted |
-| `Subscription.status` | `ACTIVE`, `IN_GRACE_PERIOD`, `CANCELLED`, `EXPIRED` | Driven by RevenueCat events. `effectiveTier()` falls back to FREE once the subscription is expired or its period has ended |
+| `CreditBalance.balance` | integer, may go down to `-5` | Only moves together with a ledger entry. Consuming a credit is a single conditional `UPDATE` that refuses to cross the floor; grants, refunds and admin adjustments never check it |
 
 ## Data integrity rules
 
 - **Tenant scoping:** every business row has a `companyId` foreign key, and repositories always filter by it.
-- **Soft delete:** `Client` and `Product` have a `deletedAt` column. Deleting sets the timestamp, and reads and plan-usage counts exclude soft-deleted rows, so historic orders keep pointing to valid rows.
+- **Soft delete:** `Client` and `Product` have a `deletedAt` column. Deleting sets the timestamp, and reads exclude soft-deleted rows, so historic orders keep pointing to valid rows.
 - **Money:** every monetary column is `DECIMAL(12,2)` and rates are `DECIMAL(5,2)`. Coordinates are `DECIMAL(10,8)` / `DECIMAL(11,8)`.
 - **Restrictive foreign keys:** relations use the default `ON DELETE RESTRICT`. Tenant deletion is therefore explicit and ordered from leaves to root (see [account deletion](account-deletion.md)) rather than relying on implicit cascades.
 - **Uniqueness:** `(userId, companyId)` membership, `(email, companyId)` invitation, `(name|phone|email, companyId)` client, and `(month, year, companyId)` tax period.
