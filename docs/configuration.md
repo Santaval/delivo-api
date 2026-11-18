@@ -63,6 +63,7 @@ All configuration comes from environment variables, loaded with `dotenv` from `.
 |---|:-:|---|
 | `REVENUECAT_WEBHOOK_AUTH` | optional | Shared secret for `POST /billing/webhooks/revenuecat`. **When it is unset, every webhook is rejected** |
 | `REVENUECAT_API_KEY` | optional | Deleting subscribers on account deletion. Skipped when unset |
+| `BILLING_ACCEPT_SANDBOX` | optional | `true` credits sandbox store purchases (dev/staging). Anything else, or unset, ignores them (production) |
 
 ### Admin
 

@@ -113,7 +113,7 @@ export const routeOptimizationProvider = new GoogleRouteOptimizationProvider();
 export const locationBroadcaster: ILocationBroadcaster = new InMemoryLocationBroadcaster();
 export const emailService: IEmailService = new ResendEmailProvider(ENV.RESEND_API_KEY, ENV.MAIL_FROM);
 export const paymentProvider: IPaymentProvider = new RevenueCatProvider(ENV.REVENUECAT_WEBHOOK_AUTH, ENV.REVENUECAT_API_KEY);
-export const creditPurchaseService: ICreditPurchaseService = new CreditPurchaseService(creditRepository, companiesRepository);
+export const creditPurchaseService: ICreditPurchaseService = new CreditPurchaseService(creditRepository, companiesRepository, ENV.BILLING_ACCEPT_SANDBOX);
 export const creditsService: ICreditsService = new CreditsService(creditRepository, companiesRepository);
 
 

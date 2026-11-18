@@ -28,6 +28,19 @@ export default class PrismaCreditRepository implements ICreditRepository {
     return fn(this.client);
   }
 
+  async findCompanyIdByProviderTransactionId(providerTransactionId: string): Promise<string | null> {
+    try {
+      const row = await this.client.creditLedgerEntry.findUnique({
+        where: { providerTransactionId },
+        select: { companyId: true },
+      });
+      return row ? row.companyId : null;
+    } catch (error) {
+      console.error("Error fetching credit ledger entry by provider transaction:", error);
+      throw new DatabaseError("Could not fetch credit ledger entry");
+    }
+  }
+
   async getBalance(companyId: string): Promise<number | null> {
     try {
       const row = await this.client.creditBalance.findUnique({

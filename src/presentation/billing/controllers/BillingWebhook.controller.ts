@@ -25,6 +25,7 @@ export default class BillingWebhookController {
     const outcome = await this.creditPurchaseService.applyEvent(event);
     switch (outcome) {
       case "UNKNOWN_PRODUCT":
+      case "SANDBOX_IGNORED":
         res.status(202).json({ message: "Event ignored" });
         return;
       case "DUPLICATE":

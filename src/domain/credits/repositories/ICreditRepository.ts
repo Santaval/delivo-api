@@ -24,6 +24,9 @@ export interface ICreditRepository {
   /** The whole ledger of a company (support view), newest first, with `billNumber` filled. */
   listAllEntries(companyId: string): Promise<CreditLedgerEntry[]>;
 
+  /** Company of the ledger entry recorded under `providerTransactionId`, or null when there is none. */
+  findCompanyIdByProviderTransactionId(providerTransactionId: string): Promise<string | null>;
+
   /**
    * Applies a signed delta and records the ledger entry. It never checks the floor, so
    * refunds and admin adjustments may take the balance below it. The balance update and the
