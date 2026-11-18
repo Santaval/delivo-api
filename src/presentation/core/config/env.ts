@@ -39,6 +39,19 @@ const ENV = {
   // Minimum supported frontend/app version. Required and validated as semver at boot so
   // a typo doesn't silently ship a broken version gate to clients.
   MIN_FRONTEND_VERSION: required("MIN_FRONTEND_VERSION"),
+  // Universal / app links for APP_INVITE_URL's host (served by the links router at the app
+  // root). Deliberately NOT required(): without APPLE_TEAM_ID (above) or the Android
+  // fingerprints the matching .well-known file 404s and links fall back to the web page.
+  APP_SCHEME: process.env.APP_SCHEME || "com.tributcr.savaldev",
+  IOS_BUNDLE_ID: process.env.IOS_BUNDLE_ID || "com.tributcr.savaldev",
+  ANDROID_PACKAGE_NAME: process.env.ANDROID_PACKAGE_NAME || "com.tributcr.savaldev",
+  // Comma-separated, colon-delimited uppercase hex (as shown by Play Console / keytool).
+  ANDROID_SHA256_CERT_FINGERPRINTS: (process.env.ANDROID_SHA256_CERT_FINGERPRINTS || "")
+    .split(",")
+    .map((f) => f.trim().toUpperCase())
+    .filter(Boolean),
+  APP_STORE_URL: process.env.APP_STORE_URL || "",
+  PLAY_STORE_URL: process.env.PLAY_STORE_URL || "",
 };
 
 const TEST_LOGIN_MIN_PASSWORD_LENGTH = 16;

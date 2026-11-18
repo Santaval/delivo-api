@@ -3,6 +3,7 @@ import cors from "cors";
 import morgan from "morgan";
 import origins from "./core/config/origins";
 import router from "./core/routes/router";
+import linksRouter from "./links/routes/links.routes";
 import errorHandler from "./core/middlewares/errorHandler";
 
 const app = express();
@@ -29,6 +30,9 @@ app.use(express.json());
 
 // API routes
 app.use("/api/v1", router);
+
+// Public link-domain routes (invitation landing page + universal/app link verification files)
+app.use(linksRouter);
 
 app.use(errorHandler);
 

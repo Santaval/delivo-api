@@ -70,6 +70,7 @@ import RevenueCatProvider from "@/infrastructure/billing/providers/RevenueCatPro
 import BillingWebhookController from "@/presentation/billing/controllers/BillingWebhook.controller";
 import BillingController from "@/presentation/billing/controllers/Billing.controller";
 import SystemController from "@/presentation/system/controllers/SystemController";
+import LinksController from "@/presentation/links/controllers/LinksController";
 
 // ==================== INFRASTRUCTURE ====================
 
@@ -185,4 +186,13 @@ export const paymentMethodsController = new PaymentMethodsController(paymentMeth
 export const billingWebhookController = new BillingWebhookController(paymentProvider, subscriptionSyncService);
 export const billingController = new BillingController(entitlementService, subscriptionRepository);
 export const systemController = new SystemController(ENV.MIN_FRONTEND_VERSION);
+export const linksController = new LinksController({
+  appScheme: ENV.APP_SCHEME,
+  iosBundleId: ENV.IOS_BUNDLE_ID,
+  appleTeamId: ENV.APPLE_TEAM_ID,
+  androidPackageName: ENV.ANDROID_PACKAGE_NAME,
+  androidSha256CertFingerprints: ENV.ANDROID_SHA256_CERT_FINGERPRINTS,
+  appStoreUrl: ENV.APP_STORE_URL,
+  playStoreUrl: ENV.PLAY_STORE_URL,
+});
 

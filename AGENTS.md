@@ -74,6 +74,25 @@ checks as any other account, no special role or bypass.
 **Operating rule: turn it on for submission, turn it off as soon as the app is approved.** This
 is not a product feature — see the submission checklist on issue #37 for the exact steps.
 
+## Invitation links
+
+The invitation email links to `APP_INVITE_URL` (`https://links.appdelivo.com/invitations/accept?token=…`).
+That host is served by this API through `linksRouter` (`src/presentation/links/`), mounted at the
+app **root**, not under `/api/v1`, because the OS fetches the verification files from fixed paths:
+
+- `GET /.well-known/apple-app-site-association` — iOS universal links; built from `APPLE_TEAM_ID` +
+  `IOS_BUNDLE_ID`, 404 while `APPLE_TEAM_ID` is unset.
+- `GET /.well-known/assetlinks.json` — Android app links; built from `ANDROID_PACKAGE_NAME` +
+  `ANDROID_SHA256_CERT_FINGERPRINTS`, 404 while the fingerprints are unset.
+- `GET /invitations/accept?token=…` — public fallback HTML page shown when the app isn't installed
+  (or the link isn't handed to the OS). It doesn't accept anything: accepting needs a signed-in
+  user, so it only offers an `APP_SCHEME://invitations/accept?token=…` deep link plus optional
+  `APP_STORE_URL` / `PLAY_STORE_URL`. The app then calls the JWT-authenticated
+  `POST /api/v1/invitations/accept`.
+
+Only `/invitations/*` is claimed for the app; keep it in sync with `associatedDomains` /
+`intentFilters` in the mobile app's `app.json`.
+
 ## Billing
 
 Plans are per `Company`, not per user. RevenueCat's `app_user_id` MUST be the `companyId` — the
