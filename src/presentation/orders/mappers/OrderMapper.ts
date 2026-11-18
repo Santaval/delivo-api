@@ -21,6 +21,7 @@ export default class OrdersDtoMapper {
       // @ts-expect-error
       status: order.status,
       deliveryStatus: order.deliveryStatus as "PENDING" | "ON_ROUTE" | "IN_TRANSIT" | "DELIVERED" | "RETURNED",
+      route: order.route ?? null,
       createdAt: order.createdAt.toISOString(),
       updatedAt: order.updatedAt.toISOString(),
     };

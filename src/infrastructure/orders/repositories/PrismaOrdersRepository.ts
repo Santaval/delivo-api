@@ -274,7 +274,8 @@ export default class PrismaOrderRepository implements IOrderRepository {
         include: {
           method: true
         }
-      }
+      },
+      routePoint: { select: { route: { select: { id: true, name: true, status: true } } } }
     }
   }
 

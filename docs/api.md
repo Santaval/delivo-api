@@ -162,6 +162,7 @@ Error cases: `409` already a member, invitation already pending, or removing the
 Business rules:
 - Items cannot be changed once an order is `DELIVERED` or `RETURNED`.
 - Payments require `deliveryStatus = DELIVERED` and cannot exceed the outstanding total. The order becomes `PAID` when `paid ≥ total`.
+- `route` is the route the order is on (resolved through its route point), or `null` when it isn't on one.
 
 ```jsonc
 // OrderResponse
@@ -173,6 +174,7 @@ Business rules:
   "items": [{ "productId": "uuid", "quantity": 2, "name": "Arroz 1kg", "pricing": { /* … */ } }],
   "status": "PENDING",
   "deliveryStatus": "DELIVERED",
+  "route": { "id": "uuid", "name": "North", "status": "STARTED" },   // or null when the order is not on a route
   "createdAt": "…", "updatedAt": "…"
 }
 ```

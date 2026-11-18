@@ -1,12 +1,12 @@
 import { Order } from "@/domain/orders";
-import { BillDeliveryStatus, BillStatus, Client, ClientBill, ClientBillItem, ClientPayment, PaymentMethod } from "@/infrastructure/prisma/generated/prisma/client";
+import { BillDeliveryStatus, BillStatus, Client, ClientBill, ClientBillItem, ClientPayment, PaymentMethod, RouteStatus } from "@/infrastructure/prisma/generated/prisma/client";
 import PrismaOrderItemMapper from "./PrismaOrderItemMapper";
 import { ClientBillCreateArgs, ClientBillUpdateArgs } from "@/infrastructure/prisma/generated/prisma/models";
 import { PrismaClientMapper } from "@/infrastructure/clients/mappers/PrismaClientMapper";
 import PrismaPaymentMapper, { FullPaymentType } from "./PrismaPaymentMapper";
 
 export default class PrismaOrderMapper {
-  static toDomain(raw: ClientBill & { items: ClientBillItem[], client: Client, payments: FullPaymentType[] }): Order {
+  static toDomain(raw: ClientBill & { items: ClientBillItem[], client: Client, payments: FullPaymentType[], routePoint?: { route: { id: string; name: string; status: RouteStatus } } | null }): Order {
     return new Order({
       client: PrismaClientMapper.toDomain(raw.client),
       companyId: raw.companyId,
@@ -21,6 +21,7 @@ export default class PrismaOrderMapper {
       subtotal: raw.subtotal.toNumber(),
       total: raw.total.toNumber(),
       payments: raw.payments.map(PrismaPaymentMapper.toDomain),
+      route: raw.routePoint?.route ? { id: raw.routePoint.route.id, name: raw.routePoint.route.name, status: raw.routePoint.route.status } : null,
       createdAt: raw.createdAt.toISOString(),
       updatedAt: raw.updatedAt.toISOString()
     });
@@ -50,7 +51,8 @@ export default class PrismaOrderMapper {
           include: {
             method: true
           }
-        }
+        },
+        routePoint: { select: { route: { select: { id: true, name: true, status: true } } } }
       }
     };
   }
@@ -82,7 +84,8 @@ export default class PrismaOrderMapper {
           include: {
             method: true
           }
-        }
+        },
+        routePoint: { select: { route: { select: { id: true, name: true, status: true } } } }
       }
     };
   }

@@ -14,6 +14,7 @@ export default interface OrderResponse {
   items: OrderItemResponse[];
   status: "PENDING" | "PAID" | "CANCELLED";
   deliveryStatus: "PENDING" | "ON_ROUTE" | "IN_TRANSIT" | "DELIVERED" | "RETURNED";
+  route?: { id: string; name: string; status: "CREATED" | "STARTED" | "COMPLETED" } | null;
   createdAt?: string;
   updatedAt?: string;
 }
