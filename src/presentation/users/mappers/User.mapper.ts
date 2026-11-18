@@ -26,6 +26,7 @@ export default class UserDtoMapper {
       surnames: user.surnames,
       companies: user.companies.map(CompanyDtoMapper.toResponse),
       email: user.email.value,
+      memberCode: user.memberCode,
     };
   }
 

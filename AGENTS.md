@@ -173,6 +173,28 @@ consumed by `deleteSubscriber`.
   Settings → Cuenta → Eliminar cuenta. A later `GET /api/v1/me` with the same token returns
   404 "Usuario no encontrado".
 
+## Members
+
+Every user has a unique 6-digit numeric **member code** (`User.memberCode`, `CHAR(6)`, nullable +
+`@unique`; leading zeros allowed). It is the handle a company owner/admin will use to add that user
+as a member (follow-up issues), replacing email invitations.
+
+- Generated with `crypto.randomInt` (`CryptoMemberCodeGenerator`) — never `Math.random`. Collisions
+  are resolved by the DB unique index: `PrismaUsersRepository.setMemberCode` maps `P2002` to
+  `MemberCodeTakenError`, and `MemberCodeService.assignNewCode` retries up to 5 times before
+  throwing `MemberCodeGenerationError` (500).
+- Assigned at sign-up by `UserService.create` (covers Google, Apple and test-login). Existing users
+  without a code are lazily backfilled by `MemberCodeService.ensureMemberCode` in `GET /auth/me`,
+  the Google/Apple/test logins and `GET`/`PUT /me`.
+- `PrismaUserMapper.toPersistence` deliberately does NOT write `memberCode`; only `setMemberCode`
+  does, so generic create/update can never null it out.
+- The code is returned only in the user's own payload (`UserResponse.memberCode`: login responses,
+  `GET /auth/me`, `GET`/`PUT /me`). NEVER add it to `MemberResponse` or any other user's data.
+- `POST /api/v1/me/member-code/regenerate` (JWT, rate-limited 5 / hour per IP) assigns a new code,
+  invalidating the old one, and returns `200 { "memberCode": "012345" }`.
+
+There is no `docs/api.md` in this repo; endpoints are documented here.
+
 ## Key Quirks
 
 - Express **5.x** (not 4) — response methods may differ from 4.x patterns

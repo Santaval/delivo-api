@@ -7,4 +7,7 @@ export interface IUserRepository {
   find(value: string, field?: string): Promise<User | null>;
   update(user: User): Promise<void>;
   delete(id: string): Promise<void>;
+  /** Throws MemberCodeTakenError when the code is already assigned to another user. */
+  setMemberCode(userId: string, code: string): Promise<void>;
+  findByMemberCode(code: string): Promise<User | null>;
 }

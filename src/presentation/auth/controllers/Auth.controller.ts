@@ -3,6 +3,7 @@ import { IOAuthService } from "@/application/auth/services/interfaces/IOAuthServ
 import { AuthResponse } from "../responses/AuthResponse";
 import IJwtService from "@/domain/auth/services/IJwtService";
 import { IUserService } from "@/application/users/services/interfaces/IUserService";
+import { IMemberCodeService } from "@/application/users/services/interfaces/IMemberCodeService";
 import { ITestLoginService } from "@/application/auth/services/interfaces/ITestLoginService";
 import UserDtoMapper from "@/presentation/users/mappers/User.mapper";
 import { TestLoginRequest } from "../requests/TestLoginRequest";
@@ -12,7 +13,8 @@ export default class AuthController {
     private readonly oAuthService: IOAuthService,
     private readonly jwtService: IJwtService,
     private readonly usersService: IUserService,
-    private readonly testLoginService: ITestLoginService
+    private readonly testLoginService: ITestLoginService,
+    private readonly memberCodeService: IMemberCodeService,
   ) {}
 
   async googleLogin(req: Request, res: Response): Promise<void> {
@@ -33,7 +35,7 @@ export default class AuthController {
         email: user.email.value,
       });
 
-      const userResponse = UserDtoMapper.toResponse(user);
+      const userResponse = UserDtoMapper.toResponse(await this.memberCodeService.ensureMemberCode(user));
 
       const response: AuthResponse = {
         user: userResponse,
@@ -59,7 +61,7 @@ export default class AuthController {
         email: user.email.value,
       });
 
-      const userResponse = UserDtoMapper.toResponse(user);
+      const userResponse = UserDtoMapper.toResponse(await this.memberCodeService.ensureMemberCode(user));
 
       const response: AuthResponse = {
         user: userResponse,
@@ -97,7 +99,7 @@ export default class AuthController {
       return;
     }
 
-    res.json(UserDtoMapper.toResponse(user));
+    res.json(UserDtoMapper.toResponse(await this.memberCodeService.ensureMemberCode(user)));
   }
 
   async refreshToken(req: Request, res: Response): Promise<void> {
@@ -151,7 +153,7 @@ export default class AuthController {
     });
 
     const response: AuthResponse = {
-      user: UserDtoMapper.toResponse(user),
+      user: UserDtoMapper.toResponse(await this.memberCodeService.ensureMemberCode(user)),
       token: jwtToken,
       expiresIn: "7d",
     };
