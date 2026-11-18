@@ -19,6 +19,9 @@ import { ProductService } from "@/application/products/services/implementations/
 import RouteOptimizationService from "@/application/routes/services/implementations/RouteOptimizationService";
 import RouteService from "@/application/routes/services/implementations/RouteService";
 import FinancialSummaryCalculator from "@/application/stats/services/implementations/FinancialSummaryCalculator";
+import { MemberCodeService } from "@/application/users/services/implementations/MemberCodeService";
+import { IMemberCodeService } from "@/application/users/services/interfaces/IMemberCodeService";
+import { CryptoMemberCodeGenerator } from "@/infrastructure/users/services/CryptoMemberCodeGenerator";
 import { UserService } from "@/application/users/services/implementations/UserService";
 import { AccountDeletionService } from "@/application/users/services/implementations/AccountDeletionService";
 import { IAccountDeletionService } from "@/application/users/services/interfaces/IAccountDeletionService";
@@ -93,6 +96,7 @@ export const userDeletionUOW = new PrismaUserDeletionUnitOfWork();
 
 // providers
 export const idGenerator = new UuidIDGenerator();
+export const memberCodeGenerator = new CryptoMemberCodeGenerator();
 export const googleOAuthProvider = new GoogleOAuthProvider();
 export const appleOAuthProvider = new AppleOAuthProvider(
   ENV.APPLE_TEAM_ID,
@@ -113,7 +117,8 @@ export const jwtService = new JwtTokenService();
 // ==================== APPLICATION ====================
 
 // services
-export const userService = new UserService(userRepository);
+export const memberCodeService: IMemberCodeService = new MemberCodeService(userRepository, memberCodeGenerator);
+export const userService = new UserService(userRepository, memberCodeService);
 export const oAuthService = new OAuthService(userService, googleOAuthProvider, appleOAuthProvider, idGenerator);
 export const companiesService = new CompanyService(companiesRepository, companyCreationUOW, idGenerator);
 export const invitationEmailSender = new InvitationEmailSender(emailService, ENV.APP_INVITE_URL);
@@ -169,12 +174,13 @@ export const accountDeletionExternalCleanup: IAccountDeletionExternalCleanup = n
 // controllers
 export const myProfileController = new MyProfileController(
   userService,
+  memberCodeService,
   accountDeletionService,
   accountDeletionExternalCleanup,
 );
 export const companyController = new CompanyController(companiesService, idGenerator);
 export const companyMemberController = new CompanyMemberController(companyMemberService);
-export const authController = new AuthController(oAuthService, jwtService, userService, testLoginService);
+export const authController = new AuthController(oAuthService, jwtService, userService, testLoginService, memberCodeService);
 export const clientsController = new ClientController(clientsService);
 export const productsController = new ProductController(productsService);
 export const ordersController = new OrdersController(ordersService, orderPaymentsService, orderItemsManager);

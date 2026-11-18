@@ -5,6 +5,7 @@ import { Prisma } from "@/infrastructure/prisma/generated/prisma/client";
 import { PrismaUserMapper } from "../mappers/PrismaUserMapper";
 import DatabaseError from "@/infrastructure/core/errors/DatabaseError";
 import DatabaseInsertError from "@/infrastructure/core/errors/DatabaseInsertError";
+import { MemberCodeTakenError } from "@/domain/users/errors/MemberCodeTakenError";
 
 export default class PrismaUsersRepository implements IUserRepository {
 
@@ -95,6 +96,45 @@ export default class PrismaUsersRepository implements IUserRepository {
     } catch (error) {
       console.error("Error deleting user:", error);
       throw new DatabaseInsertError("Could not delete user");
+    }
+  }
+
+  /**
+   * Assign a member code to a user. The code is never written by create/update.
+   * @throws MemberCodeTakenError when the unique constraint on memberCode is violated.
+   */
+  async setMemberCode(userId: string, code: string): Promise<void> {
+    try {
+      await this.client.user.update({
+        where: { id: userId },
+        data: { memberCode: code },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        throw new MemberCodeTakenError();
+      }
+      console.error("Error setting member code:", error);
+      throw new DatabaseInsertError("Could not set member code");
+    }
+  }
+
+  /**
+   * Find a user by their member code.
+   * @returns A promise that resolves to a User entity or null if not found.
+   */
+  async findByMemberCode(code: string): Promise<User | null> {
+    try {
+      const user = await this.client.user.findUnique({
+        where: { memberCode: code },
+        include: this.getIncludes(),
+      });
+      return user ? PrismaUserMapper.toDomain(user) : null;
+    } catch (error) {
+      console.error("Error finding user by member code:", error);
+      throw new DatabaseError("Could not find user");
     }
   }
 

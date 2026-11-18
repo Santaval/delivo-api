@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { UpdateUserRequest } from "../requests/UpdateUserRequest";
 import UserDtoMapper from "../mappers/User.mapper";
 import { IUserService } from "@/application/users/services/interfaces/IUserService";
+import { IMemberCodeService } from "@/application/users/services/interfaces/IMemberCodeService";
 import { IAccountDeletionService } from "@/application/users/services/interfaces/IAccountDeletionService";
 import { IAccountDeletionExternalCleanup } from "@/application/users/services/interfaces/IAccountDeletionExternalCleanup";
 
@@ -9,6 +10,7 @@ export default class MyProfileController {
 
   constructor(
     private readonly userService: IUserService,
+    private readonly memberCodeService: IMemberCodeService,
     private readonly accountDeletionService: IAccountDeletionService,
     private readonly accountDeletionExternalCleanup: IAccountDeletionExternalCleanup,
   ) {}
@@ -27,7 +29,7 @@ export default class MyProfileController {
       res.status(404).json({ message: "User not found" });
       return;
     }
-    res.json(UserDtoMapper.toResponse(updatedUser));
+    res.json(UserDtoMapper.toResponse(await this.memberCodeService.ensureMemberCode(updatedUser)));
   }
 
   async me(req: Request, res: Response): Promise<void> {
@@ -38,7 +40,14 @@ export default class MyProfileController {
       res.status(404).json({ message: "User not found" });
       return;
     }
-    res.json(UserDtoMapper.toMyProfileResponse(user));
+    res.json(UserDtoMapper.toMyProfileResponse(await this.memberCodeService.ensureMemberCode(user)));
+  }
+
+  async regenerateMemberCode(req: Request, res: Response): Promise<void> {
+    // @ts-expect-error
+    const { id } = req.user;
+    const memberCode = await this.memberCodeService.assignNewCode(id);
+    res.status(200).json({ memberCode });
   }
 
   async logout(req: Request, res: Response) {

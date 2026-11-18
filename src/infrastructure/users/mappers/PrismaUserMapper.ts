@@ -20,12 +20,15 @@ export class PrismaUserMapper {
       name: row.name,
       surnames: row.surnames,
       email: row.email,
+      memberCode: row.memberCode,
       companies: row.companies.map((registry) => PrismaCompanyMapper.toDomain(registry.company)),
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
     });
   }
 
+  // memberCode is intentionally NOT persisted here: it is only written via
+  // IUserRepository.setMemberCode so generic create/update never overwrite it.
   static toPersistence(user: User): UserCreateArgs {
     return {
       data: {
