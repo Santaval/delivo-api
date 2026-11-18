@@ -27,7 +27,6 @@ The **Guards** column lists the middleware that runs before each handler:
 | **Role** | `requireCompanyRole`: caller must be `OWNER` or `ADMIN` of `:companyId`, otherwise `403` |
 | **Member** | `requireCompanyMembership`: caller must be a member (any role) of the company in `x-company-id`, otherwise `403` |
 | **Admin key** | `requireAdminKey`: header `x-admin-key` must equal the server's `ADMIN_API_KEY`, otherwise `401` (also `401` when the key is not configured) |
-| **Limit(x)** | `enforceLimit(x)`: `402 PLAN_LIMIT_EXCEEDED` when the plan quota for `x` is used up |
 | **Rate(n/15m)** | Per-IP rate limit, `429` when exceeded |
 
 Validation failures return `400 { "message": "<first Zod issue>" }`.
@@ -96,7 +95,7 @@ The deletion flow is explained in [account-deletion.md](account-deletion.md).
 |---|---|---|---|---|
 | `GET` | `/companies/:companyId/members` | JWT (caller must be a member) | none | `200 MemberResponse[]` |
 | `GET` | `/companies/:companyId/invitations` | JWT, Role | none | `200 InvitationResponse[]` (pending only) |
-| `POST` | `/companies/:companyId/invitations` | JWT, Role, Limit(drivers) *when `role = DEALER`* | `{ email, role: "ADMIN"\|"DEALER" }` | `201 InvitationResponse` + invitation email |
+| `POST` | `/companies/:companyId/invitations` | JWT, Role | `{ email, role: "ADMIN"\|"DEALER" }` | `201 InvitationResponse` + invitation email |
 | `DELETE` | `/companies/:companyId/invitations/:invitationId` | JWT, Role | none | `204` |
 | `DELETE` | `/companies/:companyId/members/:userId` | JWT, Role | none | `204` |
 | `POST` | `/invitations/accept` | JWT | `{ token }` | `204` |
@@ -109,7 +108,7 @@ Error cases: `409` already a member, invitation already pending, or removing the
 
 | Method | Path | Guards | Body | Success |
 |---|---|---|---|---|
-| `POST` | `/clients` | Tenant, Limit(clients) | `{ name, phoneNumber?, email?, lat, lng }` (`lat`/`lng` nullable) | `201 ClientResponse` |
+| `POST` | `/clients` | Tenant | `{ name, phoneNumber?, email?, lat, lng }` (`lat`/`lng` nullable) | `201 ClientResponse` |
 | `GET` | `/clients` | Tenant | none | `200 ClientResponse[]` |
 | `GET` | `/clients/:id` | Tenant | none | `200 ClientResponse` / `404` |
 | `PUT` | `/clients/:id` | Tenant | `{ name?, phoneNumber?, email? }` | `200 ClientResponse` |
@@ -128,7 +127,7 @@ Error cases: `409` already a member, invitation already pending, or removing the
 
 | Method | Path | Guards | Body | Success |
 |---|---|---|---|---|
-| `POST` | `/products` | Tenant, Limit(products) | `{ name, grossPrice, ivaRate? = 13 }` | `201 ProductResponse` |
+| `POST` | `/products` | Tenant | `{ name, grossPrice, ivaRate? = 13 }` | `201 ProductResponse` |
 | `GET` | `/products` | Tenant | none | `200 ProductResponse[]` |
 | `GET` | `/products/:id` | Tenant | none | `200 ProductResponse` / `404` |
 | `PUT` | `/products/:id` | Tenant | `{ name?, grossPrice?, ivaRate? }` | `200 ProductResponse` |
@@ -191,7 +190,7 @@ Business rules:
 
 | Method | Path | Guards | Body | Success |
 |---|---|---|---|---|
-| `POST` | `/routes` | JWT, Tenant, Limit(routes) | `{ name, driverId? }` (name 2–100 characters; `driverId` is a UUID of a company member) | `201 RouteResponse` / `422` if `driverId` is not a `DEALER`/`ADMIN`/`OWNER` member of the company |
+| `POST` | `/routes` | JWT, Tenant | `{ name, driverId? }` (name 2–100 characters; `driverId` is a UUID of a company member) | `201 RouteResponse` / `422` if `driverId` is not a `DEALER`/`ADMIN`/`OWNER` member of the company |
 | `GET` | `/routes` | JWT, Tenant | query `driverId?` = `me` or a user UUID | `200 RouteResponse[]`. With `driverId` only routes assigned to that user are returned (`me` = the token's user); `400` if it is neither `me` nor a UUID |
 | `GET` | `/routes/:id` | JWT, Tenant | none | `200 RouteResponse` / `404` |
 | `PATCH` | `/routes/:id/driver` | JWT, Tenant | `{ driverId: string \| null }` (`null` unassigns) | `200 RouteResponse` / `404` (route missing or from another company) / `409` (route `COMPLETED`) / `422` (driver is not a `DEALER`/`ADMIN`/`OWNER` member of the company) |
@@ -349,7 +348,6 @@ The mobile app calls this at startup and blocks with a "please update" screen wh
 | `400` | `{ message }` | Zod validation failure, or missing `x-company-id` |
 | `401` | `{ message }` | Missing or invalid JWT, failed OAuth, bad webhook secret, missing or wrong `x-admin-key` |
 | `402` | `{ code: "INSUFFICIENT_CREDITS", balance, overdraftFloor, required }` | `POST /orders` with no credits left (balance ≤ -5) |
-| `402` | `{ code: "PLAN_LIMIT_EXCEEDED", resource, limit, used, tier, upgradeTo }` | Plan quota used up |
 | `403` | `{ message }` | Not allowed to manage members, or not a member of the `x-company-id` company |
 | `404` | `{ message }` | Resource not found |
 | `409` | `{ message }` | Conflict: already a member, duplicate invitation, last owner |
@@ -363,17 +361,6 @@ The mobile app calls this at startup and blocks with a "please update" screen wh
   "balance": -5,
   "overdraftFloor": -5,
   "required": 1
-}
-```
-
-```json
-{
-  "code": "PLAN_LIMIT_EXCEEDED",
-  "resource": "clients",
-  "limit": 25,
-  "used": 25,
-  "tier": "FREE",
-  "upgradeTo": "BASIC"
 }
 ```
 

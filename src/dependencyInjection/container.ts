@@ -66,10 +66,6 @@ import StatsController from "@/presentation/stats/controllers/Stats.controller";
 import MyProfileController from "@/presentation/users/controllers/MyProfile.controller";
 import { IEmailService } from "@/domain/core/services/IEmailService";
 import { ICompanyMemberService } from "@/application/companies/services/interfaces/ICompanyMemberService";
-import { UsageService } from "@/application/billing/services/implementations/UsageService";
-import { IUsageService } from "@/application/billing/services/interfaces/IUsageService";
-import { EntitlementService } from "@/application/billing/services/implementations/EntitlementService";
-import { IEntitlementService } from "@/application/billing/services/interfaces/IEntitlementService";
 import { CreditPurchaseService } from "@/application/credits/services/implementations/CreditPurchaseService";
 import { ICreditPurchaseService } from "@/application/credits/services/interfaces/ICreditPurchaseService";
 import { IPaymentProvider } from "@/domain/billing/providers/IPaymentProvider";
@@ -167,8 +163,6 @@ export const testLoginService: ITestLoginService = new TestLoginService(userServ
   email: ENV.TEST_LOGIN_EMAIL,
   password: ENV.TEST_LOGIN_PASSWORD,
 }, testAccountSeeder);
-export const usageService: IUsageService = new UsageService(ordersRepository, routesRepository, clientsRepository, productsRepository, companyMemberRepository);
-export const entitlementService: IEntitlementService = new EntitlementService(usageService);
 
 export const accountDeletionService: IAccountDeletionService = new AccountDeletionService(userDeletionUOW);
 export const accountDeletionEmailSender = new AccountDeletionEmailSender(emailService);

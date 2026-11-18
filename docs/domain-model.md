@@ -220,7 +220,7 @@ stateDiagram-v2
 ## Data integrity rules
 
 - **Tenant scoping:** every business row has a `companyId` foreign key, and repositories always filter by it.
-- **Soft delete:** `Client` and `Product` have a `deletedAt` column. Deleting sets the timestamp, and reads and plan-usage counts exclude soft-deleted rows, so historic orders keep pointing to valid rows.
+- **Soft delete:** `Client` and `Product` have a `deletedAt` column. Deleting sets the timestamp, and reads exclude soft-deleted rows, so historic orders keep pointing to valid rows.
 - **Money:** every monetary column is `DECIMAL(12,2)` and rates are `DECIMAL(5,2)`. Coordinates are `DECIMAL(10,8)` / `DECIMAL(11,8)`.
 - **Restrictive foreign keys:** relations use the default `ON DELETE RESTRICT`. Tenant deletion is therefore explicit and ordered from leaves to root (see [account deletion](account-deletion.md)) rather than relying on implicit cascades.
 - **Uniqueness:** `(userId, companyId)` membership, `(email, companyId)` invitation, `(name|phone|email, companyId)` client, and `(month, year, companyId)` tax period.

@@ -1,6 +1,6 @@
 /**
  * Credit pricing and limits for pay-per-bill. They live in code, not in the database, so
- * every pricing change goes through code review (same idea as the former `PlanCatalog`).
+ * every pricing change goes through code review.
  */
 
 /** Credits granted to every new company, in the same transaction as its creation. */

@@ -57,7 +57,7 @@ Authorization: Bearer eyJ...
 x-company-id: 3f1c9a0e-7c1b-4a53-9d0f-1b2c3d4e5f60
 ```
 
-`requireCompanyId` rejects the request with `400` when the header is missing. `CompanyIdParser` is the single place the header is read, and it is reused by controllers and by `enforceLimit`. Every repository query for tenant data filters on `companyId`.
+`requireCompanyId` rejects the request with `400` when the header is missing. `CompanyIdParser` is the single place the header is read and is reused by controllers. Every repository query for tenant data filters on `companyId`.
 
 ## Roles and permissions
 
@@ -92,7 +92,6 @@ sequenceDiagram
     participant Invitee
 
     Admin->>API: POST /companies/:id/invitations { email, role }
-    API->>API: enforceLimit("drivers") if role = DEALER
     API->>API: reject if already a member (409) or already invited (409)
     API->>API: create PENDING invitation, token = UUID, expires in 7 days
     API->>Mail: HTML invitation with APP_INVITE_URL?token=…
@@ -107,7 +106,7 @@ sequenceDiagram
 - Emails are normalized (trimmed and lowercased) before comparison.
 - An invitation can only be accepted by the account whose email it was sent to.
 - Expired invitations return `410 Gone`. Revoked or accepted ones return `404`.
-- Only **DEALER** invitations use up the plan's `drivers` seat. ADMIN invitations are free (`enforceLimit(..., { when: req => req.body.role === "DEALER" })`).
+- Drivers (`DEALER`) are unlimited. Only bills cost credits, see [billing.md](billing.md).
 
 ## Review-only QA login
 
@@ -122,5 +121,5 @@ App Store and Google Play reviewers need a working demo account, but this app on
 | No enumeration | Every failure returns the same `401 Credenciales inválidas` |
 | Rate limited | 10 attempts per 15 minutes per IP |
 | Audited | Each successful login logs the source IP (never the credentials) |
-| No special privileges | The account is an ordinary FREE-plan user. On the first login it is seeded with a demo company, clients, products and orders so reviewers see a populated app |
+| No special privileges | The account is an ordinary user with the 50 welcome credits. On the first login it is seeded with a demo company, clients, products and orders so reviewers see a populated app |
 | Defense in depth | `TestLoginService` re-checks that the feature is enabled, in case it is ever wired up somewhere else |

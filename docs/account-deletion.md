@@ -1,6 +1,6 @@
 # Account deletion
 
-Apple (App Review guideline 5.1.1(v)) and Google Play require apps that support account creation to also support **in-app account deletion**. In a multi-tenant system this is harder than deleting one row: the user may be the sole owner of a company that holds orders, routes, payments and a paid subscription, or just one member of someone else's company.
+Apple (App Review guideline 5.1.1(v)) and Google Play require apps that support account creation to also support **in-app account deletion**. In a multi-tenant system this is harder than deleting one row: the user may be the sole owner of a company that holds orders, routes, payments and a credit balance, or just one member of someone else's company.
 
 Delivo splits the job in two:
 
