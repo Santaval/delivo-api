@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { ICompanyMemberService } from "@/application/companies/services/interfaces/ICompanyMemberService";
 import { MemberResponse } from "../responses/MemberResponse";
 import { InvitationResponse } from "../responses/InvitationResponse";
+import { AddMemberByCodeRequest } from "../requests/AddMemberByCodeRequest";
 import { CompanyRoleType } from "@/domain/companies/valueObjects/companyRole.valueObject";
 
 export default class CompanyMemberController {
@@ -51,6 +52,24 @@ export default class CompanyMemberController {
       status: invitation.status,
       expiresAt: invitation.expiresAt.toISOString(),
       createdAt: invitation.createdAt.toISOString(),
+    };
+    res.status(201).json(response);
+  }
+
+  async addMemberByCode(req: Request, res: Response): Promise<void> {
+    const { companyId } = req.params;
+    // @ts-expect-error req.user typing conflicts with @types/passport (see express.d.ts)
+    const actingUserId = req.user.id;
+    const { code, role } = req.body as AddMemberByCodeRequest;
+    // validateSchema only validates (it does not replace req.body), so normalize here too.
+    const normalizedCode = code.replace(/\s+/g, "");
+    const d = await this.companyMemberService.addMemberByCode(companyId, actingUserId, normalizedCode, role);
+    const response: MemberResponse = {
+      userId: d.userId,
+      name: d.name,
+      surnames: d.surnames,
+      email: d.email,
+      role: d.role,
     };
     res.status(201).json(response);
   }

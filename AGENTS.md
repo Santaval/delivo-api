@@ -192,6 +192,17 @@ as a member (follow-up issues), replacing email invitations.
   `GET /auth/me`, `GET`/`PUT /me`). NEVER add it to `MemberResponse` or any other user's data.
 - `POST /api/v1/me/member-code/regenerate` (JWT, rate-limited 5 / hour per IP) assigns a new code,
   invalidating the old one, and returns `200 { "memberCode": "012345" }`.
+- `POST /api/v1/companies/:companyId/members` with `{ code, role }` (`role` is `ADMIN` or
+  `DEALER`, never `OWNER`) adds the user owning that code as a member and returns
+  `201 MemberResponse`. Only OWNER/ADMIN may call it (`requireCompanyRole` +
+  `CompanyMemberService.addMemberByCode`). Whitespace in `code` is stripped; unknown code -> 404
+  `MemberCodeNotFoundError` ("No existe un usuario con ese código", generic on purpose), already a
+  member -> 409. Adding a `DEALER` goes through `enforceLimit("drivers")` (HTTP 402 when the plan is
+  full). A best-effort "you were added" email is sent to the new member; failures are only logged.
+- Abuse protection: rate-limited to 10 attempts / 15 min **per acting user** (not per IP; keyed by
+  `add-member:<userId>` via `rateLimit`'s `keyGenerator`). The limiter runs before the handler, so
+  404 lookups count, which blunts enumeration of the 6-digit space. The counter is per-process.
+  Failed lookups are logged with the acting user id and company id only — NEVER the code.
 
 There is no `docs/api.md` in this repo; endpoints are documented here.
 

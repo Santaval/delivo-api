@@ -7,6 +7,7 @@ import { ITestAccountSeeder } from "@/application/auth/services/interfaces/ITest
 import { ClientService } from "@/application/clients/services/implementations/ClientService";
 import { CompanyService } from "@/application/companies/services/implementations/CompanyService";
 import { CompanyMemberService } from "@/application/companies/services/implementations/CompanyMemberService";
+import MemberAddedEmailSender from "@/application/companies/services/members/MemberAddedEmailSender";
 import InvitationEmailSender from "@/application/companies/services/invitations/InvitationEmailSender";
 import LocationService from "@/application/geolocation/services/implementations/LocationService";
 import OrderDeliveryStatusManager from "@/application/orders/services/implementations/OrderDeliveryStatusManger";
@@ -122,6 +123,7 @@ export const userService = new UserService(userRepository, memberCodeService);
 export const oAuthService = new OAuthService(userService, googleOAuthProvider, appleOAuthProvider, idGenerator);
 export const companiesService = new CompanyService(companiesRepository, companyCreationUOW, idGenerator);
 export const invitationEmailSender = new InvitationEmailSender(emailService, ENV.APP_INVITE_URL);
+export const memberAddedEmailSender = new MemberAddedEmailSender(emailService);
 export const companyMemberService: ICompanyMemberService = new CompanyMemberService(
   companyMemberRepository,
   companyInvitationRepository,
@@ -129,6 +131,7 @@ export const companyMemberService: ICompanyMemberService = new CompanyMemberServ
   userRepository,
   idGenerator,
   invitationEmailSender,
+  memberAddedEmailSender,
 );
 export const clientsService = new ClientService(clientsRepository);
 export const productsService = new ProductService(productsRepository, productDeletionUOW);

@@ -8,6 +8,7 @@ import { IUserRepository } from "@/domain/users/repositories/IUserRepository";
 import { IIDGenerator } from "@/domain/core/services/IIDGenerator";
 import { ICompanyMemberService, CompanyMemberDetails } from "../interfaces/ICompanyMemberService";
 import InvitationEmailSender from "../invitations/InvitationEmailSender";
+import MemberAddedEmailSender from "../members/MemberAddedEmailSender";
 import { CompanyNotFoundError } from "../../errors/CompanyNotFoundError";
 import { NotAllowedToManageMembersError } from "../../errors/NotAllowedToManageMembersError";
 import { InvitationNotFoundError } from "../../errors/InvitationNotFoundError";
@@ -16,6 +17,7 @@ import { AlreadyMemberError } from "../../errors/AlreadyMemberError";
 import { InvitationAlreadyExistsError } from "../../errors/InvitationAlreadyExistsError";
 import { CannotRemoveLastOwnerError } from "../../errors/CannotRemoveLastOwnerError";
 import { MemberNotFoundError } from "../../errors/MemberNotFoundError";
+import { MemberCodeNotFoundError } from "../../errors/MemberCodeNotFoundError";
 
 const INVITATION_EXPIRY_DAYS = 7;
 
@@ -27,6 +29,7 @@ export class CompanyMemberService implements ICompanyMemberService {
     private readonly userRepository: IUserRepository,
     private readonly idGenerator: IIDGenerator,
     private readonly invitationEmailSender: InvitationEmailSender,
+    private readonly memberAddedEmailSender: MemberAddedEmailSender,
   ) {}
 
   async inviteMember(
@@ -86,6 +89,55 @@ export class CompanyMemberService implements ICompanyMemberService {
     }
 
     return invitation;
+  }
+
+  async addMemberByCode(
+    companyId: string,
+    actingUserId: string,
+    code: string,
+    role: CompanyRoleType,
+  ): Promise<CompanyMemberDetails> {
+    const actingMember = await this.memberRepository.findMembership(actingUserId, companyId);
+    if (!actingMember?.canManageMembers()) {
+      throw new NotAllowedToManageMembersError();
+    }
+
+    if (role === "OWNER") {
+      throw new NotAllowedToManageMembersError("Cannot add a member as OWNER");
+    }
+
+    const company = await this.companyRepository.find(companyId, "id");
+    if (!company) throw new CompanyNotFoundError();
+
+    const targetUser = await this.userRepository.findByMemberCode(code);
+    if (!targetUser) {
+      // Never log the code itself: it is a credential-like handle.
+      console.warn(`Member code lookup failed (actingUserId=${actingUserId}, companyId=${companyId})`);
+      throw new MemberCodeNotFoundError();
+    }
+
+    const existingMembership = await this.memberRepository.findMembership(targetUser.id, companyId);
+    if (existingMembership) throw new AlreadyMemberError();
+
+    await this.memberRepository.add(
+      new CompanyMember({ userId: targetUser.id, companyId, role }),
+    );
+
+    try {
+      const adder = await this.userRepository.find(actingUserId, "id");
+      const adderName = adder ? `${adder.name} ${adder.surnames}`.trim() : "Un administrador";
+      await this.memberAddedEmailSender.sendMemberAddedEmail(targetUser.email.value, adderName, company.name);
+    } catch (error) {
+      console.error("Failed to send member added email:", error);
+    }
+
+    return {
+      userId: targetUser.id,
+      name: targetUser.name,
+      surnames: targetUser.surnames,
+      email: targetUser.email.value,
+      role,
+    };
   }
 
   async listMembers(companyId: string, actingUserId: string): Promise<CompanyMemberDetails[]> {
