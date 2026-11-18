@@ -17,4 +17,5 @@ export interface ICompanyMemberService {
   acceptInvitation(token: string, acceptingUserId: string, acceptingEmail: string): Promise<void>;
   revokeInvitation(invitationId: string, actingUserId: string): Promise<void>;
   removeMember(companyId: string, actingUserId: string, targetUserId: string): Promise<void>;
+  leaveCompany(companyId: string, userId: string): Promise<void>;
 }

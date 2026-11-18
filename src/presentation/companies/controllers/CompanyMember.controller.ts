@@ -90,6 +90,14 @@ export default class CompanyMemberController {
     res.status(204).send();
   }
 
+  async leaveCompany(req: Request, res: Response): Promise<void> {
+    const { companyId } = req.params;
+    // @ts-expect-error req.user typing conflicts with @types/passport (see express.d.ts)
+    const userId = req.user.id;
+    await this.companyMemberService.leaveCompany(companyId, userId);
+    res.status(204).send();
+  }
+
   async removeMember(req: Request, res: Response): Promise<void> {
     const { companyId, userId } = req.params;
     // @ts-expect-error req.user typing conflicts with @types/passport (see express.d.ts)

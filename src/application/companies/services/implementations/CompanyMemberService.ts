@@ -231,4 +231,17 @@ export class CompanyMemberService implements ICompanyMemberService {
 
     await this.memberRepository.remove(targetUserId, companyId);
   }
+
+  async leaveCompany(companyId: string, userId: string): Promise<void> {
+    const member = await this.memberRepository.findMembership(userId, companyId);
+    if (!member) throw new MemberNotFoundError();
+
+    const allMembers = await this.memberRepository.findByCompany(companyId);
+    if (CompanyMember.isLastOwner(member, allMembers)) {
+      throw new CannotRemoveLastOwnerError();
+    }
+
+    // Route driver unassignment is skipped: Route has no driverId yet (#47 not landed).
+    await this.memberRepository.remove(userId, companyId);
+  }
 }

@@ -64,6 +64,13 @@ companyMembersRouter.delete(
   asyncHandler(companyMemberController.revokeInvitation.bind(companyMemberController)),
 );
 
+// Must be declared before "/:companyId/members/:userId" so "me" is not parsed as a userId.
+// No requireCompanyRole: any member (including DEALER) may leave; the service checks membership.
+companyMembersRouter.delete(
+  "/:companyId/members/me",
+  asyncHandler(companyMemberController.leaveCompany.bind(companyMemberController)),
+);
+
 companyMembersRouter.delete(
   "/:companyId/members/:userId",
   requireCompanyRole,

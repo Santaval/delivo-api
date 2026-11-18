@@ -203,6 +203,13 @@ as a member (follow-up issues), replacing email invitations.
   `add-member:<userId>` via `rateLimit`'s `keyGenerator`). The limiter runs before the handler, so
   404 lookups count, which blunts enumeration of the 6-digit space. The counter is per-process.
   Failed lookups are logged with the acting user id and company id only — NEVER the code.
+- `DELETE /api/v1/companies/:companyId/members/me` lets any member (OWNER, ADMIN or DEALER) leave
+  a company; returns `204`. JWT only: deliberately NO `requireCompanyRole`, and declared before
+  `/members/:userId` so `me` is never parsed as a user id. `CompanyMemberService.leaveCompany`:
+  not a member -> 404 `MemberNotFoundError`; sole OWNER -> 409 `CannotRemoveLastOwnerError`
+  (`CompanyMember.isLastOwner`; they must transfer ownership or delete the account first);
+  otherwise `remove(userId, companyId)`. Route unassignment is not done because `Route` has no
+  `driverId` yet (#47 not landed); add it there when it does.
 
 There is no `docs/api.md` in this repo; endpoints are documented here.
 
