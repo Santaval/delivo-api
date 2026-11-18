@@ -220,6 +220,25 @@ route's company (422 `InvalidRouteDriverError`), and a `COMPLETED` route cannot 
 `PATCH /api/v1/routes/:id/driver` with `{ driverId: uuid | null }` (re)assigns; `GET /api/v1/routes?driverId=me|<uuid>`
 filters. The routes router requires `jwtAuth`. See `docs/api.md`.
 
+## Live driver location
+
+While a route is `STARTED`, its driver (`Route.driverId`) reports their position and OWNER/ADMIN members of the
+company watch it live. Full contract in `docs/live-tracking.md`.
+
+- Ingest: `POST /api/v1/routes/:id/location` `{ locations: [1..50 points] }` -> `204` (rate limit 60/min per user).
+  `RouteLocationService.report`: 404 route missing, **403** caller is not the `driverId`, **409** route not `STARTED`
+  (the app uses it to stop sending); stale (`recordedAt` <= stored) and throttled (< 3 s per route) points are silently
+  ignored; otherwise upsert into `RouteDriverLocation` (latest position only, no history) and publish.
+- Read: `GET /routes/:id/location` (`200` location or `null`) and SSE `GET /routes/:id/location/stream`
+  (events `location`, `cleared`, `finished`; ping comment every 25 s). Allowed: the driver or OWNER/ADMIN of the route's
+  company, otherwise 403. Bearer header only (no `?token=`). `RouteResponse.driverLocation` is only filled for those same callers.
+- Fan-out: `ILocationBroadcaster` (`src/domain/routes/providers/`) with `InMemoryLocationBroadcaster` (single instance
+  only; swap for Redis to scale horizontally). The SSE handler authorizes BEFORE flushing headers (errors stay normal JSON)
+  and cleans up interval + subscription on `res` `close`.
+- Privacy: the row is deleted when the route finishes (`RouteService.finish`, publishes `finished`) and when the driver
+  changes (`assignDriver`, publishes `cleared`); it is also removed by `ON DELETE CASCADE` with the route.
+- `server.ts` raises `keepAliveTimeout`/`headersTimeout` above typical proxy idle timeouts; SSE sockets disable their idle timeout.
+
 ## Key Quirks
 
 - Express **5.x** (not 4) — response methods may differ from 4.x patterns

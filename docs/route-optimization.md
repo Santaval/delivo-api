@@ -84,3 +84,5 @@ route.points.forEach((point) => {
 - **Provider isolation.** Google-specific types (`optimizeTours`, `visitLabel`, `routePolyline`) never leave `GoogleRouteOptimizationProvider`. Failures there are wrapped in an `InfrastructureError` and mapped centrally to a clean HTTP error.
 - **Quota counted once.** The daily `routes` limit is applied to `POST /routes`, not to `/start`, so a driver can re-optimize after changing the stops without being charged twice.
 - **Geo-aware data entry.** Client coordinates usually come from `GET /locations/autocomplete` and `/locations/place/:id` (Google Places, limited to Costa Rica), which gives the optimizer accurate destinations.
+
+While a route is `STARTED`, its driver's live position is available through `/routes/:id/location*`; see [live-tracking.md](live-tracking.md).

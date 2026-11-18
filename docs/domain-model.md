@@ -36,6 +36,7 @@ erDiagram
     PaymentMethod ||--o{ ClientPayment : "used in"
 
     Route ||--o{ RoutePoint : stops
+    Route ||--o| RouteDriverLocation : "last known position"
     ClientBill ||--o| RoutePoint : "delivered at"
 
     Supplier ||--o{ SupplierBill : bills
@@ -120,6 +121,16 @@ erDiagram
       enum status "CREATED | STARTED | COMPLETED"
       text polyline
       uuid driverId FK "nullable"
+    }
+    RouteDriverLocation {
+      uuid routeId PK, FK "ON DELETE CASCADE"
+      uuid driverId
+      float lat
+      float lng
+      float heading "nullable"
+      float speed "nullable"
+      float accuracy "nullable"
+      datetime recordedAt "device clock"
     }
     RoutePoint {
       uuid id PK
