@@ -45,6 +45,7 @@ import PrismaPaymentsRepository from "@/infrastructure/orders/repositories/Prism
 import PrismaProductsRepository from "@/infrastructure/products/repositories/PrismaProductsRepository";
 import { PrismaProductDeletionUnitOfWork } from "@/infrastructure/products/unitsOfWork/PrismaProductDeletionUnitOfWork";
 import { PrismaCompanyCreationUnitOfWork } from "@/infrastructure/companies/unitsOfWork/PrismaCompanyCreationUnitOfWork";
+import { PrismaBillIssuingUnitOfWork } from "@/infrastructure/orders/unitsOfWork/PrismaBillIssuingUnitOfWork";
 import { PrismaUserDeletionUnitOfWork } from "@/infrastructure/users/unitsOfWork/PrismaUserDeletionUnitOfWork";
 import GoogleRouteOptimizationProvider from "@/infrastructure/routes/providers/GoogleRouteOptimizationProvider";
 import InMemoryLocationBroadcaster from "@/infrastructure/routes/providers/InMemoryLocationBroadcaster";
@@ -92,6 +93,7 @@ export const creditRepository = new PrismaCreditRepository();
 export const productDeletionUOW = new PrismaProductDeletionUnitOfWork();
 export const companyCreationUOW = new PrismaCompanyCreationUnitOfWork();
 export const userDeletionUOW = new PrismaUserDeletionUnitOfWork();
+export const billIssuingUOW = new PrismaBillIssuingUnitOfWork();
 
 // providers
 export const idGenerator = new UuidIDGenerator();
@@ -133,7 +135,7 @@ export const companyMemberService: ICompanyMemberService = new CompanyMemberServ
 export const clientsService = new ClientService(clientsRepository);
 export const productsService = new ProductService(productsRepository, productDeletionUOW);
 export const ordersPricingCalculator = new OrderPricingCalculator(ordersRepository, productsRepository);
-export const ordersService = new OrdersService(ordersRepository);
+export const ordersService = new OrdersService(ordersRepository, billIssuingUOW);
 export const orderDeliveryStatusManager = new OrderDeliveryStatusManager(ordersRepository);
 export const routeOptimizationService = new RouteOptimizationService(routesRepository, routeOptimizationProvider);
 export const routesService = new RouteService(routesRepository, routeOptimizationService, orderDeliveryStatusManager, companyMemberRepository, locationBroadcaster);

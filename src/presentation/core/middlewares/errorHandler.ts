@@ -2,6 +2,7 @@ import ApplicationError from '@/application/core/errors/ApplicationError';
 import DomainError from '@/domain/core/errors/DomainError';
 import InfrastructureError from '@/infrastructure/core/errors/InfrastructureError';
 import { LimitExceededError } from '@/application/billing/errors/LimitExceededError';
+import { InsufficientCreditsError } from '@/application/credits/errors/InsufficientCreditsError';
 import { Request, Response, NextFunction } from 'express';
 
 const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
@@ -9,6 +10,12 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
     // log error type and stack trace
     console.log(typeof err);
     console.error("Error:", err.stack);
+
+    // Must come before the generic ApplicationError branch, which would drop the payload.
+    if (err instanceof InsufficientCreditsError) {
+        res.status(402).json(err.toPayload());
+        return;
+    }
 
     // LimitExceededError is an ApplicationError subclass, so this must be checked before the
     // generic ApplicationError branch below.

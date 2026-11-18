@@ -147,7 +147,7 @@ Error cases: `409` already a member, invitation already pending, or removing the
 
 | Method | Path | Guards | Body | Success |
 |---|---|---|---|---|
-| `POST` | `/orders` | Tenant, Limit(documents) | `{ clientId }` | `201 OrderResponse` |
+| `POST` | `/orders` | Tenant | `{ clientId }` | `201 OrderResponse`; consumes 1 credit; `402 INSUFFICIENT_CREDITS` when balance ≤ -5 |
 | `GET` | `/orders` | Tenant | none | `200 OrderResponse[]`: open orders (`PENDING`, `ON_ROUTE`, `IN_TRANSIT`) |
 | `GET` | `/orders/bills` | Tenant | none | `200 OrderResponse[]`: delivered orders |
 | `GET` | `/orders/:id` | Tenant | none | `200 OrderResponse` / `404` |
@@ -280,6 +280,7 @@ The mobile app calls this at startup and blocks with a "please update" screen wh
 |---|---|---|
 | `400` | `{ message }` | Zod validation failure, or missing `x-company-id` |
 | `401` | `{ message }` | Missing or invalid JWT, failed OAuth, bad webhook secret |
+| `402` | `{ code: "INSUFFICIENT_CREDITS", balance, overdraftFloor, required }` | `POST /orders` with no credits left (balance ≤ -5) |
 | `402` | `{ code: "PLAN_LIMIT_EXCEEDED", resource, limit, used, tier, upgradeTo }` | Plan quota used up |
 | `403` | `{ message }` | Not allowed to manage members |
 | `404` | `{ message }` | Resource not found |
@@ -287,6 +288,15 @@ The mobile app calls this at startup and blocks with a "please update" screen wh
 | `410` | `{ message }` | Invitation expired |
 | `429` | `{ message }` | Rate limit hit |
 | `500` | `{ message: "Internal Server Error" }` | Unexpected error (details are only logged) |
+
+```json
+{
+  "code": "INSUFFICIENT_CREDITS",
+  "balance": -5,
+  "overdraftFloor": -5,
+  "required": 1
+}
+```
 
 ```json
 {

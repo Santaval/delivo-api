@@ -17,7 +17,8 @@ import IOrderItemsManager from "@/application/orders/services/interfaces/IOrderI
  * test-login of a brand new user (see TestLoginService) — never on subsequent logins.
  *
  * The demo company gets the normal welcome credit grant (`CreditPolicy.ts`); the 3 demo
- * orders are a small fraction of it.
+ * orders go through `OrdersService.create`, so they consume 3 of the 50 welcome credits like
+ * any other bill.
  */
 export class TestAccountSeeder implements ITestAccountSeeder {
   constructor(
