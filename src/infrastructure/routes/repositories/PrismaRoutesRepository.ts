@@ -6,6 +6,7 @@ import { Prisma } from "@/infrastructure/prisma/generated/prisma/client";
 import PrismaRouteMapper from "../mappers/PrismaRouteMapper";
 import DatabaseInsertError from "@/infrastructure/core/errors/DatabaseInsertError";
 import DatabaseError from "@/infrastructure/core/errors/DatabaseError";
+import { DriverLocation } from "@/domain/routes/valueObjects/driverLocation.valueObject";
 import PrismaRoutePointMapper from "../mappers/PrismaRoutePointMapper";
 
 export default class PrismaRoutesRepository implements IRouteRepository {
@@ -236,11 +237,53 @@ export default class PrismaRoutesRepository implements IRouteRepository {
     }
   }
 
+  async upsertDriverLocation(routeId: string, driverId: string, location: DriverLocation): Promise<void> {
+    const data = {
+      driverId,
+      lat: location.lat,
+      lng: location.lng,
+      heading: location.heading,
+      speed: location.speed,
+      accuracy: location.accuracy,
+      recordedAt: location.recordedAt,
+    };
+    try {
+      await this.client.routeDriverLocation.upsert({
+        where: { routeId },
+        create: { routeId, ...data },
+        update: data,
+      });
+    } catch (error) {
+      console.error("Error upserting driver location:", error);
+      throw new DatabaseError("Could not save driver location");
+    }
+  }
+
+  async findDriverLocation(routeId: string): Promise<DriverLocation | null> {
+    try {
+      const result = await this.client.routeDriverLocation.findUnique({ where: { routeId } });
+      return result ? PrismaRouteMapper.locationToDomain(result) : null;
+    } catch (error) {
+      console.error("Error finding driver location:", error);
+      throw new DatabaseError("Could not find driver location");
+    }
+  }
+
+  async deleteDriverLocation(routeId: string): Promise<void> {
+    try {
+      await this.client.routeDriverLocation.deleteMany({ where: { routeId } });
+    } catch (error) {
+      console.error("Error deleting driver location:", error);
+      throw new DatabaseError("Could not delete driver location");
+    }
+  }
+
   getIncludeConditions() {
     return {
       driver: {
         select: { id: true, name: true, surnames: true, email: true }
       },
+      driverLocation: true,
       points: {
         include: {
           bill: {

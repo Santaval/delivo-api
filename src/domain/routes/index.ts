@@ -7,6 +7,7 @@ export { RouteId } from "./valueObjects/routeId.valueObject";
 export { RouteName } from "./valueObjects/routeName.valueObject";
 export { RouteStatus, RouteStatusType } from "./valueObjects/routeStatus.valueObject";
 export { RoutePointId } from "./valueObjects/routePointId.valueObject";
+export { DriverLocation } from "./valueObjects/driverLocation.valueObject";
 export { RoutePointStatus, RoutePointStatusType } from "./valueObjects/routePointStatus.valueObject";
 
 // Types

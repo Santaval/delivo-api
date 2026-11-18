@@ -4,6 +4,7 @@ import { RouteName } from "../valueObjects/routeName.valueObject";
 import { RouteStatus, RouteStatusType } from "../valueObjects/routeStatus.valueObject";
 import { UserId } from "@/domain/users/valueObjects/userId.valueObject";
 import { RoutePoint } from "./RoutePoint";
+import { DriverLocation } from "../valueObjects/driverLocation.valueObject";
 
 /** Read-model of the user assigned to a route (populated by the repository). */
 export interface RouteDriver {
@@ -26,6 +27,7 @@ export class Route {
       companyId: CompanyId.create(props.companyId),
       driverId: props.driverId ? UserId.create(props.driverId) : null,
       driver: props.driver ?? null,
+      driverLocation: props.driverLocation ?? null,
       createdAt: props.createdAt ? new Date(props.createdAt) : new Date(),
       updatedAt: props.updatedAt ? new Date(props.updatedAt) : new Date(),
     };
@@ -58,6 +60,11 @@ export class Route {
 
   get driver(): RouteDriver | null {
     return this.props.driver;
+  }
+
+  /** Read-model: latest known driver location (populated by the repository). */
+  get driverLocation(): DriverLocation | null {
+    return this.props.driverLocation;
   }
 
   get polyline(): string | null {
@@ -100,6 +107,7 @@ interface RouteProps {
   polyline: string | null;
   driverId: UserId | null;
   driver: RouteDriver | null;
+  driverLocation: DriverLocation | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -112,6 +120,7 @@ export interface RouteConstructorProps {
   polyline: string | null;
   driverId?: string | null;
   driver?: RouteDriver | null;
+  driverLocation?: DriverLocation | null;
   points?: RoutePoint[];
   createdAt?: string;
   updatedAt?: string;

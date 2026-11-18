@@ -300,7 +300,23 @@ model Route {
 
   points RoutePoint[]
 
+  driverLocation RouteDriverLocation?
+
   @@index([driverId])
+}
+
+/// Latest known position of a route's driver (only while the route is STARTED).
+model RouteDriverLocation {
+  routeId    String   @id
+  route      Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  driverId   String
+  lat        Float
+  lng        Float
+  heading    Float?
+  speed      Float?
+  accuracy   Float?
+  recordedAt DateTime // device timestamp
+  updatedAt  DateTime @updatedAt
 }
 
 model RoutePoint {
