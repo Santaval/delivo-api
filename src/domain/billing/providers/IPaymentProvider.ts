@@ -1,37 +1,37 @@
 import { PaymentProviderType } from "@/domain/billing/valueObjects/paymentProvider.valueObject";
-import { PlanTierType } from "@/domain/billing/valueObjects/planTier.valueObject";
 
 /**
  * Convention: `app_user_id` (RevenueCat's term for the provider customer id) MUST be the
  * `companyId`. The mobile client passes the organization id as the RevenueCat app user id when
- * starting a purchase, because plans belong to a `Company`, not to an individual user. Every
- * adapter implementing this port must uphold that same convention so `providerCustomerId` below
- * can always be trusted to equal `companyId`.
+ * starting a purchase, because credits belong to a `Company`, not to an individual user. For
+ * consumable credit packs this has no transfer problem: a grant is written to our ledger once,
+ * keyed by the store transaction id, so nothing the provider does later (restore, transfer,
+ * alias) can move it. Every adapter implementing this port must uphold the same convention so
+ * `CreditEvent.companyId` can always be trusted.
  */
 
 /** Provider-neutral meaning of a billing event. */
-export type SubscriptionEventKind =
-  | "ACTIVATED" // purchase, renewal, product change, uncancellation
-  | "CANCELLED" // auto-renew off; access continues until periodEnd
-  | "EXPIRED" // access ended -> effective tier falls back to FREE
-  | "BILLING_ISSUE"; // payment failed -> grace period
+export type CreditEventKind =
+  | "PURCHASE" // a consumable credit pack was bought
+  | "REFUND"; // the store refunded a purchase
 
-export interface SubscriptionEvent {
-  /** Provider event id, for logging/idempotency diagnostics. */
+export type CreditEnvironment = "SANDBOX" | "PRODUCTION";
+
+export interface CreditEvent {
+  /** Provider event id, for logging diagnostics. */
   eventId: string;
-  kind: SubscriptionEventKind;
-  provider: PaymentProviderType;
-  /** Provider customer id. By convention this IS the companyId (see above). */
-  providerCustomerId: string;
+  kind: CreditEventKind;
+  /** By convention this IS the provider's app user id (see above). */
   companyId: string;
-  tier: PlanTierType;
-  entitlementId: string | null;
-  periodStart: Date | null;
-  periodEnd: Date | null;
+  /** Store transaction id of the purchase; the idempotency key of the grant. */
+  transactionId: string;
+  productId: string;
+  environment: CreditEnvironment | null;
+  occurredAt: Date;
 }
 
 /**
- * Provider-agnostic port for payment/subscription providers. RevenueCat is the first adapter
+ * Provider-agnostic port for payment providers. RevenueCat is the first adapter
  * (`src/infrastructure/billing/providers/RevenueCatProvider.ts`); Tilopay can implement this
  * same contract later without touching application-layer code.
  */
@@ -40,7 +40,7 @@ export interface IPaymentProvider {
   /** True when the request genuinely came from the provider. */
   verifyWebhook(headers: Record<string, string | string[] | undefined>): boolean;
   /** Provider payload -> neutral event, or null when the event type is not relevant to us. */
-  parseWebhookEvent(payload: unknown): SubscriptionEvent | null;
+  parseWebhookEvent(payload: unknown): CreditEvent | null;
   /**
    * Best-effort: delete the subscriber on the provider side. By convention
    * `providerCustomerId === companyId` (see above).

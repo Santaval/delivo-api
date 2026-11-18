@@ -260,7 +260,7 @@ Starting a route does **not** count against the daily `routes` quota again, beca
 
 | Method | Path | Guards | Body | Success |
 |---|---|---|---|---|
-| `POST` | `/billing/webhooks/revenuecat` | Shared secret in `Authorization` (server-to-server) | RevenueCat webhook payload | `202` acknowledged (events are not applied until #68) · `401` bad secret |
+| `POST` | `/billing/webhooks/revenuecat` | Shared secret in `Authorization` (server-to-server) | RevenueCat webhook payload | `200` processed or duplicate · `202` ignored or unknown product · `401` bad secret |
 
 See [billing.md](billing.md).
 

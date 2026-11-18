@@ -77,7 +77,7 @@ The confirmation email is sent *after* the user row no longer exists, so the rec
 
 ## 3. Late webhook protection
 
-A subscription can renew or expire *after* its company is gone. Without a guard, the webhook upsert would hit a missing foreign key, return `500`, and RevenueCat would retry indefinitely. `SubscriptionSyncService.applyEvent` first checks that the company exists. If it does not, the event is logged, the endpoint returns `200`, and nothing is written.
+A purchase or refund event can arrive *after* its company is gone. Without a guard, the ledger insert would hit a missing foreign key, return `500`, and RevenueCat would retry indefinitely. `CreditPurchaseService.applyEvent` first checks that the company exists. If it does not, the event is logged, the endpoint returns `200`, and nothing is written. Replays of an already-applied event are also harmless: the unique `CreditLedgerEntry.providerTransactionId` makes them a no-op.
 
 ## Audit logging
 

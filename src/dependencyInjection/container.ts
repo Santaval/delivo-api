@@ -70,6 +70,8 @@ import { UsageService } from "@/application/billing/services/implementations/Usa
 import { IUsageService } from "@/application/billing/services/interfaces/IUsageService";
 import { EntitlementService } from "@/application/billing/services/implementations/EntitlementService";
 import { IEntitlementService } from "@/application/billing/services/interfaces/IEntitlementService";
+import { CreditPurchaseService } from "@/application/credits/services/implementations/CreditPurchaseService";
+import { ICreditPurchaseService } from "@/application/credits/services/interfaces/ICreditPurchaseService";
 import { IPaymentProvider } from "@/domain/billing/providers/IPaymentProvider";
 import RevenueCatProvider from "@/infrastructure/billing/providers/RevenueCatProvider";
 import BillingWebhookController from "@/presentation/billing/controllers/BillingWebhook.controller";
@@ -111,6 +113,7 @@ export const routeOptimizationProvider = new GoogleRouteOptimizationProvider();
 export const locationBroadcaster: ILocationBroadcaster = new InMemoryLocationBroadcaster();
 export const emailService: IEmailService = new ResendEmailProvider(ENV.RESEND_API_KEY, ENV.MAIL_FROM);
 export const paymentProvider: IPaymentProvider = new RevenueCatProvider(ENV.REVENUECAT_WEBHOOK_AUTH, ENV.REVENUECAT_API_KEY);
+export const creditPurchaseService: ICreditPurchaseService = new CreditPurchaseService(creditRepository, companiesRepository);
 
 
 // services
@@ -190,6 +193,6 @@ export const routesController = new RoutesContoller(routesService, routeLocation
 export const statsController = new StatsController(financialSummaryCalculator);
 export const locationController = new LocationController(locationService);
 export const paymentMethodsController = new PaymentMethodsController(paymentMethodsService)
-export const billingWebhookController = new BillingWebhookController(paymentProvider);
+export const billingWebhookController = new BillingWebhookController(paymentProvider, creditPurchaseService);
 export const systemController = new SystemController(ENV.MIN_FRONTEND_VERSION);
 
