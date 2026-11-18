@@ -41,6 +41,8 @@ flowchart TD
     H --> R["Return { email, name, deletedCompanyIds, unlinkedCompanyIds }"]
 ```
 
+Before the user row is deleted, `Route.driverId` is set to `null` on every route that still references the user (routes in companies that survive).
+
 ### Deleting a company the user solely owns
 
 Foreign keys are `ON DELETE RESTRICT`, and `Client` and `Product` normally use **soft** delete, which read paths filter out. A company therefore can't simply be dropped. `deleteWithAllData` removes rows in an explicit **leaf-to-root topological order**, using raw `deleteMany` calls that also catch soft-deleted rows. Any row left behind would make the final `company.delete()` fail.

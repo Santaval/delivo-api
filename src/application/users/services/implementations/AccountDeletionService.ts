@@ -13,6 +13,7 @@ export class AccountDeletionService implements IAccountDeletionService {
       const userRepo       = ctx.getUserRepository();
       const companyRepo    = ctx.getCompanyRepository();
       const memberRepo     = ctx.getCompanyMemberRepository();
+      const routeRepo      = ctx.getRouteRepository();
 
       const user = await userRepo.find(userId, "id");
       if (!user) throw new UserNotFoundError();
@@ -34,6 +35,9 @@ export class AccountDeletionService implements IAccountDeletionService {
           unlinkedCompanyIds.push(membership.companyId);
         }
       }
+
+      // Routes in companies that survive still reference the user as driver (FK): clear it first.
+      await routeRepo.unassignDriverFromAll(userId);
 
       await userRepo.delete(userId);
 

@@ -189,13 +189,23 @@ Business rules:
 
 | Method | Path | Guards | Body | Success |
 |---|---|---|---|---|
-| `POST` | `/routes` | Tenant, Limit(routes) | `{ name }` (2–100 characters) | `201 RouteResponse` |
-| `GET` | `/routes` | Tenant | none | `200 RouteResponse[]` |
-| `GET` | `/routes/:id` | Tenant | none | `200 RouteResponse` / `404` |
-| `POST` | `/routes/:id/points` | Tenant | `{ orderId }` | `201 RoutePointResponse`. The order moves to `ON_ROUTE` |
-| `DELETE` | `/routes/:id/points/:pointId` | Tenant | none | `204` |
-| `POST` | `/routes/:id/start` | Tenant | `{ startLocation: { lat, lng } }` | `200 RouteResponse`, optimized: points get an `index` and `polyline`, and orders move to `IN_TRANSIT` |
-| `PATCH` | `/routes/points/:pointId/complete` | Tenant | none | `200 RoutePointResponse`. The order moves to `DELIVERED`, and the route auto-completes when every stop is done |
+| `POST` | `/routes` | JWT, Tenant, Limit(routes) | `{ name, driverId? }` (name 2–100 characters; `driverId` is a UUID of a company member) | `201 RouteResponse` / `422` if `driverId` is not a `DEALER`/`ADMIN`/`OWNER` member of the company |
+| `GET` | `/routes` | JWT, Tenant | query `driverId?` = `me` or a user UUID | `200 RouteResponse[]`. With `driverId` only routes assigned to that user are returned (`me` = the token's user); `400` if it is neither `me` nor a UUID |
+| `GET` | `/routes/:id` | JWT, Tenant | none | `200 RouteResponse` / `404` |
+| `PATCH` | `/routes/:id/driver` | JWT, Tenant | `{ driverId: string \| null }` (`null` unassigns) | `200 RouteResponse` / `404` (route missing or from another company) / `409` (route `COMPLETED`) / `422` (driver is not a `DEALER`/`ADMIN`/`OWNER` member of the company) |
+| `POST` | `/routes/:id/points` | JWT, Tenant | `{ orderId }` | `201 RoutePointResponse`. The order moves to `ON_ROUTE` |
+| `DELETE` | `/routes/:id/points/:pointId` | JWT, Tenant | none | `204` |
+| `POST` | `/routes/:id/start` | JWT, Tenant | `{ startLocation: { lat, lng } }` | `200 RouteResponse`, optimized: points get an `index` and `polyline`, and orders move to `IN_TRANSIT` |
+| `POST` | `/routes/:id/location` | JWT (own rate limit: 60 / min per user) | `{ locations: [{ lat, lng, heading?, speed?, accuracy?, recordedAt }] }` (1–50 points; `recordedAt` is an ISO-8601 string or epoch ms) | `204`. Only the most recent point is processed. `403` not the route's driver / `404` / `409` route not `STARTED` (the app stops sending on it) |
+| `GET` | `/routes/:id/location` | JWT | none | `200` `{ lat, lng, heading, speed, accuracy, recordedAt }` or `null`. `403` unless the caller is the route's driver or an `OWNER`/`ADMIN` of its company |
+| `GET` | `/routes/:id/location/stream` | JWT (`Authorization: Bearer` only) | none | Server-Sent Events (`location`, `cleared`, `finished`), same read permissions as above. See [live-tracking.md](live-tracking.md) |
+| `PATCH` | `/routes/points/:pointId/complete` | JWT, Tenant | none | `200 RoutePointResponse`. The order moves to `DELIVERED`, and the route auto-completes when every stop is done |
+
+The whole routes router now requires a valid bearer token (`jwtAuth`), in addition to the `x-company-id` header.
+
+A route may have an optional driver (`User`), who must be a member of the route's company. The driver can only be changed while the route is `CREATED` or `STARTED`. When a user leaves or is removed from a company, or deletes their account, they are unassigned from their routes (leaving/removal skips `COMPLETED` routes).
+
+Live driver tracking (`/routes/:id/location*`) is documented in [live-tracking.md](live-tracking.md).
 
 Starting a route does **not** count against the daily `routes` quota again, because it was already counted when the route was created. See [route-optimization.md](route-optimization.md).
 
@@ -204,6 +214,10 @@ Starting a route does **not** count against the daily `routes` quota again, beca
 {
   "id": "uuid", "name": "Ruta Heredia – martes", "status": "STARTED", "companyId": "uuid",
   "polyline": "a~l~Fjk~uOwHJy@P…",
+  "driverId": "uuid | null",
+  "driver": { "id": "uuid", "name": "Ana", "surnames": "Mora" },  // null when unassigned
+  // latest known position; null when there is none or the caller is neither the driver nor OWNER/ADMIN
+  "driverLocation": { "lat": 9.99, "lng": -84.1, "heading": 90, "recordedAt": "2026-11-18T15:04:05.000Z" },
   "points": [
     { "id": "uuid", "status": "CREATED", "index": 0, "routeId": "uuid", "order": { /* OrderResponse */ } }
   ]
