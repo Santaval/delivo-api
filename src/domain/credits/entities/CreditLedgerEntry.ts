@@ -15,6 +15,7 @@ export class CreditLedgerEntry {
       reason: CreditReason.create(props.reason),
       balanceAfter: props.balanceAfter,
       billId: props.billId ?? null,
+      billNumber: props.billNumber ?? null,
       providerTransactionId: props.providerTransactionId ?? null,
       productId: props.productId ?? null,
       environment: props.environment ?? null,
@@ -30,6 +31,8 @@ export class CreditLedgerEntry {
   get reason() { return this.props.reason.value; }
   get balanceAfter() { return this.props.balanceAfter; }
   get billId() { return this.props.billId; }
+  /** Read-side lookup, filled only by list queries; null otherwise or when the bill is gone. */
+  get billNumber() { return this.props.billNumber; }
   get providerTransactionId() { return this.props.providerTransactionId; }
   get productId() { return this.props.productId; }
   get environment() { return this.props.environment; }
@@ -45,6 +48,7 @@ export interface CreditLedgerEntryProps {
   reason: CreditReason;
   balanceAfter: number;
   billId: string | null;
+  billNumber: number | null;
   providerTransactionId: string | null;
   productId: string | null;
   environment: string | null;
@@ -60,6 +64,7 @@ export interface CreditLedgerEntryConstructorProps {
   reason: CreditReasonType | string;
   balanceAfter: number;
   billId?: string | null;
+  billNumber?: number | null;
   providerTransactionId?: string | null;
   productId?: string | null;
   environment?: string | null;

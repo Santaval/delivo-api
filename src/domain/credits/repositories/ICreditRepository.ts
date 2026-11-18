@@ -18,8 +18,11 @@ export interface ICreditRepository {
   /** Current balance, or null when the company has no CreditBalance row. */
   getBalance(companyId: string): Promise<number | null>;
 
-  /** Ledger entries of a company, newest first. */
+  /** Ledger entries of a company, newest first, with `billNumber` filled for bill charges. */
   listEntries(companyId: string, page: PageRequest): Promise<PaginatedResult<CreditLedgerEntry>>;
+
+  /** The whole ledger of a company (support view), newest first, with `billNumber` filled. */
+  listAllEntries(companyId: string): Promise<CreditLedgerEntry[]>;
 
   /**
    * Applies a signed delta and records the ledger entry. It never checks the floor, so

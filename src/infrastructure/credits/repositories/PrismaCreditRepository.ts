@@ -8,6 +8,8 @@ import DatabaseError from "@/infrastructure/core/errors/DatabaseError";
 import DatabaseInsertError from "@/infrastructure/core/errors/DatabaseInsertError";
 import { PrismaCreditLedgerEntryMapper } from "../mappers/PrismaCreditLedgerEntryMapper";
 
+type CreditLedgerEntryRow = Awaited<ReturnType<Prisma.TransactionClient["creditLedgerEntry"]["findMany"]>>[number];
+
 export default class PrismaCreditRepository implements ICreditRepository {
 
   private readonly client: Prisma.TransactionClient;
@@ -52,7 +54,7 @@ export default class PrismaCreditRepository implements ICreditRepository {
       ]);
 
       return {
-        items: rows.map((row) => PrismaCreditLedgerEntryMapper.toDomain(row)),
+        items: await this.toDomainWithBillNumbers(rows),
         page: page.page,
         pageSize: page.pageSize,
         total,
@@ -61,6 +63,33 @@ export default class PrismaCreditRepository implements ICreditRepository {
       console.error("Error listing credit ledger entries:", error);
       throw new DatabaseError("Could not list credit ledger entries");
     }
+  }
+
+  async listAllEntries(companyId: string): Promise<CreditLedgerEntry[]> {
+    try {
+      const rows = await this.client.creditLedgerEntry.findMany({
+        where: { companyId },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      });
+      return await this.toDomainWithBillNumbers(rows);
+    } catch (error) {
+      console.error("Error listing all credit ledger entries:", error);
+      throw new DatabaseError("Could not list credit ledger entries");
+    }
+  }
+
+  /** One extra query resolves the bill numbers of all BILL_ISSUED rows; a deleted bill yields null. */
+  private async toDomainWithBillNumbers(rows: CreditLedgerEntryRow[]): Promise<CreditLedgerEntry[]> {
+    const billIds = [...new Set(rows.map((row) => row.billId).filter((id): id is string => id !== null))];
+    const numbers = new Map<string, number>();
+    if (billIds.length > 0) {
+      const bills = await this.client.clientBill.findMany({
+        where: { id: { in: billIds } },
+        select: { id: true, number: true },
+      });
+      for (const bill of bills) numbers.set(bill.id, bill.number);
+    }
+    return rows.map((row) => PrismaCreditLedgerEntryMapper.toDomain(row, row.billId ? numbers.get(row.billId) ?? null : null));
   }
 
   async grant(input: CreditGrantInput): Promise<CreditLedgerEntry> {

@@ -21,3 +21,11 @@ export const CREDIT_PACKS: Readonly<Record<string, number>> = {
 export function creditsForProduct(productId: string): number | null {
   return CREDIT_PACKS[productId] ?? null;
 }
+
+/** The app warns the company when its balance drops to this value or below. */
+export const LOW_BALANCE_THRESHOLD = 10;
+
+/** Credit packs as a list, for clients to match store packages to credit amounts. */
+export function creditPacks(): { productId: string; credits: number }[] {
+  return Object.entries(CREDIT_PACKS).map(([productId, credits]) => ({ productId, credits }));
+}

@@ -3,7 +3,7 @@ import { CreditLedgerEntry as PrismaCreditLedgerEntry } from "@/infrastructure/p
 
 export class PrismaCreditLedgerEntryMapper {
   /** Rows are only ever created inside the repository, so there is no toPersistence. */
-  static toDomain(row: PrismaCreditLedgerEntry): CreditLedgerEntry {
+  static toDomain(row: PrismaCreditLedgerEntry, billNumber?: number | null): CreditLedgerEntry {
     return new CreditLedgerEntry({
       id: row.id,
       companyId: row.companyId,
@@ -11,6 +11,7 @@ export class PrismaCreditLedgerEntryMapper {
       reason: row.reason,
       balanceAfter: row.balanceAfter,
       billId: row.billId,
+      billNumber: billNumber ?? null,
       providerTransactionId: row.providerTransactionId,
       productId: row.productId,
       environment: row.environment,

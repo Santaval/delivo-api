@@ -27,6 +27,9 @@ const ENV = {
   TEST_LOGIN_ENABLED: process.env.TEST_LOGIN_ENABLED === "true",
   TEST_LOGIN_EMAIL: process.env.TEST_LOGIN_EMAIL || "",
   TEST_LOGIN_PASSWORD: process.env.TEST_LOGIN_PASSWORD || "",
+  // Shared key for the /admin routes (header x-admin-key). Deliberately NOT required(): when it
+  // is empty the routes stay mounted but reject every request (fail closed).
+  ADMIN_API_KEY: process.env.ADMIN_API_KEY || "",
   // Apple Sign In. Deliberately NOT required(): an existing deployment without these must
   // still boot. Used both to verify Apple id tokens at login and to revoke tokens at
   // DELETE /api/v1/me (App Review 5.1.1(v)). AppleOAuthProvider silently skips revocation
@@ -78,6 +81,20 @@ function validateTestLoginConfig(): void {
 }
 
 validateTestLoginConfig();
+
+const ADMIN_API_KEY_MIN_LENGTH = 32;
+
+// A short admin key is guessable. Never include the value itself in the error message.
+function validateAdminApiKeyConfig(): void {
+  if (ENV.ADMIN_API_KEY && ENV.ADMIN_API_KEY.length < ADMIN_API_KEY_MIN_LENGTH) {
+    throw new Error(
+      `ADMIN_API_KEY must be at least ${ADMIN_API_KEY_MIN_LENGTH} characters long. ` +
+      `Generate one with: openssl rand -base64 48`
+    );
+  }
+}
+
+validateAdminApiKeyConfig();
 
 // Fail-fast: the min frontend version must be valid semver. A malformed value
 // (e.g. "1.2" or "v1.2.0") would otherwise silently ship a broken version gate

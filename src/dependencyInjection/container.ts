@@ -74,6 +74,10 @@ import { CreditPurchaseService } from "@/application/credits/services/implementa
 import { ICreditPurchaseService } from "@/application/credits/services/interfaces/ICreditPurchaseService";
 import { IPaymentProvider } from "@/domain/billing/providers/IPaymentProvider";
 import RevenueCatProvider from "@/infrastructure/billing/providers/RevenueCatProvider";
+import CreditsController from "@/presentation/billing/controllers/Credits.controller";
+import AdminCreditsController from "@/presentation/admin/controllers/AdminCredits.controller";
+import { CreditsService } from "@/application/credits/services/implementations/CreditsService";
+import { ICreditsService } from "@/application/credits/services/interfaces/ICreditsService";
 import BillingWebhookController from "@/presentation/billing/controllers/BillingWebhook.controller";
 import SystemController from "@/presentation/system/controllers/SystemController";
 
@@ -114,6 +118,7 @@ export const locationBroadcaster: ILocationBroadcaster = new InMemoryLocationBro
 export const emailService: IEmailService = new ResendEmailProvider(ENV.RESEND_API_KEY, ENV.MAIL_FROM);
 export const paymentProvider: IPaymentProvider = new RevenueCatProvider(ENV.REVENUECAT_WEBHOOK_AUTH, ENV.REVENUECAT_API_KEY);
 export const creditPurchaseService: ICreditPurchaseService = new CreditPurchaseService(creditRepository, companiesRepository);
+export const creditsService: ICreditsService = new CreditsService(creditRepository, companiesRepository);
 
 
 // services
@@ -194,5 +199,7 @@ export const statsController = new StatsController(financialSummaryCalculator);
 export const locationController = new LocationController(locationService);
 export const paymentMethodsController = new PaymentMethodsController(paymentMethodsService)
 export const billingWebhookController = new BillingWebhookController(paymentProvider, creditPurchaseService);
+export const creditsController = new CreditsController(creditsService);
+export const adminCreditsController = new AdminCreditsController(creditsService);
 export const systemController = new SystemController(ENV.MIN_FRONTEND_VERSION);
 

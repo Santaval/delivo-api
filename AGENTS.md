@@ -94,7 +94,14 @@ machine-readable `PLAN_LIMIT_EXCEEDED` payload — the API never blocks silently
 the upgrade UX. Monthly/daily windows are evaluated in `America/Costa_Rica`
 (`src/application/billing/utils/billingWindows.ts`).
 
-Optional env vars: `REVENUECAT_WEBHOOK_AUTH` (must match the `Authorization` header configured in
+Credit balance and history: `GET /billing/credits` and `/billing/credits/ledger` (JWT +
+`requireCompanyId` + `requireCompanyMembership`, any role). There is no platform-admin role, so
+support adjustments (`POST|GET /api/v1/admin/companies/:companyId/credits`) are guarded by the
+shared `ADMIN_API_KEY` env var in the `x-admin-key` header (`requireAdminKey`: sha256 digests
+compared with `crypto.timingSafeEqual`, 401 when the key is unset, rate limited 10/15 min per IP,
+key never logged; `env.ts` requires at least 32 characters when set).
+
+Optional env vars: `ADMIN_API_KEY`, `REVENUECAT_WEBHOOK_AUTH` (must match the `Authorization` header configured in
 the RevenueCat dashboard; when unset the webhook fails closed and rejects everything),
 `REVENUECAT_API_KEY`.
 
@@ -210,7 +217,7 @@ as a member. It replaced the former email invitation flow.
   (`IRouteRepository.unassignDriverInCompany`, `driverId -> null`) and then
   `remove(userId, companyId)`. `removeMember` unassigns the same way.
 
-There is no `docs/api.md` in this repo; endpoints are documented here.
+Endpoints are documented in `docs/api.md`.
 
 ## Route drivers
 

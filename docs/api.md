@@ -5,7 +5,7 @@ Base URL: `https://<host>/api/v1`. All request and response bodies are JSON.
 - [Conventions](#conventions)
 - [Auth](#auth) · [Profile](#profile) · [Companies](#companies) · [Members and invitations](#members-and-invitations)
 - [Clients](#clients) · [Products](#products) · [Orders](#orders) · [Payment methods](#payment-methods)
-- [Routes](#routes) · [Stats](#stats) · [Locations](#locations) · [Billing](#billing) · [System](#system)
+- [Routes](#routes) · [Stats](#stats) · [Locations](#locations) · [Billing](#billing) · [Credits](#credits) · [Admin](#admin) · [System](#system)
 - [Errors](#errors)
 
 ---
@@ -25,6 +25,8 @@ The **Guards** column lists the middleware that runs before each handler:
 | **JWT** | `jwtAuth`: valid bearer token required, otherwise `401` |
 | **Tenant** | Handler is scoped to the company in `x-company-id` (`400` if it is missing and `requireCompanyId` is mounted) |
 | **Role** | `requireCompanyRole`: caller must be `OWNER` or `ADMIN` of `:companyId`, otherwise `403` |
+| **Member** | `requireCompanyMembership`: caller must be a member (any role) of the company in `x-company-id`, otherwise `403` |
+| **Admin key** | `requireAdminKey`: header `x-admin-key` must equal the server's `ADMIN_API_KEY`, otherwise `401` (also `401` when the key is not configured) |
 | **Limit(x)** | `enforceLimit(x)`: `402 PLAN_LIMIT_EXCEEDED` when the plan quota for `x` is used up |
 | **Rate(n/15m)** | Per-IP rate limit, `429` when exceeded |
 
@@ -264,6 +266,72 @@ Starting a route does **not** count against the daily `routes` quota again, beca
 
 See [billing.md](billing.md).
 
+## Credits
+
+| Method | Path | Guards | Success |
+|---|---|---|---|
+| `GET` | `/billing/credits` | JWT, Tenant, Member | `200 CreditsSummaryResponse` |
+| `GET` | `/billing/credits/ledger?page=&pageSize=` | JWT, Tenant, Member | `200 CreditLedgerPageResponse`; `400` on an invalid `page` / `pageSize` |
+
+Any role (`OWNER`, `ADMIN`, `DEALER`) can read both; a non-member gets `403`. `page` defaults to 1 and `pageSize` to 20 (max 100). The ledger is newest first.
+
+```jsonc
+// CreditsSummaryResponse
+{
+  "balance": 37,
+  "overdraftFloor": -5,          // a bill can be issued while balance - 1 >= overdraftFloor
+  "lowBalanceThreshold": 10,     // show a "running low" warning at or below this
+  "packs": [{ "productId": "delivo_bills_100", "credits": 100 }]  // from CREDIT_PACKS; prices come from the store
+}
+
+// CreditLedgerPageResponse (same pagination shape as GET /orders/bills, without `counts`)
+{
+  "data": [{
+    "id": "uuid",
+    "reason": "BILL_ISSUED",     // WELCOME_GRANT | PURCHASE | BILL_ISSUED | REFUND | ADMIN_ADJUSTMENT
+    "delta": -1,
+    "balanceAfter": 36,
+    "createdAt": "2026-11-18T16:00:00.000Z",
+    "billId": "uuid",            // only for BILL_ISSUED, otherwise null
+    "billNumber": 1042,          // null when not a bill charge or the bill was deleted
+    "productId": null,           // set for PURCHASE / REFUND
+    "note": null                 // set for ADMIN_ADJUSTMENT
+  }],
+  "pagination": { "page": 1, "pageSize": 20, "total": 1, "totalPages": 1, "hasNextPage": false }
+}
+```
+
+## Admin
+
+Support-only routes. There is no platform-admin role: they are protected by the shared `ADMIN_API_KEY` env var, sent in the `x-admin-key` header (no JWT). Without the header, with a wrong key, or when `ADMIN_API_KEY` is not set on the server, the answer is `401`. They are rate limited to 10 requests per 15 minutes per IP (`429`), failed attempts included.
+
+| Method | Path | Guards | Body | Success |
+|---|---|---|---|---|
+| `POST` | `/admin/companies/:companyId/credits` | Admin key, Rate(10/15m) | `{ delta, note }` | `201 { entry, balance }` / `400` / `404` unknown company |
+| `GET` | `/admin/companies/:companyId/credits` | Admin key, Rate(10/15m) | none | `200 { companyId, balance, ledger }` / `404` unknown company |
+
+`delta` is a non-zero integer between -10000 and 10000 (negative debits). `note` is required, 3 to 500 characters. It writes an `ADMIN_ADJUSTMENT` ledger row and does not check the overdraft floor.
+
+```jsonc
+// POST body
+{ "delta": 20, "note": "Compensation for outage 2026-11-20" }
+
+// 201 response: `entry` is a ledger entry with two extra fields (also present in GET `ledger`)
+{
+  "entry": {
+    "id": "uuid", "reason": "ADMIN_ADJUSTMENT", "delta": 20, "balanceAfter": 57,
+    "createdAt": "…", "billId": null, "billNumber": null, "productId": null,
+    "note": "Compensation for outage 2026-11-20",
+    "environment": null,          // "SANDBOX" / "PRODUCTION" for store purchases
+    "createdByUserId": null       // always null: the shared key has no user
+  },
+  "balance": 57
+}
+
+// GET response: the full ledger, newest first, no pagination
+{ "companyId": "uuid", "balance": 57, "ledger": [ /* entries as above */ ] }
+```
+
 ## System
 
 | Method | Path | Guards | Success |
@@ -279,10 +347,10 @@ The mobile app calls this at startup and blocks with a "please update" screen wh
 | Status | Body | Typical cause |
 |---|---|---|
 | `400` | `{ message }` | Zod validation failure, or missing `x-company-id` |
-| `401` | `{ message }` | Missing or invalid JWT, failed OAuth, bad webhook secret |
+| `401` | `{ message }` | Missing or invalid JWT, failed OAuth, bad webhook secret, missing or wrong `x-admin-key` |
 | `402` | `{ code: "INSUFFICIENT_CREDITS", balance, overdraftFloor, required }` | `POST /orders` with no credits left (balance ≤ -5) |
 | `402` | `{ code: "PLAN_LIMIT_EXCEEDED", resource, limit, used, tier, upgradeTo }` | Plan quota used up |
-| `403` | `{ message }` | Not allowed to manage members |
+| `403` | `{ message }` | Not allowed to manage members, or not a member of the `x-company-id` company |
 | `404` | `{ message }` | Resource not found |
 | `409` | `{ message }` | Conflict: already a member, duplicate invitation, last owner |
 | `410` | `{ message }` | Invitation expired |
