@@ -28,8 +28,9 @@ RUN npm ci --include=dev
 # Copy application code
 COPY . .
 
-# Generate prisma client
-RUN npx prisma generate
+# Generate prisma client (prisma.config.ts requires DATABASE_URL to be set, but
+# generate never connects, so a placeholder scoped to this step is enough)
+RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" npx prisma generate
 
 # Build application
 RUN npm run build
