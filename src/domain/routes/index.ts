@@ -10,5 +10,5 @@ export { RoutePointId } from "./valueObjects/routePointId.valueObject";
 export { RoutePointStatus, RoutePointStatusType } from "./valueObjects/routePointStatus.valueObject";
 
 // Types
-export type { RouteConstructorProps } from "./entities/Route";
+export type { RouteConstructorProps, RouteDriver } from "./entities/Route";
 export type { RoutePointConstructorProps } from "./entities/RoutePoint";

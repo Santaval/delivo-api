@@ -2,7 +2,16 @@ import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject
 import { RouteId } from "../valueObjects/routeId.valueObject";
 import { RouteName } from "../valueObjects/routeName.valueObject";
 import { RouteStatus, RouteStatusType } from "../valueObjects/routeStatus.valueObject";
+import { UserId } from "@/domain/users/valueObjects/userId.valueObject";
 import { RoutePoint } from "./RoutePoint";
+
+/** Read-model of the user assigned to a route (populated by the repository). */
+export interface RouteDriver {
+  id: string;
+  name: string;
+  surnames: string;
+  email: string;
+}
 
 export class Route {
   private props: RouteProps;
@@ -15,6 +24,8 @@ export class Route {
       polyline: props.polyline || null,
       points: props.points || [],
       companyId: CompanyId.create(props.companyId),
+      driverId: props.driverId ? UserId.create(props.driverId) : null,
+      driver: props.driver ?? null,
       createdAt: props.createdAt ? new Date(props.createdAt) : new Date(),
       updatedAt: props.updatedAt ? new Date(props.updatedAt) : new Date(),
     };
@@ -41,6 +52,14 @@ export class Route {
     return this.props.companyId.value;
   }
 
+  get driverId(): string | null {
+    return this.props.driverId ? this.props.driverId.value : null;
+  }
+
+  get driver(): RouteDriver | null {
+    return this.props.driver;
+  }
+
   get polyline(): string | null {
     return this.props.polyline;
   }
@@ -57,6 +76,15 @@ export class Route {
     this.props.polyline = polyline;
   }
 
+  assignDriver(driverId: string | null): void {
+    const newDriverId = driverId ? UserId.create(driverId) : null;
+    if (newDriverId?.value !== this.driverId) {
+      // the read-model no longer matches the new driver; it is re-populated on the next read
+      this.props.driver = null;
+    }
+    this.props.driverId = newDriverId;
+  }
+
   setStatus(status: RouteStatusType): void {
     this.props.status = RouteStatus.create(status);
   }
@@ -70,6 +98,8 @@ interface RouteProps {
   points: RoutePoint[];
   companyId: CompanyId;
   polyline: string | null;
+  driverId: UserId | null;
+  driver: RouteDriver | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -80,6 +110,8 @@ export interface RouteConstructorProps {
   status: string;
   companyId: string;
   polyline: string | null;
+  driverId?: string | null;
+  driver?: RouteDriver | null;
   points?: RoutePoint[];
   createdAt?: string;
   updatedAt?: string;

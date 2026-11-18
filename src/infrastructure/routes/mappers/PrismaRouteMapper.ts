@@ -3,8 +3,10 @@ import PrismaRoutePointMapper, { RawRoutePoint } from "./PrismaRoutePointMapper"
 import { RouteCreateArgs, RouteUpdateArgs } from "@/infrastructure/prisma/generated/prisma/models";
 import { Route } from "@/domain/routes/entities/Route";
 
+export type RawRouteDriver = { id: string; name: string; surnames: string; email: string };
+
 export default class PrismaRouteMapper {
-  static toDomain(raw: PrismaRoute & { points: RawRoutePoint[] }): Route {
+  static toDomain(raw: PrismaRoute & { points: RawRoutePoint[]; driver?: RawRouteDriver | null }): Route {
     return new Route({
       id: raw.id,
       name: raw.name,
@@ -12,6 +14,8 @@ export default class PrismaRouteMapper {
       polyline: raw.polyline,
       points: raw.points.map(PrismaRoutePointMapper.toDomain),
       companyId: raw.companyId,
+      driverId: raw.driverId,
+      driver: raw.driver ?? null,
     })
   }
 
@@ -19,7 +23,8 @@ export default class PrismaRouteMapper {
     return {
       data: {
         name: domain.name,
-        companyId: domain.companyId
+        companyId: domain.companyId,
+        driverId: domain.driverId
       },
       include: this.getIncludeConditions()
     }
@@ -33,6 +38,7 @@ export default class PrismaRouteMapper {
       data: {
         name: domain.name,
         polyline: domain.polyline,
+        driverId: domain.driverId,
         status: domain.status as RouteStatus
       },
       include: this.getIncludeConditions()
@@ -41,6 +47,9 @@ export default class PrismaRouteMapper {
 
   static getIncludeConditions() {
     return {
+      driver: {
+        select: { id: true, name: true, surnames: true, email: true }
+      },
       points: {
         include: {
           bill: {

@@ -11,6 +11,10 @@ export default class RouteDtoMapper {
       status: dto.status,
       companyId: dto.companyId,
       polyline: dto.polyline,
+      driverId: dto.driverId,
+      driver: dto.driver
+        ? { id: dto.driver.id, name: dto.driver.name, surnames: dto.driver.surnames }
+        : null,
       points: dto.points?.map(RoutePointDtoMapper.toResponse),
       createdAt: dto.createdAt.toISOString(),
       updatedAt: dto.updatedAt.toISOString(),
@@ -23,6 +27,7 @@ export default class RouteDtoMapper {
       status: "CREATED",
       companyId: companyId,
       polyline: null,
+      driverId: dto.driverId ?? null,
       points: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

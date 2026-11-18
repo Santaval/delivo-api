@@ -28,6 +28,8 @@ model User {
   updatedAt DateTime @updatedAt
 
   companies UserCompany[]
+
+  routesAsDriver Route[] @relation("RouteDriver")
 }
 
 model Company {
@@ -293,7 +295,12 @@ model Route {
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
 
+  driverId String?
+  driver   User?   @relation("RouteDriver", fields: [driverId], references: [id])
+
   points RoutePoint[]
+
+  @@index([driverId])
 }
 
 model RoutePoint {

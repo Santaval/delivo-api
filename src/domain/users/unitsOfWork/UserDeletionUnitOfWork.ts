@@ -1,5 +1,6 @@
 import { IUserRepository } from "@/domain/users/repositories/IUserRepository";
 import { ICompanyRepository } from "@/domain/companies/repositories/ICompanyRepository";
+import IRouteRepository from "@/domain/routes/repositories/IRouteRepository";
 import { ICompanyMemberRepository } from "@/domain/companies/repositories/ICompanyMemberRepository";
 
 /**
@@ -19,4 +20,5 @@ export interface IUserDeletionContext {
   getUserRepository(): IUserRepository;
   getCompanyRepository(): ICompanyRepository;
   getCompanyMemberRepository(): ICompanyMemberRepository;
+  getRouteRepository(): IRouteRepository;
 }

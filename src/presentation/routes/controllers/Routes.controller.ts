@@ -5,6 +5,7 @@ import { Request, Response } from "express";
 import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import { RouteId, RoutePointId } from "@/domain/routes";
 import RoutePointDtoMapper from "../mappers/RoutePointDtoMapper";
+import z from "zod";
 import { Location } from "@/domain/clients/valueObjects/location.valouObject";
 
 export default class RoutesContoller {
@@ -21,7 +22,22 @@ export default class RoutesContoller {
 
   async findAll(req: Request, res: Response) {
     const companyId = CompanyIdParser(req);
-    const result = await this.routeService.findAllByCompany(CompanyId.create(companyId));
+    const driverIdQuery = req.query.driverId;
+    let driverId: string | undefined;
+    if (driverIdQuery !== undefined) {
+      if (typeof driverIdQuery !== "string") {
+        return res.status(400).json({ message: "driverId must be 'me' or a UUID" });
+      }
+      if (driverIdQuery === "me") {
+        // @ts-expect-error req.user typing conflicts with @types/passport (see express.d.ts)
+        driverId = req.user.id;
+      } else if (z.uuid().safeParse(driverIdQuery).success) {
+        driverId = driverIdQuery;
+      } else {
+        return res.status(400).json({ message: "driverId must be 'me' or a UUID" });
+      }
+    }
+    const result = await this.routeService.findAllByCompany(CompanyId.create(companyId), { driverId });
     return res.status(200).json(result.map(RouteDtoMapper.toResponse));
   }
 
@@ -33,6 +49,12 @@ export default class RoutesContoller {
     }
     const resultDto = RouteDtoMapper.toResponse(result);
     return res.status(200).json(resultDto);
+  }
+
+  async assignDriver(req: Request, res: Response) {
+    const companyId = CompanyIdParser(req);
+    const result = await this.routeService.assignDriver(RouteId.create(req.params.id), req.body.driverId, companyId);
+    return res.status(200).json(RouteDtoMapper.toResponse(result));
   }
 
   async addPoint(req: Request, res: Response) {

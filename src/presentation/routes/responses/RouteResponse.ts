@@ -7,6 +7,8 @@ export default interface RouteResponse {
     companyId: string;
     points?: RoutePointResponse[];
     polyline: string | null;
+    driverId: string | null;
+    driver: { id: string; name: string; surnames: string } | null;
     createdAt?: string;
     updatedAt?: string;
 }

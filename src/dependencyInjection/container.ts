@@ -125,6 +125,7 @@ export const companyMemberService: ICompanyMemberService = new CompanyMemberServ
   companiesRepository,
   userRepository,
   memberAddedEmailSender,
+  routesRepository,
 );
 export const clientsService = new ClientService(clientsRepository);
 export const productsService = new ProductService(productsRepository, productDeletionUOW);
@@ -132,7 +133,7 @@ export const ordersPricingCalculator = new OrderPricingCalculator(ordersReposito
 export const ordersService = new OrdersService(ordersRepository);
 export const orderDeliveryStatusManager = new OrderDeliveryStatusManager(ordersRepository);
 export const routeOptimizationService = new RouteOptimizationService(routesRepository, routeOptimizationProvider);
-export const routesService = new RouteService(routesRepository, routeOptimizationService, orderDeliveryStatusManager);
+export const routesService = new RouteService(routesRepository, routeOptimizationService, orderDeliveryStatusManager, companyMemberRepository);
 export const financialSummaryCalculator = new FinancialSummaryCalculator(ordersRepository)
 export const locationService = new LocationService(placesProvider);
 export const paymentMethodsService = new PaymentMethodsService(paymentMethodsRepository);

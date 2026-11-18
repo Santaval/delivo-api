@@ -14,6 +14,7 @@ The schema lives in [`src/infrastructure/prisma/schema.prisma`](../src/infrastru
 ```mermaid
 erDiagram
     User ||--o{ UserCompany : "belongs to"
+    User ||--o{ Route : drives
     Company ||--o{ UserCompany : "has members"
     User ||--o{ CompanyInvitation : "sends"
     Company ||--o{ CompanyInvitation : "has"
@@ -118,6 +119,7 @@ erDiagram
       string name
       enum status "CREATED | STARTED | COMPLETED"
       text polyline
+      uuid driverId FK "nullable"
     }
     RoutePoint {
       uuid id PK
@@ -140,7 +142,7 @@ erDiagram
 | **Client** | `Client` | Optional geolocation used as the delivery destination. Name, phone and email are each unique per company. |
 | **Product** | `Product` | Stores the gross price and the IVA rate. Order lines snapshot both at the time of sale. |
 | **Order** | `ClientBill` | Order lines, running totals (`subtotal`, `ivaTotal`, `total`, `paid`), payment and delivery status, and a sequential human-readable `number`. |
-| **Route** | `Route` | An ordered list of `RoutePoint`s, each tied to exactly one order (`billId` is unique, so an order can only be on one route). Stores the encoded polylines returned by the optimizer. |
+| **Route** | `Route` | An ordered list of `RoutePoint`s, each tied to exactly one order (`billId` is unique, so an order can only be on one route). Stores the encoded polylines returned by the optimizer. Optionally has a `driver` (`User`, nullable `driverId`, `ON DELETE SET NULL`); the driver must be a `DEALER`/`ADMIN`/`OWNER` member of the route's company. |
 
 ## State machines
 
