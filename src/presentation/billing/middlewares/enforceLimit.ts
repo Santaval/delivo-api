@@ -6,7 +6,7 @@ import CompanyIdParser from "@/presentation/core/utils/companyIdParser";
 export interface EnforceLimitOptions {
   /** How to resolve the company under enforcement. Defaults to the `x-company-id` header. */
   companyId?: (req: Request) => string | undefined;
-  /** Only enforce when this predicate is true (e.g. only DEALER invitations consume the driver seat). */
+  /** Only enforce when this predicate is true (e.g. only DEALER members consume the driver seat). */
   when?: (req: Request) => boolean;
 }
 

@@ -1,7 +1,6 @@
 import { IUserRepository } from "@/domain/users/repositories/IUserRepository";
 import { ICompanyRepository } from "@/domain/companies/repositories/ICompanyRepository";
 import { ICompanyMemberRepository } from "@/domain/companies/repositories/ICompanyMemberRepository";
-import { ICompanyInvitationRepository } from "@/domain/companies/repositories/ICompanyInvitationRepository";
 
 /**
  * Deleting a user that owns a single company means deleting the whole company
@@ -20,5 +19,4 @@ export interface IUserDeletionContext {
   getUserRepository(): IUserRepository;
   getCompanyRepository(): ICompanyRepository;
   getCompanyMemberRepository(): ICompanyMemberRepository;
-  getCompanyInvitationRepository(): ICompanyInvitationRepository;
 }
