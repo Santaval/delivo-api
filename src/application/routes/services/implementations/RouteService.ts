@@ -1,4 +1,4 @@
-import IRouteRepository from "@/domain/routes/repositories/IRouteRepository";
+import IRouteRepository, { RouteFilters } from "@/domain/routes/repositories/IRouteRepository";
 import IRouteService from "../interfaces/IRouteService";
 import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import { Route, RouteId, RoutePoint, RoutePointId } from "@/domain/routes";
@@ -6,20 +6,60 @@ import IRouteOptimizationService from "@/domain/routes/service/IRouteOptimizatio
 import { Location } from "@/domain/clients/valueObjects/location.valouObject";
 import IOrderDeliveryStatusManager from "@/domain/orders/services/IOrderDeliveryStatusManager";
 import ApplicationError from "@/application/core/errors/ApplicationError";
+import { ICompanyMemberRepository } from "@/domain/companies/repositories/ICompanyMemberRepository";
+import { RouteNotFoundError } from "../../errors/RouteNotFoundError";
+import { InvalidRouteDriverError } from "../../errors/InvalidRouteDriverError";
+import { ILocationBroadcaster } from "@/domain/routes/providers/ILocationBroadcaster";
+import { RouteAlreadyCompletedError } from "../../errors/RouteAlreadyCompletedError";
+
+const DRIVER_ROLES = ["DEALER", "ADMIN", "OWNER"];
 
 export default class RouteService implements IRouteService {
   constructor(
     private readonly routeRepository: IRouteRepository,
     private readonly routeOptimizationService: IRouteOptimizationService,
-    private readonly orderDeliveryStatusManager: IOrderDeliveryStatusManager
+    private readonly orderDeliveryStatusManager: IOrderDeliveryStatusManager,
+    private readonly companyMemberRepository: ICompanyMemberRepository,
+    private readonly locationBroadcaster: ILocationBroadcaster
   ) {}
 
-  findAllByCompany(companyId: CompanyId): Promise<Route[]> {
-    return this.routeRepository.findAllByCompany(companyId);
+  findAllByCompany(companyId: CompanyId, filters?: RouteFilters): Promise<Route[]> {
+    return this.routeRepository.findAllByCompany(companyId, filters);
   }
 
-  create(route: Route): Promise<Route> {
-    return this.routeRepository.create(route);
+  /**
+   * The driver must be a member of the company with a role that can deliver.
+   * @throws InvalidRouteDriverError (422)
+   */
+  private async validateDriver(driverId: string, companyId: string): Promise<void> {
+    const membership = await this.companyMemberRepository.findMembership(driverId, companyId);
+    if (!membership || !DRIVER_ROLES.includes(membership.role)) {
+      throw new InvalidRouteDriverError();
+    }
+  }
+
+  async create(route: Route): Promise<Route> {
+    if (route.driverId) await this.validateDriver(route.driverId, route.companyId);
+    const created = await this.routeRepository.create(route);
+    // re-read so the `driver` read-model is populated
+    return (await this.routeRepository.findById(RouteId.create(created.id))) ?? created;
+  }
+
+  async assignDriver(routeId: RouteId, driverId: string | null, companyId: string): Promise<Route> {
+    const route = await this.routeRepository.findById(routeId);
+    if (!route || route.companyId !== companyId) throw new RouteNotFoundError();
+    if (route.status === "COMPLETED") throw new RouteAlreadyCompletedError();
+    if (driverId) await this.validateDriver(driverId, companyId);
+
+    const driverChanged = route.driverId !== driverId;
+    route.assignDriver(driverId);
+    await this.routeRepository.update(route);
+    if (driverChanged) {
+      // privacy: the previous driver's position must not outlive the assignment
+      await this.routeRepository.deleteDriverLocation(route.id);
+      this.locationBroadcaster.publish(route.id, { type: "cleared" });
+    }
+    return (await this.routeRepository.findById(routeId)) ?? route;
   }
 
   update(route: Route): Promise<Route> {
@@ -66,7 +106,12 @@ export default class RouteService implements IRouteService {
     const skippedPoints = route.points.filter(point => point.status === "SKIPPED");
     const promises = skippedPoints.map(point => this.orderDeliveryStatusManager.change(point.order.id, "PENDING"));
     await Promise.all(promises);
-    return this.routeRepository.update(route);
+    const updated = await this.routeRepository.update(route);
+
+    // privacy: drop the live location and tell the SSE clients to close
+    await this.routeRepository.deleteDriverLocation(route.id);
+    this.locationBroadcaster.publish(route.id, { type: "finished" });
+    return updated;
   }
 
   async completeDelivery(routePointId: RoutePointId): Promise<RoutePoint> {

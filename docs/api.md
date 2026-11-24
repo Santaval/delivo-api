@@ -5,7 +5,7 @@ Base URL: `https://<host>/api/v1`. All request and response bodies are JSON.
 - [Conventions](#conventions)
 - [Auth](#auth) · [Profile](#profile) · [Companies](#companies) · [Members and invitations](#members-and-invitations)
 - [Clients](#clients) · [Products](#products) · [Orders](#orders) · [Payment methods](#payment-methods)
-- [Routes](#routes) · [Stats](#stats) · [Locations](#locations) · [Billing](#billing) · [System](#system)
+- [Routes](#routes) · [Stats](#stats) · [Locations](#locations) · [Billing](#billing) · [Credits](#credits) · [Admin](#admin) · [System](#system)
 - [Errors](#errors)
 
 ---
@@ -25,7 +25,8 @@ The **Guards** column lists the middleware that runs before each handler:
 | **JWT** | `jwtAuth`: valid bearer token required, otherwise `401` |
 | **Tenant** | Handler is scoped to the company in `x-company-id` (`400` if it is missing and `requireCompanyId` is mounted) |
 | **Role** | `requireCompanyRole`: caller must be `OWNER` or `ADMIN` of `:companyId`, otherwise `403` |
-| **Limit(x)** | `enforceLimit(x)`: `402 PLAN_LIMIT_EXCEEDED` when the plan quota for `x` is used up |
+| **Member** | `requireCompanyMembership`: caller must be a member (any role) of the company in `x-company-id`, otherwise `403` |
+| **Admin key** | `requireAdminKey`: header `x-admin-key` must equal the server's `ADMIN_API_KEY`, otherwise `401` (also `401` when the key is not configured) |
 | **Rate(n/15m)** | Per-IP rate limit, `429` when exceeded |
 
 Validation failures return `400 { "message": "<first Zod issue>" }`.
@@ -82,7 +83,7 @@ The deletion flow is explained in [account-deletion.md](account-deletion.md).
 
 | Method | Path | Guards | Body | Success |
 |---|---|---|---|---|
-| `POST` | `/companies` | JWT | `{ name }` | `200 CompanyResponse`. The caller becomes `OWNER` and a FREE subscription is created in the same transaction |
+| `POST` | `/companies` | JWT | `{ name }` | `200 CompanyResponse`. The caller becomes `OWNER` and 50 welcome credits are granted in the same transaction |
 | `GET` | `/companies` | JWT | none | `200 CompanyResponse[]` |
 | `GET` | `/companies/:id` | JWT | none | `200 CompanyResponse` / `404` |
 | `PUT` | `/companies/:id` | JWT | `{ name? }` | `200 CompanyResponse` |
@@ -94,7 +95,7 @@ The deletion flow is explained in [account-deletion.md](account-deletion.md).
 |---|---|---|---|---|
 | `GET` | `/companies/:companyId/members` | JWT (caller must be a member) | none | `200 MemberResponse[]` |
 | `GET` | `/companies/:companyId/invitations` | JWT, Role | none | `200 InvitationResponse[]` (pending only) |
-| `POST` | `/companies/:companyId/invitations` | JWT, Role, Limit(drivers) *when `role = DEALER`* | `{ email, role: "ADMIN"\|"DEALER" }` | `201 InvitationResponse` + invitation email |
+| `POST` | `/companies/:companyId/invitations` | JWT, Role | `{ email, role: "ADMIN"\|"DEALER" }` | `201 InvitationResponse` + invitation email |
 | `DELETE` | `/companies/:companyId/invitations/:invitationId` | JWT, Role | none | `204` |
 | `DELETE` | `/companies/:companyId/members/:userId` | JWT, Role | none | `204` |
 | `POST` | `/invitations/accept` | JWT | `{ token }` | `204` |
@@ -107,7 +108,7 @@ Error cases: `409` already a member, invitation already pending, or removing the
 
 | Method | Path | Guards | Body | Success |
 |---|---|---|---|---|
-| `POST` | `/clients` | Tenant, Limit(clients) | `{ name, phoneNumber?, email?, lat, lng }` (`lat`/`lng` nullable) | `201 ClientResponse` |
+| `POST` | `/clients` | Tenant | `{ name, phoneNumber?, email?, lat, lng }` (`lat`/`lng` nullable) | `201 ClientResponse` |
 | `GET` | `/clients` | Tenant | none | `200 ClientResponse[]` |
 | `GET` | `/clients/:id` | Tenant | none | `200 ClientResponse` / `404` |
 | `PUT` | `/clients/:id` | Tenant | `{ name?, phoneNumber?, email? }` | `200 ClientResponse` |
@@ -126,7 +127,7 @@ Error cases: `409` already a member, invitation already pending, or removing the
 
 | Method | Path | Guards | Body | Success |
 |---|---|---|---|---|
-| `POST` | `/products` | Tenant, Limit(products) | `{ name, grossPrice, ivaRate? = 13 }` | `201 ProductResponse` |
+| `POST` | `/products` | Tenant | `{ name, grossPrice, ivaRate? = 13 }` | `201 ProductResponse` |
 | `GET` | `/products` | Tenant | none | `200 ProductResponse[]` |
 | `GET` | `/products/:id` | Tenant | none | `200 ProductResponse` / `404` |
 | `PUT` | `/products/:id` | Tenant | `{ name?, grossPrice?, ivaRate? }` | `200 ProductResponse` |
@@ -147,7 +148,7 @@ Error cases: `409` already a member, invitation already pending, or removing the
 
 | Method | Path | Guards | Body | Success |
 |---|---|---|---|---|
-| `POST` | `/orders` | Tenant, Limit(documents) | `{ clientId }` | `201 OrderResponse` |
+| `POST` | `/orders` | Tenant | `{ clientId }` | `201 OrderResponse`; consumes 1 credit; `402 INSUFFICIENT_CREDITS` when balance ≤ -5 |
 | `GET` | `/orders` | Tenant | none | `200 OrderResponse[]`: open orders (`PENDING`, `ON_ROUTE`, `IN_TRANSIT`) |
 | `GET` | `/orders/bills` | Tenant | none | `200 OrderResponse[]`: delivered orders |
 | `GET` | `/orders/:id` | Tenant | none | `200 OrderResponse` / `404` |
@@ -161,6 +162,7 @@ Error cases: `409` already a member, invitation already pending, or removing the
 Business rules:
 - Items cannot be changed once an order is `DELIVERED` or `RETURNED`.
 - Payments require `deliveryStatus = DELIVERED` and cannot exceed the outstanding total. The order becomes `PAID` when `paid ≥ total`.
+- `route` is the route the order is on (resolved through its route point), or `null` when it isn't on one.
 
 ```jsonc
 // OrderResponse
@@ -172,6 +174,7 @@ Business rules:
   "items": [{ "productId": "uuid", "quantity": 2, "name": "Arroz 1kg", "pricing": { /* … */ } }],
   "status": "PENDING",
   "deliveryStatus": "DELIVERED",
+  "route": { "id": "uuid", "name": "North", "status": "STARTED" },   // or null when the order is not on a route
   "createdAt": "…", "updatedAt": "…"
 }
 ```
@@ -189,13 +192,23 @@ Business rules:
 
 | Method | Path | Guards | Body | Success |
 |---|---|---|---|---|
-| `POST` | `/routes` | Tenant, Limit(routes) | `{ name }` (2–100 characters) | `201 RouteResponse` |
-| `GET` | `/routes` | Tenant | none | `200 RouteResponse[]` |
-| `GET` | `/routes/:id` | Tenant | none | `200 RouteResponse` / `404` |
-| `POST` | `/routes/:id/points` | Tenant | `{ orderId }` | `201 RoutePointResponse`. The order moves to `ON_ROUTE` |
-| `DELETE` | `/routes/:id/points/:pointId` | Tenant | none | `204` |
-| `POST` | `/routes/:id/start` | Tenant | `{ startLocation: { lat, lng } }` | `200 RouteResponse`, optimized: points get an `index` and `polyline`, and orders move to `IN_TRANSIT` |
-| `PATCH` | `/routes/points/:pointId/complete` | Tenant | none | `200 RoutePointResponse`. The order moves to `DELIVERED`, and the route auto-completes when every stop is done |
+| `POST` | `/routes` | JWT, Tenant | `{ name, driverId? }` (name 2–100 characters; `driverId` is a UUID of a company member) | `201 RouteResponse` / `422` if `driverId` is not a `DEALER`/`ADMIN`/`OWNER` member of the company |
+| `GET` | `/routes` | JWT, Tenant | query `driverId?` = `me` or a user UUID | `200 RouteResponse[]`. With `driverId` only routes assigned to that user are returned (`me` = the token's user); `400` if it is neither `me` nor a UUID |
+| `GET` | `/routes/:id` | JWT, Tenant | none | `200 RouteResponse` / `404` |
+| `PATCH` | `/routes/:id/driver` | JWT, Tenant | `{ driverId: string \| null }` (`null` unassigns) | `200 RouteResponse` / `404` (route missing or from another company) / `409` (route `COMPLETED`) / `422` (driver is not a `DEALER`/`ADMIN`/`OWNER` member of the company) |
+| `POST` | `/routes/:id/points` | JWT, Tenant | `{ orderId }` | `201 RoutePointResponse`. The order moves to `ON_ROUTE` |
+| `DELETE` | `/routes/:id/points/:pointId` | JWT, Tenant | none | `204` |
+| `POST` | `/routes/:id/start` | JWT, Tenant | `{ startLocation: { lat, lng } }` | `200 RouteResponse`, optimized: points get an `index` and `polyline`, and orders move to `IN_TRANSIT` |
+| `POST` | `/routes/:id/location` | JWT (own rate limit: 60 / min per user) | `{ locations: [{ lat, lng, heading?, speed?, accuracy?, recordedAt }] }` (1–50 points; `recordedAt` is an ISO-8601 string or epoch ms) | `204`. Only the most recent point is processed. `403` not the route's driver / `404` / `409` route not `STARTED` (the app stops sending on it) |
+| `GET` | `/routes/:id/location` | JWT | none | `200` `{ lat, lng, heading, speed, accuracy, recordedAt }` or `null`. `403` unless the caller is the route's driver or an `OWNER`/`ADMIN` of its company |
+| `GET` | `/routes/:id/location/stream` | JWT (`Authorization: Bearer` only) | none | Server-Sent Events (`location`, `cleared`, `finished`), same read permissions as above. See [live-tracking.md](live-tracking.md) |
+| `PATCH` | `/routes/points/:pointId/complete` | JWT, Tenant | none | `200 RoutePointResponse`. The order moves to `DELIVERED`, and the route auto-completes when every stop is done |
+
+The whole routes router now requires a valid bearer token (`jwtAuth`), in addition to the `x-company-id` header.
+
+A route may have an optional driver (`User`), who must be a member of the route's company. The driver can only be changed while the route is `CREATED` or `STARTED`. When a user leaves or is removed from a company, or deletes their account, they are unassigned from their routes (leaving/removal skips `COMPLETED` routes).
+
+Live driver tracking (`/routes/:id/location*`) is documented in [live-tracking.md](live-tracking.md).
 
 Starting a route does **not** count against the daily `routes` quota again, because it was already counted when the route was created. See [route-optimization.md](route-optimization.md).
 
@@ -204,6 +217,10 @@ Starting a route does **not** count against the daily `routes` quota again, beca
 {
   "id": "uuid", "name": "Ruta Heredia – martes", "status": "STARTED", "companyId": "uuid",
   "polyline": "a~l~Fjk~uOwHJy@P…",
+  "driverId": "uuid | null",
+  "driver": { "id": "uuid", "name": "Ana", "surnames": "Mora" },  // null when unassigned
+  // latest known position; null when there is none or the caller is neither the driver nor OWNER/ADMIN
+  "driverLocation": { "lat": 9.99, "lng": -84.1, "heading": 90, "recordedAt": "2026-11-18T15:04:05.000Z" },
   "points": [
     { "id": "uuid", "status": "CREATED", "index": 0, "routeId": "uuid", "order": { /* OrderResponse */ } }
   ]
@@ -246,26 +263,75 @@ Starting a route does **not** count against the daily `routes` quota again, beca
 
 | Method | Path | Guards | Body | Success |
 |---|---|---|---|---|
-| `GET` | `/billing/subscription` | JWT, Tenant | none | `200 SubscriptionStatusResponse` |
-| `POST` | `/billing/webhooks/revenuecat` | Shared secret in `Authorization` (server-to-server) | RevenueCat webhook payload | `200` processed · `202` ignored event type · `401` bad secret |
+| `POST` | `/billing/webhooks/revenuecat` | Shared secret in `Authorization` (server-to-server) | RevenueCat webhook payload | `200` processed or duplicate · `202` ignored or unknown product · `401` bad secret |
+
+See [billing.md](billing.md).
+
+## Credits
+
+| Method | Path | Guards | Success |
+|---|---|---|---|
+| `GET` | `/billing/credits` | JWT, Tenant, Member | `200 CreditsSummaryResponse` |
+| `GET` | `/billing/credits/ledger?page=&pageSize=` | JWT, Tenant, Member | `200 CreditLedgerPageResponse`; `400` on an invalid `page` / `pageSize` |
+
+Any role (`OWNER`, `ADMIN`, `DEALER`) can read both; a non-member gets `403`. `page` defaults to 1 and `pageSize` to 20 (max 100). The ledger is newest first.
 
 ```jsonc
-// SubscriptionStatusResponse
+// CreditsSummaryResponse
 {
-  "tier": "FREE",
-  "status": "ACTIVE",
-  "currentPeriodEnd": null,
-  "limits": [
-    { "resource": "documents", "limit": 10, "used": 8, "remaining": 2, "percentUsed": 80 },
-    { "resource": "routes",    "limit": 1,  "used": 0, "remaining": 1, "percentUsed": 0 },
-    { "resource": "clients",   "limit": 25, "used": 25, "remaining": 0, "percentUsed": 100 },
-    { "resource": "products",  "limit": 20, "used": 4, "remaining": 16, "percentUsed": 20 },
-    { "resource": "drivers",   "limit": 1,  "used": 1, "remaining": 0, "percentUsed": 100 }
-  ]
+  "balance": 37,
+  "overdraftFloor": -5,          // a bill can be issued while balance - 1 >= overdraftFloor
+  "lowBalanceThreshold": 10,     // show a "running low" warning at or below this
+  "packs": [{ "productId": "delivo_bills_100", "credits": 100 }]  // from CREDIT_PACKS; prices come from the store
+}
+
+// CreditLedgerPageResponse (same pagination shape as GET /orders/bills, without `counts`)
+{
+  "data": [{
+    "id": "uuid",
+    "reason": "BILL_ISSUED",     // WELCOME_GRANT | PURCHASE | BILL_ISSUED | REFUND | ADMIN_ADJUSTMENT
+    "delta": -1,
+    "balanceAfter": 36,
+    "createdAt": "2026-11-18T16:00:00.000Z",
+    "billId": "uuid",            // only for BILL_ISSUED, otherwise null
+    "billNumber": 1042,          // null when not a bill charge or the bill was deleted
+    "productId": null,           // set for PURCHASE / REFUND
+    "note": null                 // set for ADMIN_ADJUSTMENT
+  }],
+  "pagination": { "page": 1, "pageSize": 20, "total": 1, "totalPages": 1, "hasNextPage": false }
 }
 ```
 
-See [billing.md](billing.md).
+## Admin
+
+Support-only routes. There is no platform-admin role: they are protected by the shared `ADMIN_API_KEY` env var, sent in the `x-admin-key` header (no JWT). Without the header, with a wrong key, or when `ADMIN_API_KEY` is not set on the server, the answer is `401`. They are rate limited to 10 requests per 15 minutes per IP (`429`), failed attempts included.
+
+| Method | Path | Guards | Body | Success |
+|---|---|---|---|---|
+| `POST` | `/admin/companies/:companyId/credits` | Admin key, Rate(10/15m) | `{ delta, note }` | `201 { entry, balance }` / `400` / `404` unknown company |
+| `GET` | `/admin/companies/:companyId/credits` | Admin key, Rate(10/15m) | none | `200 { companyId, balance, ledger }` / `404` unknown company |
+
+`delta` is a non-zero integer between -10000 and 10000 (negative debits). `note` is required, 3 to 500 characters. It writes an `ADMIN_ADJUSTMENT` ledger row and does not check the overdraft floor.
+
+```jsonc
+// POST body
+{ "delta": 20, "note": "Compensation for outage 2026-11-20" }
+
+// 201 response: `entry` is a ledger entry with two extra fields (also present in GET `ledger`)
+{
+  "entry": {
+    "id": "uuid", "reason": "ADMIN_ADJUSTMENT", "delta": 20, "balanceAfter": 57,
+    "createdAt": "…", "billId": null, "billNumber": null, "productId": null,
+    "note": "Compensation for outage 2026-11-20",
+    "environment": null,          // "SANDBOX" / "PRODUCTION" for store purchases
+    "createdByUserId": null       // always null: the shared key has no user
+  },
+  "balance": 57
+}
+
+// GET response: the full ledger, newest first, no pagination
+{ "companyId": "uuid", "balance": 57, "ledger": [ /* entries as above */ ] }
+```
 
 ## System
 
@@ -282,9 +348,9 @@ The mobile app calls this at startup and blocks with a "please update" screen wh
 | Status | Body | Typical cause |
 |---|---|---|
 | `400` | `{ message }` | Zod validation failure, or missing `x-company-id` |
-| `401` | `{ message }` | Missing or invalid JWT, failed OAuth, bad webhook secret |
-| `402` | `{ code: "PLAN_LIMIT_EXCEEDED", resource, limit, used, tier, upgradeTo }` | Plan quota used up |
-| `403` | `{ message }` | Not allowed to manage members |
+| `401` | `{ message }` | Missing or invalid JWT, failed OAuth, bad webhook secret, missing or wrong `x-admin-key` |
+| `402` | `{ code: "INSUFFICIENT_CREDITS", balance, overdraftFloor, required }` | `POST /orders` with no credits left (balance ≤ -5) |
+| `403` | `{ message }` | Not allowed to manage members, or not a member of the `x-company-id` company |
 | `404` | `{ message }` | Resource not found |
 | `409` | `{ message }` | Conflict: already a member, duplicate invitation, last owner |
 | `410` | `{ message }` | Invitation expired |
@@ -293,12 +359,10 @@ The mobile app calls this at startup and blocks with a "please update" screen wh
 
 ```json
 {
-  "code": "PLAN_LIMIT_EXCEEDED",
-  "resource": "clients",
-  "limit": 25,
-  "used": 25,
-  "tier": "FREE",
-  "upgradeTo": "BASIC"
+  "code": "INSUFFICIENT_CREDITS",
+  "balance": -5,
+  "overdraftFloor": -5,
+  "required": 1
 }
 ```
 

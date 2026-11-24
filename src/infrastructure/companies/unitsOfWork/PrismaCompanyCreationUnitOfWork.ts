@@ -6,7 +6,7 @@ import {
 } from "@/domain/companies/unitsOfWork/CompanyCreationUnitOfWork";
 import { prisma } from "@/infrastructure/prisma/client";
 import PrismaCompaniesRepository from "../repositories/PrismaCompaniesRepository";
-import PrismaSubscriptionRepository from "@/infrastructure/billing/repositories/PrismaSubscriptionRepository";
+import PrismaCreditRepository from "@/infrastructure/credits/repositories/PrismaCreditRepository";
 
 export class PrismaCompanyCreationUnitOfWork implements ICompanyCreationUnitOfWork {
   private readonly prisma = prisma;
@@ -16,7 +16,7 @@ export class PrismaCompanyCreationUnitOfWork implements ICompanyCreationUnitOfWo
 
       const context: ICompanyCreationContext = {
         getCompanyRepository: () => new PrismaCompaniesRepository(tx),
-        getSubscriptionRepository: () => new PrismaSubscriptionRepository(tx),
+        getCreditRepository: () => new PrismaCreditRepository(tx),
       };
 
       return await work(context);

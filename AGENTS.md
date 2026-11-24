@@ -68,35 +68,49 @@ The route is additionally rate-limited (10 attempts / 15 min per IP,
 
 On first login, the account is seeded once with a demo company, clients, products and orders
 (`TestAccountSeeder`) so reviewers see a populated app; from then on it is a completely ordinary
-FREE-plan user — same `jwtAuth`, `requireCompanyId`, `requireCompanyRole` and `enforceLimit`
-checks as any other account, no special role or bypass.
+user with the 50 welcome credits — same `jwtAuth`, `requireCompanyId` and `requireCompanyRole`
+checks and the same credit debit on `POST /orders` as any other account, no special role or bypass.
 
 **Operating rule: turn it on for submission, turn it off as soon as the app is approved.** This
 is not a product feature — see the submission checklist on issue #37 for the exact steps.
 
 ## Billing
 
-Plans are per `Company`, not per user. RevenueCat's `app_user_id` MUST be the `companyId` — the
-mobile client passes the organization id as the app user id when starting a purchase. Webhook
-events (`POST /api/v1/billing/webhooks/revenuecat`) are unauthenticated by JWT — there is no
+Billing is pay-per-bill and credits are per `Company`, not per user. One issued `ClientBill`
+costs 1 credit; every new company gets 50 welcome credits in the same transaction as the company
+itself (`PrismaCompanyCreationUnitOfWork`), companies predating credits were backfilled by the
+`20261118161000_backfill_welcome_credits` data migration, and credits never expire. Clients,
+products, routes and drivers are unlimited. The balance is a cache (`CreditBalance`) of the
+append-only `CreditLedgerEntry`; amounts, the overdraft floor (-5) and the credit packs live in
+code in `src/application/credits/CreditPolicy.ts`. `POST /orders` debits through a conditional
+`UPDATE` inside the bill's transaction (`IBillIssuingUnitOfWork`), never through a pre-check
+middleware (it would race), and answers **HTTP 402** `INSUFFICIENT_CREDITS` when the floor would
+be crossed — the API never blocks silently, the client owns the buy-credits UX. See
+`docs/billing.md`.
+
+RevenueCat's `app_user_id` MUST still be the `companyId` — the mobile client passes the
+organization id as the app user id when starting a purchase; this stays safe for consumable
+packs because a grant is keyed by the store transaction id and never moves. Webhook events
+(`POST /api/v1/billing/webhooks/revenuecat`) are unauthenticated by JWT — there is no
 `jwtAuth`/`requireCompanyId` on that route — and are instead verified server-to-server against
 the `REVENUECAT_WEBHOOK_AUTH` shared secret in the `Authorization` header
 (`src/infrastructure/billing/providers/RevenueCatProvider.ts`). The provider is abstracted behind
 `IPaymentProvider` (`src/domain/billing/providers/`) so a future Tilopay adapter can be added
-without touching application code. Plan limits (per resource, per tier) live in code in
-`src/application/billing/PlanCatalog.ts`.
+without touching application code. `NON_RENEWING_PURCHASE` grants the pack's credits and a
+store-refund `CANCELLATION` (`cancel_reason = CUSTOMER_SUPPORT`) takes them back
+(`CreditPurchaseService`); idempotency comes from the unique `providerTransactionId` (refunds use
+`refund:<transaction_id>`), and sandbox purchases are granted and tagged with `environment`.
 
-Every company gets a FREE subscription at creation time, in the same transaction as the company
-itself (`PrismaCompanyCreationUnitOfWork`); companies predating this were backfilled by the
-`20260725130000_backfill_free_subscriptions` data migration. Limits are enforced in the
-presentation layer by the `enforceLimit(resource)` middleware, which returns **HTTP 402** with a
-machine-readable `PLAN_LIMIT_EXCEEDED` payload — the API never blocks silently, the client owns
-the upgrade UX. Monthly/daily windows are evaluated in `America/Costa_Rica`
-(`src/application/billing/utils/billingWindows.ts`).
+Credit balance and history: `GET /billing/credits` and `/billing/credits/ledger` (JWT +
+`requireCompanyId` + `requireCompanyMembership`, any role). There is no platform-admin role, so
+support adjustments (`POST|GET /api/v1/admin/companies/:companyId/credits`) are guarded by the
+shared `ADMIN_API_KEY` env var in the `x-admin-key` header (`requireAdminKey`: sha256 digests
+compared with `crypto.timingSafeEqual`, 401 when the key is unset, rate limited 10/15 min per IP,
+key never logged; `env.ts` requires at least 32 characters when set).
 
-Optional env vars: `REVENUECAT_WEBHOOK_AUTH` (must match the `Authorization` header configured in
+Optional env vars: `ADMIN_API_KEY`, `REVENUECAT_WEBHOOK_AUTH` (must match the `Authorization` header configured in
 the RevenueCat dashboard; when unset the webhook fails closed and rejects everything),
-`REVENUECAT_API_KEY`.
+`REVENUECAT_API_KEY`, `BILLING_ACCEPT_SANDBOX` (`true` on dev/staging so sandbox purchases grant credits; false/unset in production ignores them).
 
 ## Account deletion
 
@@ -117,7 +131,8 @@ The DB deletion runs in ONE transaction via `UserDeletionUnitOfWork`
      soft-delete filters, otherwise their `deletedAt: null` rows would survive and the final
      `company.delete()` would hit `ON DELETE RESTRICT`).
    - Otherwise → `CompanyMemberRepository.remove(userId, companyId)` (the company stays).
-3. `userRepository.delete(userId)` last.
+3. `RouteRepository.unassignDriverFromAll(userId)` (`Route.driverId -> null` for routes in
+   companies that survive), then `userRepository.delete(userId)` last.
 
 `deletedCompanyIds` and `unlinkedCompanyIds` are returned in `AccountDeletionResult`, along
 with `email`/`name` captured **before** the user row is deleted (the confirmation email needs
@@ -137,8 +152,8 @@ client, never returns 5xx, and never reverts the deletion:
    is a logged no-op because the server never stores Google tokens.
 2. **RevenueCat subscriber deletion** for each `deletedCompanyIds` entry via
    `IPaymentProvider.deleteSubscriber(companyId)` (the `app_user_id === companyId` convention).
-   The local `Subscription` row was already deleted inside the transaction by
-   `deleteWithAllData`, but the provider side still holds the subscriber and would otherwise
+   The local credit rows (`CreditBalance`, `CreditLedgerEntry`) were already deleted inside the
+   transaction by `deleteWithAllData`, but the provider side still holds the subscriber and would otherwise
    keep sending webhooks. Requires `REVENUECAT_API_KEY`; silently skips when unset. Idempotent
    (200/204/404 all treated as success).
 3. **Confirmation email** via `AccountDeletionEmailSender` (HTML + plain text, es-CR) to the
@@ -146,12 +161,11 @@ client, never returns 5xx, and never reverts the deletion:
 
 ### Webhook hardening
 
-`SubscriptionSyncService.applyEvent` now looks up the company first and **ignores** (log +
-HTTP 200) events whose `companyId` no longer exists. Without this guard, a late `RENEWAL` /
-`EXPIRATION` webhook for a deleted company would `upsertByProviderCustomerId` against a
-missing `company.id` → FK RESTRICT throw → 500 → RevenueCat retries the webhook forever
-(`Subscription.companyId` has a unique constraint, not a soft-fail column). The guard keeps
-the endpoint returning 200 and writes nothing.
+`CreditPurchaseService.applyEvent` looks up the company first and **ignores** (log +
+HTTP 200) events whose `companyId` no longer exists. Without this guard, a late purchase or
+refund webhook for a deleted company would insert a ledger row against a missing `company.id`
+→ FK RESTRICT throw → 500 → RevenueCat retries the webhook forever. The guard keeps the
+endpoint returning 200 and writes nothing. Unknown product ids are acknowledged with 202.
 
 ### Optional env vars
 
@@ -194,8 +208,7 @@ as a member. It replaced the former email invitation flow.
   `201 MemberResponse`. Only OWNER/ADMIN may call it (`requireCompanyRole` +
   `CompanyMemberService.addMemberByCode`). Whitespace in `code` is stripped; unknown code -> 404
   `MemberCodeNotFoundError` ("No existe un usuario con ese código", generic on purpose), already a
-  member -> 409. Adding a `DEALER` goes through `enforceLimit("drivers")` (HTTP 402 when the plan is
-  full). A best-effort "you were added" email is sent to the new member; failures are only logged.
+  member -> 409. Drivers (`DEALER`) are unlimited. A best-effort "you were added" email is sent to the new member; failures are only logged.
 - Abuse protection: rate-limited to 10 attempts / 15 min **per acting user** (not per IP; keyed by
   `add-member:<userId>` via `rateLimit`'s `keyGenerator`). The limiter runs before the handler, so
   404 lookups count, which blunts enumeration of the 6-digit space. The counter is per-process.
@@ -205,10 +218,38 @@ as a member. It replaced the former email invitation flow.
   `/members/:userId` so `me` is never parsed as a user id. `CompanyMemberService.leaveCompany`:
   not a member -> 404 `MemberNotFoundError`; sole OWNER -> 409 `CannotRemoveLastOwnerError`
   (`CompanyMember.isLastOwner`; they must transfer ownership or delete the account first);
-  otherwise `remove(userId, companyId)`. Route unassignment is not done because `Route` has no
-  `driverId` yet (#47 not landed); add it there when it does.
+  otherwise the user's non-`COMPLETED` routes in that company are unassigned first
+  (`IRouteRepository.unassignDriverInCompany`, `driverId -> null`) and then
+  `remove(userId, companyId)`. `removeMember` unassigns the same way.
 
-There is no `docs/api.md` in this repo; endpoints are documented here.
+Endpoints are documented in `docs/api.md`.
+
+## Route drivers
+
+`Route.driverId` (nullable FK to `User`, `ON DELETE SET NULL`) is the user who will deliver the route.
+`RouteService.assignDriver` / `create` validate that the driver is a `DEALER`/`ADMIN`/`OWNER` member of the
+route's company (422 `InvalidRouteDriverError`), and a `COMPLETED` route cannot change driver (409).
+`PATCH /api/v1/routes/:id/driver` with `{ driverId: uuid | null }` (re)assigns; `GET /api/v1/routes?driverId=me|<uuid>`
+filters. The routes router requires `jwtAuth`. See `docs/api.md`.
+
+## Live driver location
+
+While a route is `STARTED`, its driver (`Route.driverId`) reports their position and OWNER/ADMIN members of the
+company watch it live. Full contract in `docs/live-tracking.md`.
+
+- Ingest: `POST /api/v1/routes/:id/location` `{ locations: [1..50 points] }` -> `204` (rate limit 60/min per user).
+  `RouteLocationService.report`: 404 route missing, **403** caller is not the `driverId`, **409** route not `STARTED`
+  (the app uses it to stop sending); stale (`recordedAt` <= stored) and throttled (< 3 s per route) points are silently
+  ignored; otherwise upsert into `RouteDriverLocation` (latest position only, no history) and publish.
+- Read: `GET /routes/:id/location` (`200` location or `null`) and SSE `GET /routes/:id/location/stream`
+  (events `location`, `cleared`, `finished`; ping comment every 25 s). Allowed: the driver or OWNER/ADMIN of the route's
+  company, otherwise 403. Bearer header only (no `?token=`). `RouteResponse.driverLocation` is only filled for those same callers.
+- Fan-out: `ILocationBroadcaster` (`src/domain/routes/providers/`) with `InMemoryLocationBroadcaster` (single instance
+  only; swap for Redis to scale horizontally). The SSE handler authorizes BEFORE flushing headers (errors stay normal JSON)
+  and cleans up interval + subscription on `res` `close`.
+- Privacy: the row is deleted when the route finishes (`RouteService.finish`, publishes `finished`) and when the driver
+  changes (`assignDriver`, publishes `cleared`); it is also removed by `ON DELETE CASCADE` with the route.
+- `server.ts` raises `keepAliveTimeout`/`headersTimeout` above typical proxy idle timeouts; SSE sockets disable their idle timeout.
 
 ## Key Quirks
 

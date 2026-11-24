@@ -28,6 +28,8 @@ model User {
   updatedAt DateTime @updatedAt
 
   companies UserCompany[]
+
+  routesAsDriver Route[] @relation("RouteDriver")
 }
 
 model Company {
@@ -37,16 +39,17 @@ model Company {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users          UserCompany[]
-  clients        Client[]
-  suppliers      Supplier[]
-  products       Product[]
-  taxPeriods     TaxPeriod[]
-  clientBills    ClientBill[]
-  supplierBills  SupplierBill[]
-  routes         Route[]
-  paymentMethods PaymentMethod[]
-  subscription   Subscription?
+  users               UserCompany[]
+  clients             Client[]
+  suppliers           Supplier[]
+  products            Product[]
+  taxPeriods          TaxPeriod[]
+  clientBills         ClientBill[]
+  supplierBills       SupplierBill[]
+  routes              Route[]
+  paymentMethods      PaymentMethod[]
+  creditBalance       CreditBalance?
+  creditLedgerEntries CreditLedgerEntry[]
 }
 
 model UserCompany {
@@ -293,7 +296,28 @@ model Route {
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
 
+  driverId String?
+  driver   User?   @relation("RouteDriver", fields: [driverId], references: [id])
+
   points RoutePoint[]
+
+  driverLocation RouteDriverLocation?
+
+  @@index([driverId])
+}
+
+/// Latest known position of a route's driver (only while the route is STARTED).
+model RouteDriverLocation {
+  routeId    String   @id
+  route      Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  driverId   String
+  lat        Float
+  lng        Float
+  heading    Float?
+  speed      Float?
+  accuracy   Float?
+  recordedAt DateTime // device timestamp
+  updatedAt  DateTime @updatedAt
 }
 
 model RoutePoint {
@@ -317,42 +341,47 @@ model RoutePoint {
 /// BILLING
 /// ===============================
 
-model Subscription {
-  id     String             @id @default(uuid())
-  tier   PlanTier           @default(FREE)
-  status SubscriptionStatus @default(ACTIVE)
+model CreditBalance {
+  companyId String   @id
+  company   Company  @relation(fields: [companyId], references: [id])
+  /// Cached sum of the ledger. Can go down to OVERDRAFT_FLOOR (-5).
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
 
-  provider            PaymentProvider?
-  providerCustomerId  String?
-  providerEntitlement String?
+/// Append-only audit trail. Never updated or deleted, except by account deletion.
+model CreditLedgerEntry {
+  id           String       @id @default(uuid())
+  companyId    String
+  company      Company      @relation(fields: [companyId], references: [id])
+  /// +grant / -consume
+  delta        Int
+  reason       CreditReason
+  balanceAfter Int
 
-  currentPeriodStart DateTime?
-  currentPeriodEnd   DateTime?
-
-  companyId String  @unique
-  company   Company @relation(fields: [companyId], references: [id])
+  /// BILL_ISSUED: one charge per bill. Deliberately NOT a FK to ClientBill: the ledger must
+  /// outlive the bill (orders can be deleted).
+  billId                String? @unique
+  /// PURCHASE / REFUND idempotency key (REFUND rows store `refund:<transaction_id>`)
+  providerTransactionId String? @unique
+  productId             String?
+  /// SANDBOX | PRODUCTION (from RevenueCat)
+  environment           String?
+  /// ADMIN_ADJUSTMENT reason
+  note                  String? @db.VarChar(500)
+  createdByUserId       String?
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
-  @@index([providerCustomerId])
+  @@index([companyId, createdAt])
 }
 
-enum PlanTier {
-  FREE
-  BASIC // "Arranque"
-}
-
-enum SubscriptionStatus {
-  ACTIVE
-  IN_GRACE_PERIOD
-  EXPIRED
-  CANCELLED
-}
-
-enum PaymentProvider {
-  REVENUECAT
-  // TILOPAY -> phase 2
+enum CreditReason {
+  WELCOME_GRANT
+  PURCHASE
+  BILL_ISSUED
+  REFUND
+  ADMIN_ADJUSTMENT
 }
 
 /// ===============================

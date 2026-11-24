@@ -7,6 +7,9 @@ import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject
 import { Client } from "@/domain/clients/entities/Client";
 import { OrderDeliveryStatus, OrderDeliveryStatusType } from "../valueObjects/orderDeliveryStatus";
 import Payment from "./Payment";
+import type { RouteStatusType } from "@/domain/routes/valueObjects/routeStatus.valueObject";
+
+export type OrderRouteSummary = { id: string; name: string; status: RouteStatusType };
 
 export default class Order {
   private props: OrderProps;
@@ -22,6 +25,7 @@ export default class Order {
       status: OrderStatus.create(props.status),
       deliveryStatus: OrderDeliveryStatus.create(props.deliveryStatus),
       payments: props.payments,
+      route: props.route ?? null,
       createdAt: props.createdAt ? new Date(props.createdAt) : new Date(),
       updatedAt: props.updatedAt ? new Date(props.updatedAt) : new Date(),
     };
@@ -77,6 +81,10 @@ export default class Order {
     return this.props.deliveryStatus.value;
   }
 
+  get route(): OrderRouteSummary | null {
+    return this.props.route;
+  }
+
   get createdAt(): Date {
     return this.props.createdAt;
   }
@@ -113,6 +121,7 @@ interface OrderProps {
   status: OrderStatus;
   deliveryStatus: OrderDeliveryStatus;
   payments: Payment[]
+  route: OrderRouteSummary | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -130,6 +139,7 @@ export interface ConstructorProps {
   status: OrderStatusType;
   deliveryStatus: OrderDeliveryStatusType;
   payments: Payment[]
+  route?: OrderRouteSummary | null;
   createdAt?: string;
   updatedAt?: string;
 }

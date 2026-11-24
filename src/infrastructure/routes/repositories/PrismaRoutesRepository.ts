@@ -1,23 +1,33 @@
 import { CompanyId } from "@/domain/companies/valueObjects/companyId.valueObject";
 import { Route, RouteId, RoutePoint, RoutePointId } from "@/domain/routes";
-import IRouteRepository from "@/domain/routes/repositories/IRouteRepository";
+import IRouteRepository, { RouteFilters } from "@/domain/routes/repositories/IRouteRepository";
 import { prisma } from "@/infrastructure/prisma/client";
+import { Prisma } from "@/infrastructure/prisma/generated/prisma/client";
 import PrismaRouteMapper from "../mappers/PrismaRouteMapper";
 import DatabaseInsertError from "@/infrastructure/core/errors/DatabaseInsertError";
 import DatabaseError from "@/infrastructure/core/errors/DatabaseError";
+import { DriverLocation } from "@/domain/routes/valueObjects/driverLocation.valueObject";
 import PrismaRoutePointMapper from "../mappers/PrismaRoutePointMapper";
 
 export default class PrismaRoutesRepository implements IRouteRepository {
+  private readonly client: Prisma.TransactionClient;
+
+  constructor(client?: Prisma.TransactionClient) {
+    this.client = client || prisma;
+  }
+
   /**
    * Find all routes by company ID
    * @param companyId
+   * @param filters Optional filters (e.g. driverId)
    * @returns Route array promise
    */
-  async findAllByCompany(companyId: CompanyId): Promise<Route[]> {
+  async findAllByCompany(companyId: CompanyId, filters?: RouteFilters): Promise<Route[]> {
     try {
-      const results = await prisma.route.findMany({
+      const results = await this.client.route.findMany({
         where: {
           companyId: companyId.value,
+          ...(filters?.driverId ? { driverId: filters.driverId } : {}),
         },
         orderBy: {
           createdAt: "desc",
@@ -40,7 +50,7 @@ export default class PrismaRoutesRepository implements IRouteRepository {
   async create(route: Route): Promise<Route> {
     try {
       const raw = PrismaRouteMapper.toPersistence(route);
-      const result = await prisma.route.create(raw);
+      const result = await this.client.route.create(raw);
       // @ts-expect-error 
       return PrismaRouteMapper.toDomain(result);
     } catch (error) {
@@ -56,7 +66,7 @@ export default class PrismaRoutesRepository implements IRouteRepository {
    */
   async findById(id: RouteId): Promise<Route | null> {
     try {
-      const result = await prisma.route.findUnique({
+      const result = await this.client.route.findUnique({
         where: {
           id: id.value,
         },
@@ -75,7 +85,7 @@ export default class PrismaRoutesRepository implements IRouteRepository {
    */
   async delete(id: RouteId): Promise<void> {
     try {
-      await prisma.route.delete({
+      await this.client.route.delete({
         where: {
           id: id.value,
         },
@@ -93,7 +103,7 @@ export default class PrismaRoutesRepository implements IRouteRepository {
   async update(route: Route): Promise<Route> {
     try {
       const raw = PrismaRouteMapper.toPersistenceUpdate(route);
-      const result = await prisma.route.update(raw);
+      const result = await this.client.route.update(raw);
       // @ts-expect-error
       return PrismaRouteMapper.toDomain(result);
     } catch (error) {
@@ -110,7 +120,7 @@ export default class PrismaRoutesRepository implements IRouteRepository {
   async addPoint(point: RoutePoint): Promise<RoutePoint> {
     try {
       const raw = PrismaRoutePointMapper.toPersistence(point);
-      const result = await prisma.routePoint.create(raw);
+      const result = await this.client.routePoint.create(raw);
       // @ts-expect-error
       return PrismaRoutePointMapper.toDomain(result);
     } catch (error) {
@@ -125,7 +135,7 @@ export default class PrismaRoutesRepository implements IRouteRepository {
    */
   async removePoint(pointId: RoutePointId): Promise<void> {
     try {
-      await prisma.routePoint.delete({
+      await this.client.routePoint.delete({
         where: {
           id: pointId.value,
         },
@@ -139,7 +149,7 @@ export default class PrismaRoutesRepository implements IRouteRepository {
   async updatePoint(point: RoutePoint): Promise<RoutePoint> {
     try {
       const raw = PrismaRoutePointMapper.toPersistenceUpdate(point);
-      const result = await prisma.routePoint.update(raw);
+      const result = await this.client.routePoint.update(raw);
       // @ts-expect-error
       return PrismaRoutePointMapper.toDomain(result);
     } catch (error) {
@@ -150,7 +160,7 @@ export default class PrismaRoutesRepository implements IRouteRepository {
 
   async findPointById(id: RoutePointId): Promise<RoutePoint | null> {
     try {
-      const result = await prisma.routePoint.findUnique({
+      const result = await this.client.routePoint.findUnique({
         where: {
           id: id.value,
         },
@@ -179,32 +189,78 @@ export default class PrismaRoutesRepository implements IRouteRepository {
     }
   }
 
-  /**
-   * Count routes created by a company within a half-open date range `[start, end)`.
-   * @param companyId The ID of the company.
-   * @param start Inclusive lower bound of `createdAt`.
-   * @param end Exclusive upper bound of `createdAt`.
-   * @returns A promise that resolves to the number of matching routes.
-   */
-  async countByCompanyAndCreatedAtRange(companyId: string, start: Date, end: Date): Promise<number> {
+
+  async unassignDriverInCompany(userId: string, companyId: string): Promise<void> {
     try {
-      return await prisma.route.count({
-        where: {
-          companyId,
-          createdAt: {
-            gte: start,
-            lt: end,
-          },
-        },
+      await this.client.route.updateMany({
+        where: { driverId: userId, companyId, status: { not: "COMPLETED" } },
+        data: { driverId: null },
       });
     } catch (error) {
-      console.error("Error counting routes by company ID:", error);
-      throw new DatabaseError("Could not count routes");
+      console.error("Error unassigning driver from company routes:", error);
+      throw new DatabaseError("Could not unassign driver from routes");
+    }
+  }
+
+  async unassignDriverFromAll(userId: string): Promise<void> {
+    try {
+      await this.client.route.updateMany({
+        where: { driverId: userId },
+        data: { driverId: null },
+      });
+    } catch (error) {
+      console.error("Error unassigning driver from routes:", error);
+      throw new DatabaseError("Could not unassign driver from routes");
+    }
+  }
+
+  async upsertDriverLocation(routeId: string, driverId: string, location: DriverLocation): Promise<void> {
+    const data = {
+      driverId,
+      lat: location.lat,
+      lng: location.lng,
+      heading: location.heading,
+      speed: location.speed,
+      accuracy: location.accuracy,
+      recordedAt: location.recordedAt,
+    };
+    try {
+      await this.client.routeDriverLocation.upsert({
+        where: { routeId },
+        create: { routeId, ...data },
+        update: data,
+      });
+    } catch (error) {
+      console.error("Error upserting driver location:", error);
+      throw new DatabaseError("Could not save driver location");
+    }
+  }
+
+  async findDriverLocation(routeId: string): Promise<DriverLocation | null> {
+    try {
+      const result = await this.client.routeDriverLocation.findUnique({ where: { routeId } });
+      return result ? PrismaRouteMapper.locationToDomain(result) : null;
+    } catch (error) {
+      console.error("Error finding driver location:", error);
+      throw new DatabaseError("Could not find driver location");
+    }
+  }
+
+  async deleteDriverLocation(routeId: string): Promise<void> {
+    try {
+      await this.client.routeDriverLocation.deleteMany({ where: { routeId } });
+    } catch (error) {
+      console.error("Error deleting driver location:", error);
+      throw new DatabaseError("Could not delete driver location");
     }
   }
 
   getIncludeConditions() {
     return {
+      driver: {
+        select: { id: true, name: true, surnames: true, email: true }
+      },
+      driverLocation: true,
       points: {
         include: {
           bill: {

@@ -14,8 +14,7 @@ import {
  *      `appleAuthorizationCode` (iOS users). Silently skipped for Google users and when
  *      the Apple env vars are not configured.
  *   2. RevenueCat subscriber deletion for each deleted company (app_user_id === companyId),
- *      so a late webhook does not upsert a Subscription row for a company that no longer
- *      exists. Silently skipped when REVENUECAT_API_KEY is not configured.
+ *      so the provider stops sending webhooks for a company that no longer exists. Silently skipped when REVENUECAT_API_KEY is not configured.
  *   3. Confirmation email to the address captured pre-deletion.
  *
  * Every side effect is wrapped in its own try/catch and only logged on failure. This method
@@ -40,10 +39,9 @@ export class AccountDeletionExternalCleanup implements IAccountDeletionExternalC
       }
     }
 
-    // 2. RevenueCat subscriber cleanup per deleted company. The subscription was already
-    //    deleted with the company inside the transaction (deleteWithAllData deletes the
-    //    Subscription row), but the provider side still holds the subscriber and would
-    //    keep sending webhooks for it.
+    // 2. RevenueCat subscriber cleanup per deleted company. The company data was already
+    //    deleted inside the transaction (deleteWithAllData), but the provider side still
+    //    holds the subscriber and would keep sending webhooks for it.
     for (const companyId of result.deletedCompanyIds) {
       try {
         await this.paymentProvider.deleteSubscriber(companyId);

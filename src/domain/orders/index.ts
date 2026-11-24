@@ -9,4 +9,5 @@ export { OrderStatus, OrderStatusType } from "./valueObjects/orderStatus.valueOb
 export { OrderTotal } from "./valueObjects/orderTotal.valueObject";
 
 // Types
+export type { OrderRouteSummary } from "./entities/Order";
 export type { ConstructorProps as OrderConstructorProps } from "./entities/Order";

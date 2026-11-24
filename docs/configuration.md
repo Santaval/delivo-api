@@ -63,6 +63,13 @@ All configuration comes from environment variables, loaded with `dotenv` from `.
 |---|:-:|---|
 | `REVENUECAT_WEBHOOK_AUTH` | optional | Shared secret for `POST /billing/webhooks/revenuecat`. **When it is unset, every webhook is rejected** |
 | `REVENUECAT_API_KEY` | optional | Deleting subscribers on account deletion. Skipped when unset |
+| `BILLING_ACCEPT_SANDBOX` | optional | `true` credits sandbox store purchases (dev/staging). Anything else, or unset, ignores them (production) |
+
+### Admin
+
+| Variable | Required | Used by |
+|---|:-:|---|
+| `ADMIN_API_KEY` | optional | Key for the `/admin/*` routes (header `x-admin-key`). At least 32 characters when set (for example `openssl rand -base64 48`). **When it is unset, every admin request gets `401`** |
 
 ### Store review login
 
@@ -78,6 +85,7 @@ All configuration comes from environment variables, loaded with `dotenv` from `.
 
 - `RESEND_API_KEY`, `MAIL_FROM`, `APP_INVITE_URL` or `MIN_FRONTEND_VERSION` is missing;
 - `MIN_FRONTEND_VERSION` is not valid semver (for example `1.2` or `v1.2.0`), because a broken version gate would affect every client;
+- `ADMIN_API_KEY` is set but shorter than 32 characters;
 - `TEST_LOGIN_ENABLED=true` but the email is missing or the password is shorter than 16 characters.
 
 Error messages never include the secret values themselves.

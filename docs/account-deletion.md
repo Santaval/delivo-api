@@ -1,6 +1,6 @@
 # Account deletion
 
-Apple (App Review guideline 5.1.1(v)) and Google Play require apps that support account creation to also support **in-app account deletion**. In a multi-tenant system this is harder than deleting one row: the user may be the sole owner of a company that holds orders, routes, payments and a paid subscription, or just one member of someone else's company.
+Apple (App Review guideline 5.1.1(v)) and Google Play require apps that support account creation to also support **in-app account deletion**. In a multi-tenant system this is harder than deleting one row: the user may be the sole owner of a company that holds orders, routes, payments and a credit balance, or just one member of someone else's company.
 
 Delivo splits the job in two:
 
@@ -41,6 +41,8 @@ flowchart TD
     H --> R["Return { email, name, deletedCompanyIds, unlinkedCompanyIds }"]
 ```
 
+Before the user row is deleted, `Route.driverId` is set to `null` on every route that still references the user (routes in companies that survive).
+
 ### Deleting a company the user solely owns
 
 Foreign keys are `ON DELETE RESTRICT`, and `Client` and `Product` normally use **soft** delete, which read paths filter out. A company therefore can't simply be dropped. `deleteWithAllData` removes rows in an explicit **leaf-to-root topological order**, using raw `deleteMany` calls that also catch soft-deleted rows. Any row left behind would make the final `company.delete()` fail.
@@ -49,7 +51,7 @@ Foreign keys are `ON DELETE RESTRICT`, and `Client` and `Product` normally use *
 RoutePoint → ClientPayment → ClientBillItem → ClientBill → Route
 SupplierBillItem → SupplierBill → Supplier
 PaymentMethod → Product → Client
-TaxPeriod → Subscription
+TaxPeriod → CreditLedgerEntry → CreditBalance
 CompanyInvitation → UserCompany
 Company
 ```
@@ -75,7 +77,7 @@ The confirmation email is sent *after* the user row no longer exists, so the rec
 
 ## 3. Late webhook protection
 
-A subscription can renew or expire *after* its company is gone. Without a guard, the webhook upsert would hit a missing foreign key, return `500`, and RevenueCat would retry indefinitely. `SubscriptionSyncService.applyEvent` first checks that the company exists. If it does not, the event is logged, the endpoint returns `200`, and nothing is written.
+A purchase or refund event can arrive *after* its company is gone. Without a guard, the ledger insert would hit a missing foreign key, return `500`, and RevenueCat would retry indefinitely. `CreditPurchaseService.applyEvent` first checks that the company exists. If it does not, the event is logged, the endpoint returns `200`, and nothing is written. Replays of an already-applied event are also harmless: the unique `CreditLedgerEntry.providerTransactionId` makes them a no-op.
 
 ## Audit logging
 

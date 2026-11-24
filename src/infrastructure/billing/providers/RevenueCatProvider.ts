@@ -1,29 +1,22 @@
 import crypto from "crypto";
-import { IPaymentProvider, SubscriptionEvent, SubscriptionEventKind } from "@/domain/billing/providers/IPaymentProvider";
+import { CreditEnvironment, CreditEvent, CreditEventKind, IPaymentProvider } from "@/domain/billing/providers/IPaymentProvider";
 import { PaymentProviderType } from "@/domain/billing/valueObjects/paymentProvider.valueObject";
-import { PlanTierType } from "@/domain/billing/valueObjects/planTier.valueObject";
 import InfrastructureError from "@/infrastructure/core/errors/InfrastructureError";
 
-/** RevenueCat event types that map to a neutral kind. Anything else is ignored (return null). */
-const EVENT_KIND_BY_TYPE: Record<string, SubscriptionEventKind> = {
-  INITIAL_PURCHASE: "ACTIVATED",
-  RENEWAL: "ACTIVATED",
-  PRODUCT_CHANGE: "ACTIVATED",
-  UNCANCELLATION: "ACTIVATED",
-  CANCELLATION: "CANCELLED",
-  EXPIRATION: "EXPIRED",
-  BILLING_ISSUE: "BILLING_ISSUE",
-};
+/** RevenueCat `cancel_reason` of a CANCELLATION caused by a store refund. */
+const REFUND_CANCEL_REASON = "CUSTOMER_SUPPORT";
 
 interface RevenueCatWebhookEvent {
   id?: string;
   type?: string;
   app_user_id?: string;
   original_app_user_id?: string;
-  entitlement_ids?: string[];
-  entitlement_id?: string;
+  product_id?: string;
+  transaction_id?: string;
+  environment?: string;
+  cancel_reason?: string;
   purchased_at_ms?: number;
-  expiration_at_ms?: number;
+  event_timestamp_ms?: number;
 }
 
 interface RevenueCatWebhookPayload {
@@ -33,8 +26,7 @@ interface RevenueCatWebhookPayload {
 
 /**
  * Infrastructure adapter for RevenueCat, implementing the provider-agnostic `IPaymentProvider`
- * port. Only handles webhook verification and payload parsing; persistence lives in
- * `SubscriptionSyncService`.
+ * port. Only handles webhook verification and payload parsing.
  */
 export default class RevenueCatProvider implements IPaymentProvider {
   readonly name: PaymentProviderType = "REVENUECAT";
@@ -82,39 +74,44 @@ export default class RevenueCatProvider implements IPaymentProvider {
   }
 
   /**
-   * Maps a RevenueCat webhook payload to a neutral `SubscriptionEvent`, or `null` when the event
-   * type is not relevant to this app (e.g. `TEST`, `TRANSFER`, `SUBSCRIPTION_PAUSED`).
+   * Maps a RevenueCat webhook payload to a neutral `CreditEvent`, or `null` when the event is
+   * not relevant to this app: only `NON_RENEWING_PURCHASE` (PURCHASE) and a `CANCELLATION` with
+   * `cancel_reason = CUSTOMER_SUPPORT`, i.e. a store refund (REFUND), are mapped. Everything
+   * else (other cancel reasons, `TRANSFER`, `TEST`, subscription events) resolves to `null`.
+   * Whether the product is a known credit pack is application policy and is not checked here.
    *
    * Defensive by design: any malformed/unexpected shape resolves to `null` instead of throwing,
    * so a single bad payload cannot crash the webhook endpoint.
    */
-  parseWebhookEvent(payload: unknown): SubscriptionEvent | null {
+  parseWebhookEvent(payload: unknown): CreditEvent | null {
     if (!payload || typeof payload !== "object") return null;
 
     const { event } = payload as RevenueCatWebhookPayload;
     if (!event || typeof event !== "object") return null;
 
-    const kind = event.type ? EVENT_KIND_BY_TYPE[event.type] : undefined;
+    let kind: CreditEventKind | null = null;
+    if (event.type === "NON_RENEWING_PURCHASE") kind = "PURCHASE";
+    else if (event.type === "CANCELLATION" && event.cancel_reason === REFUND_CANCEL_REASON) kind = "REFUND";
     if (!kind) return null;
 
-    const providerCustomerId = event.app_user_id ?? event.original_app_user_id;
-    if (!providerCustomerId || !event.id) return null;
-
-    const entitlementId = event.entitlement_ids?.[0] ?? event.entitlement_id ?? null;
+    const appUserId = event.app_user_id ?? event.original_app_user_id;
+    if (!event.id || !appUserId || !event.transaction_id || !event.product_id) return null;
 
     return {
       eventId: event.id,
       kind,
-      provider: this.name,
-      providerCustomerId,
       // Convention: app_user_id === companyId (see IPaymentProvider.ts).
-      companyId: providerCustomerId,
-      // Only one paid plan exists in the MVP, so every relevant event maps to BASIC.
-      tier: "BASIC" as PlanTierType,
-      entitlementId,
-      periodStart: this.msToDate(event.purchased_at_ms),
-      periodEnd: this.msToDate(event.expiration_at_ms),
+      companyId: appUserId,
+      transactionId: event.transaction_id,
+      productId: event.product_id,
+      environment: this.toEnvironment(event.environment),
+      occurredAt: this.msToDate(event.event_timestamp_ms ?? event.purchased_at_ms) ?? new Date(),
     };
+  }
+
+  private toEnvironment(value: string | undefined): CreditEnvironment | null {
+    const upper = typeof value === "string" ? value.toUpperCase() : null;
+    return upper === "SANDBOX" || upper === "PRODUCTION" ? upper : null;
   }
 
   private msToDate(ms: number | undefined): Date | null {
@@ -123,8 +120,8 @@ export default class RevenueCatProvider implements IPaymentProvider {
 
   /**
    * Deletes the RevenueCat subscriber for a given companyId (app_user_id === companyId
-   * convention). Used during account deletion so a late webhook (RENEWAL, EXPIRATION)
-   * does not upsert a Subscription row for a company that no longer exists.
+   * convention). Used during account deletion so the provider stops associating purchases
+   * with a company that no longer exists.
    *
    * Idempotent: 200/204 (gone) and 404 (already gone) are all treated as success.
    * Silently skips when REVENUECAT_API_KEY is not configured, so a deployment without

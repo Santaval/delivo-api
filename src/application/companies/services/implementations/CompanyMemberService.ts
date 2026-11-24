@@ -2,6 +2,7 @@ import { CompanyMember } from "@/domain/companies/entities/CompanyMember";
 import { CompanyRoleType } from "@/domain/companies/valueObjects/companyRole.valueObject";
 import { ICompanyMemberRepository } from "@/domain/companies/repositories/ICompanyMemberRepository";
 import { ICompanyRepository } from "@/domain/companies/repositories/ICompanyRepository";
+import IRouteRepository from "@/domain/routes/repositories/IRouteRepository";
 import { IUserRepository } from "@/domain/users/repositories/IUserRepository";
 import { ICompanyMemberService, CompanyMemberDetails } from "../interfaces/ICompanyMemberService";
 import MemberAddedEmailSender from "../members/MemberAddedEmailSender";
@@ -18,6 +19,7 @@ export class CompanyMemberService implements ICompanyMemberService {
     private readonly companyRepository: ICompanyRepository,
     private readonly userRepository: IUserRepository,
     private readonly memberAddedEmailSender: MemberAddedEmailSender,
+    private readonly routeRepository: IRouteRepository,
   ) {}
 
   async addMemberByCode(
@@ -106,6 +108,7 @@ export class CompanyMemberService implements ICompanyMemberService {
       throw new CannotRemoveLastOwnerError();
     }
 
+    await this.routeRepository.unassignDriverInCompany(targetUserId, companyId);
     await this.memberRepository.remove(targetUserId, companyId);
   }
 
@@ -118,7 +121,7 @@ export class CompanyMemberService implements ICompanyMemberService {
       throw new CannotRemoveLastOwnerError();
     }
 
-    // Route driver unassignment is skipped: Route has no driverId yet (#47 not landed).
+    await this.routeRepository.unassignDriverInCompany(userId, companyId);
     await this.memberRepository.remove(userId, companyId);
   }
 }

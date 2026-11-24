@@ -2,8 +2,7 @@
 import { Company } from "@/domain/companies/entities/Company";
 import { ICompanyRepository } from "@/domain/companies/repositories/ICompanyRepository";
 import { ICompanyCreationUnitOfWork } from "@/domain/companies/unitsOfWork/CompanyCreationUnitOfWork";
-import { Subscription } from "@/domain/billing/entities/Subscription";
-import { IIDGenerator } from "@/domain/core/services/IIDGenerator";
+import { WELCOME_CREDITS } from "@/application/credits/CreditPolicy";
 import { ICompanyService } from "../interfaces/ICompanyService";
 import { CompanyCreationError } from "../../errors/CompanyCreationError";
 import { CompanyNotFoundError } from "../../errors/CompanyNotFoundError";
@@ -12,48 +11,33 @@ export class CompanyService implements ICompanyService {
     constructor(
         private readonly companyRepository: ICompanyRepository,
         private readonly companyCreationUOW: ICompanyCreationUnitOfWork,
-        private readonly idGenerator: IIDGenerator,
     ) {
     }
 
     /**
      * Create company service.
      *
-     * The company, its owner membership and its default FREE subscription are created in a
-     * single transaction: every organization starts on the Gratis plan, and none can ever
-     * exist without one.
+     * The company, its owner membership and its welcome credit grant are created in a
+     * single transaction: every organization starts with the welcome credits, and none can
+     * ever exist without a credit balance.
      * @param company
      * @returns {Promise<Company>}
      */
     async create(company: Company, userId: string): Promise<Company> {
         const createdCompany = await this.companyCreationUOW.runInTransaction(async (context) => {
             const companyRepository = context.getCompanyRepository();
-            const subscriptionRepository = context.getSubscriptionRepository();
+            const creditRepository = context.getCreditRepository();
 
             await companyRepository.create(company);
             // add user to company
             await companyRepository.addUser(company.id, userId);
-            await subscriptionRepository.create(this.buildDefaultSubscription(company.id));
+            await creditRepository.grant({ companyId: company.id, delta: WELCOME_CREDITS, reason: "WELCOME_GRANT" });
 
             return companyRepository.find(company.id, "id");
         });
 
         if (!createdCompany) throw new CompanyCreationError();
         return createdCompany;
-    }
-
-    /** Default plan for a brand new organization: FREE, active, with no expiry. */
-    private buildDefaultSubscription(companyId: string): Subscription {
-        const now = new Date().toISOString();
-
-        return new Subscription({
-            id: this.idGenerator.generate(),
-            tier: "FREE",
-            status: "ACTIVE",
-            companyId,
-            createdAt: now,
-            updatedAt: now,
-        });
     }
 
     async find(value: any, field: string = "id"): Promise<Company | null> {

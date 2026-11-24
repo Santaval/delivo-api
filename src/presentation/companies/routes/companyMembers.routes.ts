@@ -5,7 +5,6 @@ import jwtAuth from "@/presentation/auth/middlewares/jwtAuth";
 import { AddMemberByCodeSchema } from "../validators/addMemberByCode";
 import requireCompanyRole from "../middlewares/requireCompanyRole";
 import { companyMemberController } from "@/dependencyInjection/container";
-import enforceLimit from "@/presentation/billing/middlewares/enforceLimit";
 import rateLimit from "@/presentation/core/middlewares/rateLimit";
 
 const companyMembersRouter = Router();
@@ -27,11 +26,6 @@ companyMembersRouter.post(
     max: 10,
     // @ts-expect-error req.user typing conflicts with @types/passport (see express.d.ts)
     keyGenerator: (req) => `add-member:${req.user?.id ?? req.ip}`,
-  }),
-  // Only DEALER members consume a driver seat.
-  enforceLimit("drivers", {
-    companyId: (req) => req.params.companyId,
-    when: (req) => req.body?.role === "DEALER",
   }),
   validateSchema(AddMemberByCodeSchema),
   asyncHandler(companyMemberController.addMemberByCode.bind(companyMemberController)),
